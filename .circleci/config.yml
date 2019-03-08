@@ -18,6 +18,8 @@ version: 2
 jobs:
   test:
     <<: *defaults
+    docker:
+      - image: circleci/node:8.11.4-jessie
     steps:
       - checkout
       - *restore-cache

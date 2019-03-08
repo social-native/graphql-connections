@@ -16,6 +16,8 @@ All usernames are unique
 
 ### Firstname
 
+310 firstnames are defined
+
 | Number of people with same `firstname` | Firstname |
 |----------------------------------------|----------|
 | 10  | Reggie |
@@ -31,7 +33,7 @@ All usernames are unique
 | 2  | Gross |
 | 4  | Candaele |
 | 8  | Chew |
-| 16  | Summa |
+| 10  | Summa |
 | 32 | `null`
 
 ### Bio
@@ -54,7 +56,7 @@ All usernames are unique
 | 1000  | 80 |
 | 1000  | 90 |
 | 1000  | 100 |
-| 1000  | `null` |
+| 1000  | 110 |
 
 ### Haircolor
 
@@ -71,15 +73,18 @@ All usernames are unique
 
 Cases
 
-600 people `age` N have brown `hair`
-200 people `age` N have black `hair`
-100 people `age` N have blonde `hair`
-50 people `age` N have red `hair`
-10 people `age` N have gray `hair`
-40 people `age` N dont have a `hair` color listed
+### Case A
+600 people `age` N have brown `hair` (6000 people total across all `ages`)
+200 people `age` N have black `hair` (2000 people total across all `ages`)
+100 people `age` N have blonde `hair` (1000 people total across all `ages`)
+50 people `age` N have red `hair` (500 people total across all `ages`)
+10 people `age` N have gray `hair` (100 people total across all `ages`)
+40 people `age` N dont have a `hair` color listed (400 people total across all `ages`)
 
-10 people `age` N have brown `hair` and the `first name` Kenyon (100 people total across all `ages`)
-5 people `age` N have brown `hair` and the `first name` Nerissa (50 people total across all `ages`)
+### Case B
+16 people `age` N have brown `hair` and the `first name` Kenyon (160 people total across all `ages`)
+8 people `age` N have brown `hair` and the `first name` Nerissa (80 people total across all `ages`)
 
+### Case C
 1 person `age` N has brown `hair`, the `first name` Kenyon and the `last name` Summa (10 people total across all `ages`)
 

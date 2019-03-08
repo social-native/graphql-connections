@@ -1,0 +1,121 @@
+defaults: &defaults
+  working_directory: ~/snpkg-snapi-connections
+
+save-cache: &save-cache
+  save_cache:
+    paths:
+      - node_modules
+    key: v1-dependencies-{{ checksum "package.json" }}
+
+restore-cache: &restore-cache
+  restore_cache:
+    keys:
+    - v1-dependencies-{{ checksum "package.json" }}
+    # fallback to using the latest cache if no exact match is found
+    - v1-dependencies-
+
+version: 2
+jobs:
+  test:
+    <<: *defaults
+    docker:
+      - image: circleci/node:8.11.4-jessie
+    steps:
+      - checkout
+      - *restore-cache
+      - run: npm install
+      - *save-cache
+      - run: node_modules/knex/bin/cli.js migrate:latest --env test
+      - run: node_modules/knex/bin/cli.js seed:run --env test
+      - run: npm run test
+
+  build-verification:
+    <<: *defaults
+    docker:
+      - image: circleci/node:8.11.4-jessie
+    steps:
+      - checkout
+      - *restore-cache
+      - run: npm install
+      - run: npm run build
+
+  type-check:
+    <<: *defaults
+    docker:
+      - image: circleci/node:8.11.4-jessie
+    steps:
+      - checkout
+      - *restore-cache
+      - run: npm install
+      - *save-cache
+      - run: npm run type-check
+
+  lint-check:
+    <<: *defaults
+    docker:
+      - image: circleci/node:8.11.4-jessie
+    steps:
+      - checkout
+      - *restore-cache
+      - run: npm install
+      - *save-cache
+      - run: npm run lint
+
+  beauty-check:
+    <<: *defaults
+    docker:
+      - image: circleci/node:8.11.4-jessie
+    steps:
+      - checkout
+      - *restore-cache
+      - run: npm install
+      - *save-cache
+      - run: npm run prettier -- --check
+
+  dependency-check:
+    <<: *defaults
+    docker:
+      - image: circleci/node:8.11.4-jessie
+    steps:
+      - checkout
+      - *restore-cache
+      - run: npm install
+      - *save-cache
+      - run: npm run dep-check
+      - store_artifacts:
+          path: /tmp/dependency-check-output.json
+
+workflows:
+  version: 2
+  test-build-deploy:
+    jobs:
+    - test:
+        filters:
+          tags: # run for every branch
+            only: /^[0-9]+(\.[0-9]+)*$/
+            
+    - build-verification:
+        filters:
+          tags: # run for every branch
+            only: /^[0-9]+(\.[0-9]+)*$/
+
+    - type-check:
+        filters:
+          tags: # run for every branch
+            only: /^[0-9]+(\.[0-9]+)*$/
+
+    - lint-check:
+        filters:
+          tags: # run for every branch
+            only: /^[0-9]+(\.[0-9]+)*$/
+
+    - beauty-check:
+        filters:
+          tags: # run for every branch
+            only: /^[0-9]+(\.[0-9]+)*$/
+
+    - dependency-check:
+        filters:
+          tags: # run for every branch
+            only: /^[0-9]+(\.[0-9]+)*$/
+

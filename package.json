@@ -1,0 +1,54 @@
+{
+  "name": "snpkg-snapi-connections",
+  "version": "0.0.0",
+  "description": "Connection / Cursor logic for SNAPI packages",
+  "main": "dist/index.cjs.js",
+  "module": "dist/index.es.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "dev": "nodemon -e ts -w ./dev -x npm run ts-node-start",
+    "ts-node-start": "node ./node_modules/.bin/ts-node --project tsconfig.dev.json -r tsconfig-paths/register dev/index.ts",
+    "clean": "rm -rf dist",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "npm run clean && rollup -c",
+    "watch": "rollup -cw"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/social-native/snpkg-snapi-connections.git"
+  },
+  "keywords": [
+    "SNAPI",
+    "SNPKG",
+    "Connections",
+    "Cursor"
+  ],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/social-native/snpkg-snapi-connections/issues"
+  },
+  "homepage": "https://github.com/social-native/snpkg-snapi-connections#readme",
+  "devDependencies": {
+    "apollo-server-koa": "^2.4.8",
+    "depcheck": "^0.7.2",
+    "faker": "^4.1.0",
+    "graphql": "^14.1.1",
+    "graphql-tools": "^4.0.4",
+    "knex": "^0.16.3",
+    "koa": "^2.7.0",
+    "nodemon": "^1.18.10",
+    "rollup": "^1.2.2",
+    "rollup-plugin-typescript2": "^0.19.2",
+    "sqlite3": "^4.0.6",
+    "ts-node": "^8.0.3",
+    "tsconfig-paths": "^3.8.0",
+    "typescript": "^3.3.3333"
+  },
+  "dependencies": {
+    "prettier": "^1.16.4"
+  }
+}

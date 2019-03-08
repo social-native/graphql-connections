@@ -7,10 +7,10 @@ exports.up = function(knex, Promise) {
 
         t.string('username');
         t.string('firstname');
-        t.string('lastname');
-        t.text('bio');
-        t.integer('age');
-        t.string('haircolor');
+        t.string('lastname').nullable();
+        t.text('bio'.nullable();
+        t.integer('age').nullable();
+        t.string('haircolor').nullable();
     });
 };
 

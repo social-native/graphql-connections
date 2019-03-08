@@ -8,7 +8,7 @@ exports.up = function(knex, Promise) {
         t.string('username');
         t.string('firstname');
         t.string('lastname').nullable();
-        t.text('bio'.nullable();
+        t.text('bio').nullable();
         t.integer('age').nullable();
         t.string('haircolor').nullable();
     });

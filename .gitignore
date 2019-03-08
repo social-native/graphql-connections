@@ -65,3 +65,6 @@ typings/
 
 # sqllite
 .sqlite3
+
+# dependency check
+tmp/dependency-check-output.json

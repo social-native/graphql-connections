@@ -19,7 +19,12 @@
     "watch": "rollup -cw",
     "lint": "./node_modules/tslint/bin/tslint --project ./tsconfig.json",
     "prettier": "./node_modules/.bin/prettier \"src/**/*\"",
-    "dep-check": "node ./scripts/dependency-check.js"
+    "dep-check": "node ./scripts/dependency-check.js",
+    "knex": "node ./node_modules/.bin/ts-node --project tsconfig.dev.json ./node_modules/.bin/knex",
+    "seed:make": "npm run knex -- -x ts seed:make",
+    "seed:run": "npm run knex seed:run",
+    "migrate:latest": "npm run knex migrate:latest",
+    "migrate:rollback": "npm run knex migrate:rollback"
   },
   "repository": {
     "type": "git",
@@ -38,6 +43,7 @@
   },
   "homepage": "https://github.com/social-native/snpkg-snapi-connections#readme",
   "devDependencies": {
+    "@types/faker": "^4.1.5",
     "@types/graphql": "^14.0.7",
     "@types/jest": "^24.0.9",
     "apollo-server-koa": "^2.4.8",

@@ -8,7 +8,7 @@ console.log('              Unique     Random ');
 console.log('              -------    -------');
 
 // Usernames
-const {uniqueData: usernameUniqueData, randomData: usernameRandomData} = generateColumnData(
+const {uniqueData: usernameUniqueData, randomData: usernameRandomData} = generateColumnData<string>(
     {},
     {makeRandomUnique: true, fakerFn: faker.internet.userName},
     10000
@@ -25,11 +25,9 @@ const firstNameCount = {
     Kenyon: 160
 };
 
-const {uniqueData: firstnamesUniqueData, randomData: firstnamesRandomData} = generateColumnData(
-    firstNameCount,
-    {makeRandomUnique: false, fakerFn: faker.name.firstName},
-    10000
-);
+const {uniqueData: firstnamesUniqueData, randomData: firstnamesRandomData} = generateColumnData<
+    string
+>(firstNameCount, {makeRandomUnique: false, fakerFn: faker.name.firstName}, 10000);
 
 console.log('firstnames:   ', firstnamesUniqueData.length, '      ', firstnamesRandomData.length);
 
@@ -41,11 +39,9 @@ const lastNameCount = {
     Summa: 10
 };
 
-const {uniqueData: lastnamesUniqueData, randomData: lastnamesRandomData} = generateColumnData(
-    lastNameCount,
-    {makeRandomUnique: false, fakerFn: faker.name.lastName},
-    10000
-);
+const {uniqueData: lastnamesUniqueData, randomData: lastnamesRandomData} = generateColumnData<
+    string
+>(lastNameCount, {makeRandomUnique: false, fakerFn: faker.name.lastName}, 10000);
 
 console.log('lastnames:    ', lastnamesUniqueData.length, '       ', lastnamesRandomData.length);
 
@@ -55,7 +51,7 @@ const bioCount = {
     sodalitious: 4
 };
 
-const {uniqueData: biosUniqueData, randomData: biosRandomData} = generateColumnData(
+const {uniqueData: biosUniqueData, randomData: biosRandomData} = generateColumnData<string>(
     bioCount,
     {makeRandomUnique: false, fakerFn: faker.lorem.paragraph},
     10000
@@ -79,7 +75,7 @@ const ageCount = {
 
 const undefinedData = () => undefined;
 
-const {uniqueData: agesUniqueData, randomData: agesRandomData} = generateColumnData(
+const {uniqueData: agesUniqueData, randomData: agesRandomData} = generateColumnData<number>(
     ageCount,
     {makeRandomUnique: false, fakerFn: undefinedData, dataIsNumber: true},
     10000
@@ -96,11 +92,9 @@ const haircolorCount = {
     gray: 100
 } as {[color: string]: number};
 
-const {uniqueData: haircolorsUniqueData, randomData: haircolorsRandomData} = generateColumnData(
-    haircolorCount,
-    {makeRandomUnique: false, fakerFn: faker.commerce.color},
-    10000
-);
+const {uniqueData: haircolorsUniqueData, randomData: haircolorsRandomData} = generateColumnData<
+    string
+>(haircolorCount, {makeRandomUnique: false, fakerFn: faker.commerce.color}, 10000);
 
 console.log('haircolors:   ', haircolorsUniqueData.length, '     ', haircolorsRandomData.length);
 
@@ -113,6 +107,7 @@ const takeItemFromArray = <Type>(item: Type, array: Type[]) => {
     }
 };
 
+// Combine haircolors with ages
 let caseA: Array<{haircolor: string; age: number}> = [];
 Object.keys(haircolorCount).forEach(haircolor => {
     [20, 30, 40, 50, 60, 70, 80, 90, 100, 110].forEach(age => {
@@ -133,6 +128,7 @@ Object.keys(haircolorCount).forEach(haircolor => {
 });
 
 let caseB: Array<{haircolor: string; age: number; firstname: string}> = [];
+// Add first name Kenyon
 [20, 30, 40, 50, 60, 70, 80, 90, 100, 110].forEach(age => {
     const colorAgeFirstNameCase = Array(16)
         .fill(undefined)
@@ -150,6 +146,7 @@ let caseB: Array<{haircolor: string; age: number; firstname: string}> = [];
     caseB = [...caseB, ...colorAgeFirstNameCase];
 });
 
+// Add first name Nerissa
 [20, 30, 40, 50, 60, 70, 80, 90, 100, 110].forEach(age => {
     const colorAgeFirstNameCase = Array(8)
         .fill(undefined)
@@ -167,7 +164,8 @@ let caseB: Array<{haircolor: string; age: number; firstname: string}> = [];
     caseB = [...caseB, ...colorAgeFirstNameCase];
 });
 
-let caseC: Array<{haircolor: string; age: number; firstname: string}> = [];
+// Add last name Summa
+let caseC: Array<{haircolor: string; age: number; firstname: string; lastname: string}> = [];
 [20, 30, 40, 50, 60, 70, 80, 90, 100, 110].forEach(age => {
     const colorAgeFirstNameLastNameCase = Array(1)
         .fill(undefined)
@@ -195,14 +193,67 @@ console.log('ages:         ', agesUniqueData.length, '     ', agesRandomData.len
 console.log('haircolors:   ', haircolorsUniqueData.length, '     ', haircolorsRandomData.length);
 console.log('lastnames:   ', lastnamesUniqueData.length, '     ', lastnamesRandomData.length);
 
+const takeRandomElement = (array: string[]) => {
+    const index = Math.floor(Math.random() * array.length);
+    const item = array[index];
+    if (index !== -1) {
+        array.splice(index, 1);
+    }
+
+    return item ? item : undefined;
+};
+
+const firstnames = [...firstnamesUniqueData, ...firstnamesRandomData];
+const lastnames = [...lastnamesUniqueData, ...lastnamesRandomData];
+const bios = [...biosUniqueData, ...biosRandomData];
+const ages = [...agesUniqueData, ...agesRandomData];
+const haircolors = [...haircolorsUniqueData, ...haircolorsRandomData];
+const usernames = [...usernameUniqueData, ...usernameRandomData];
+
+const finalCaseA = caseA.map(({haircolor, age}) => ({
+    haircolor,
+    age,
+    username: takeRandomElement(usernames),
+    firstname: takeRandomElement(firstnames),
+    lastname: takeRandomElement(lastnames),
+    bio: takeRandomElement(bios)
+}));
+
+const finalCaseB = caseB.map(({haircolor, age, firstname}) => ({
+    haircolor,
+    age,
+    firstname,
+    username: takeRandomElement(usernames),
+    lastname: takeRandomElement(lastnames),
+    bio: takeRandomElement(bios)
+}));
+
+const finalCaseC = caseC.map(({haircolor, age, firstname, lastname}) => ({
+    haircolor,
+    age,
+    firstname,
+    lastname,
+    username: takeRandomElement(usernames),
+    bio: takeRandomElement(bios)
+}));
+
+const remainingRows = Array(usernames.length)
+    .fill(undefined)
+    .map(() => ({
+        haircolor: takeRandomElement(haircolors),
+        age: takeRandomElement((ages as unknown) as string[]),
+        username: takeRandomElement(usernames),
+        firstname: takeRandomElement(firstnames),
+        lastname: takeRandomElement(lastnames),
+        bio: takeRandomElement(bios)
+    }));
+
+const rows = [...finalCaseA, ...finalCaseB, ...finalCaseC, ...remainingRows];
+
 export async function seed(knex: Knex) {
     return knex('mock')
         .del()
         .then(() => {
-            return knex('mock').insert([
-                {id: 1, username: 'rowValue1', firstname: 'bob'},
-                {id: 2, username: 'rowValue2', firstname: 'jones'},
-                {id: 3, username: 'rowValue3', firstname: 'phil'}
-            ]);
+            return knex.batchInsert('mock', rows, 100);
         });
 }

@@ -25,8 +25,8 @@ jobs:
       - *restore-cache
       - run: npm install
       - *save-cache
-      - run: node_modules/knex/bin/cli.js migrate:latest --env test
-      - run: node_modules/knex/bin/cli.js seed:run --env test
+      - run: NODE_ENV=test node_modules/knex/bin/cli.js migrate:latest
+      - run: NODE_ENV=test node_modules/knex/bin/cli.js seed:run
       - run: npm run test
 
   build-verification:

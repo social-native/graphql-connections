@@ -1,5 +1,5 @@
-describe("Tests hello", () => {
-  it("returns true", () => {
-    expects("hi").toBe(true);
-  });
+describe('Tests hello', () => {
+    it('returns true', () => {
+        expect('hi').toBe('hi');
+    });
 });

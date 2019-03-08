@@ -1,8 +1,8 @@
 # Seeds for `mock` table
 
-The seeded data has the following properties 
-
 There are 10,000 rows in the `mock` table
+
+The seeded data has the following properties:
 
 ## Username
 

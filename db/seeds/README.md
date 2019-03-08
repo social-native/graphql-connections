@@ -4,7 +4,9 @@ There are 10,000 rows in the `mock` table
 
 The seeded data has the following properties:
 
-## Username
+## Columns
+
+### Username
 
 All usernames are unique
 
@@ -12,7 +14,7 @@ All usernames are unique
 |------------------------------------|----------|
 | 10000  | <unique> |
 
-## Firstname
+### Firstname
 
 | Number of people with same `firstname` | Firstname |
 |----------------------------------------|----------|
@@ -22,7 +24,7 @@ All usernames are unique
 | 80  | Nerissa |
 | 160 | Kenyon |
 
-## Lastname
+### Lastname
 
 | Number of people with same `lastname`  | Lastname |
 |----------------------------------------|----------|
@@ -32,14 +34,14 @@ All usernames are unique
 | 16  | Summa |
 | 32 | `null`
 
-## Bio
+### Bio
 
 | Number of `bios` which include a word  | Word |
 |----------------------------------------|-----------|
 | 2  | famelicose |
 | 4  | sodalitious |
 
-## Age
+### Age
 
 | Number of people with an `age`  | Age |
 |----------------------------------------|----------|
@@ -54,7 +56,7 @@ All usernames are unique
 | 1000  | 100 |
 | 1000  | `null` |
 
-## Haircolor
+### Haircolor
 
 | Number of people with a `haircolor`  | Color |
 |----------------------------------------|----------|
@@ -64,3 +66,20 @@ All usernames are unique
 | 500  | red |
 | 100  | gray |
 | 400 | `null`
+
+##
+
+Cases
+
+600 people `age` N have brown `hair`
+200 people `age` N have black `hair`
+100 people `age` N have blonde `hair`
+50 people `age` N have red `hair`
+10 people `age` N have gray `hair`
+40 people `age` N dont have a `hair` color listed
+
+10 people `age` N have brown `hair` and the `first name` Kenyon (100 people total across all `ages`)
+5 people `age` N have brown `hair` and the `first name` Nerissa (50 people total across all `ages`)
+
+1 person `age` N has brown `hair`, the `first name` Kenyon and the `last name` Summa (10 people total across all `ages`)
+

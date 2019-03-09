@@ -1,5 +1,5 @@
-import {QueryBuilder} from 'knex';
-import {ICursorManager} from './CursorManager';
+import { QueryBuilder } from 'knex';
+import { ICursorManager } from './CursorManager';
 interface ICursorArgs {
     first?: number;
     last?: number;
@@ -45,11 +45,7 @@ interface ICursorObj<PublicAttributes> extends IIntermediateCursorObj<PublicAttr
 interface IAttributeMap {
     [nodeAttribute: string]: string;
 }
-declare class ConnectionManager<
-    Node extends INode,
-    CursorArgs extends ICursorArgs,
-    SpecificFilterArgs extends FilterArgs<any>
-> {
+declare class ConnectionManager<Node extends INode, CursorArgs extends ICursorArgs, SpecificFilterArgs extends FilterArgs<any>> {
     defaultLimit: number;
     limit: number;
     private cursorArgs;
@@ -61,22 +57,13 @@ declare class ConnectionManager<
     private orderBy;
     private orderDirection;
     private filters;
-    constructor(
-        cursorArgs: CursorArgs,
-        filterArgs: SpecificFilterArgs,
-        attributeMap: IAttributeMap,
-        config?: IConfig<ICursorObj<string>>
-    );
+    constructor(cursorArgs: CursorArgs, filterArgs: SpecificFilterArgs, attributeMap: IAttributeMap, config?: IConfig<ICursorObj<string>>);
     createQuery(queryBuilder: QueryBuilder): void;
-    createPageInfo(
-        queryResult: KnexQueryResult
-    ): {
+    createPageInfo(queryResult: KnexQueryResult): {
         hasPreviousPage: boolean;
         hasNextPage: boolean;
     };
-    createEdges(
-        queryResult: KnexQueryResult
-    ): {
+    createEdges(queryResult: KnexQueryResult): {
         cursor: string;
         node: Node;
     }[];
@@ -151,4 +138,4 @@ declare class ConnectionManager<
     private createCursorObj;
     private createEdgesFromNodes;
 }
-export {ConnectionManager, INode, ICursorArgs, FilterArgs};
+export { ConnectionManager, INode, ICursorArgs, FilterArgs };

@@ -6,4 +6,4 @@ declare class CursorManager {
     static createCursor<CursorObj>(cursorObj: CursorObj): string;
     static getCursorObj<CursorObj>(cursor: string): CursorObj;
 }
-export {CursorManager, ICursorManager};
+export { CursorManager, ICursorManager };

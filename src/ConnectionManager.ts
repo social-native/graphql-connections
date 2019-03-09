@@ -354,7 +354,6 @@ class ConnectionManager<
 
     private createCursorObj(result: KnexQueryResult, nodes: Node[]) {
         let firstResultId: ICursorObj<string>['firstResultId'];
-        // let initialSort: ICursorObj<string>['initialSort'];
         let lastResultId: ICursorObj<string>['lastResultId'];
 
         const {before, after} = this.cursorArgs;
@@ -363,11 +362,9 @@ class ConnectionManager<
         if (prevCursor) {
             const prevCursorObj = this.cursorManager.getCursorObj(prevCursor);
             firstResultId = prevCursorObj.firstResultId;
-            // initialSort = prevCursorObj.initialSort;
             lastResultId = prevCursorObj.lastResultId;
         } else {
             firstResultId = nodes[0].id;
-            // initialSort = before || last ? 'desc' : 'asc';
         }
 
         // tslint:disable-line

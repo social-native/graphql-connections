@@ -1,10 +1,60 @@
-SNPKG-SNAPI-Connections
+# SNPKG-SNAPI-Connections
 
 ## About
 
 This repo contains the code to handle 1-to-Many connections. Or in other words, when a node has many edges.
 
 It can be used to create a cursor for the edges and handle movement through the edges using existing cursors.
+
+## Run locally
+
+1. Run the migrations `NODE_ENV=development npm run migrate:latest`
+2. Seed the database `NODE_ENV=development npm run seed:run`
+3. Run the dev server `npm run dev`
+4. Visit the GraphQL playground [http://localhost:4000/graphql](http://localhost:4000/graphql)
+5. Run some queries!
+
+```
+query {
+  users(cursor:{first:100, orderBy: "haircolor"}, filter: [{field:"id", value: "19990", operator:">"}]) {
+    pageInfo {
+      hasNextPage
+      hasPreviousPage
+    }
+	edges {
+      cursor
+      node {
+        username
+        lastname
+        id
+        haircolor
+        bio
+      }
+    }
+  }
+}
+```
+
+```
+query {
+  users(cursor:{first:10, after: "eyJmaXJzdFJlc3VsdElkIjoxOTk5MiwibGFzdFJlc3VsdElkIjoxOTk5OSwiaW5pdGlhbFNvcnQiOiJhc2MiLCJmaWx0ZXJzIjpbWyJpZCIsIj4iLCIxOTk5MCJdXSwib3JkZXJCeSI6ImhhaXJjb2xvciIsImlkIjoxOTk5NX0"}) {
+    pageInfo {
+      hasNextPage
+      hasPreviousPage
+    }
+    edges {
+  		cursor
+      node {
+        username
+        lastname
+        id
+        haircolor
+        bio
+      }
+    }
+  }
+}
+```
 
 ## How to use
 
@@ -34,6 +84,7 @@ async creators(_, {cursor: cursorArgs, filter: filterArgs}: ICreatorInputArgs) {
     ...
 
 ```
+
 #### 3. Define Types specific to the resolver
 
 ##### Define a `Node` type

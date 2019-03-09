@@ -79,7 +79,6 @@ const typeDefs = gql`
 
     type Query {
         users(cursor: InputCursorParams, filter: [Filter]): QueryUserConnection
-        user: User
     }
 `;
 

@@ -42,7 +42,42 @@ const rejectionOf = (promise: Promise<any>) =>
         reason => reason
     );
 
+const validateFieldIsOrderedAlphabetically = (
+    edges: Array<{node: {[attr: string]: string}}>,
+    field: string,
+    compareFn: (stringOne: string, stringTwo: string) => boolean
+) => {
+    return edges.reduce((acc: boolean, {node}, index, arr) => {
+        if (arr.length > index + 1) {
+            const first = node[field];
+            const second = arr[index + 1].node[field];
+            return acc && compareFn(first, second);
+        } else {
+            return acc;
+        }
+    }, true);
+};
+
 describe('Input args with', () => {
+    describe('OrderBy', () => {
+        it('Can order results by a given field', async () => {
+            const cursorArgs = {first: 200, orderBy: 'firstname'};
+            const filterArgs = [{field: 'haircolor', operator: '=', value: 'gray'}];
+            const {pageInfo, edges} = await createConnection(cursorArgs, filterArgs as any);
+
+            expect(pageInfo.hasNextPage).toBe(false); // there are 100 people with gray hair
+            expect(pageInfo.hasPreviousPage).toBe(false);
+            expect(edges.length).toBe(100); // 100 people have gray hair. See db/seeds/README.md
+            expect(edges[0].node.id).toBe(9360); // first person with red hair in the db
+            expect(
+                validateFieldIsOrderedAlphabetically(
+                    (edges as any) as Array<{node: {[field: string]: string}}>,
+                    'firstname',
+                    (first, second) => first <= second
+                )
+            ).toBe(true);
+        });
+    });
     describe('Page size', () => {
         it('Can be set to get the first 10 edges', async () => {
             const cursorArgs = {first: 10};
@@ -191,16 +226,23 @@ describe('Input args with', () => {
         });
     });
 
-    describe('Filters and page size', () => {
+    describe('Filters, page size, orderBy', () => {
         it('Can get the last 100 people with gray hair', async () => {
-            const cursorArgs = {last: 98};
+            const cursorArgs = {last: 98, orderBy: 'lastname'};
             const filterArgs = [{field: 'haircolor', operator: '=', value: 'gray'}];
             const {pageInfo, edges} = await createConnection(cursorArgs, filterArgs as any);
 
             expect(pageInfo.hasNextPage).toBe(true); // there are 100 people with gray hair
             expect(pageInfo.hasPreviousPage).toBe(false);
-            expect(edges.length).toBe(98); // 500 people have red hair. See db/seeds/README.md
-            expect(edges[0].node.id).toBe(9360); // first person with red hair in the db
+            expect(edges.length).toBe(98); // 100 people have gray hair. See db/seeds/README.md
+            expect(edges[0].node.id).toBe(9270); // first person with red hair in the db
+            expect(
+                validateFieldIsOrderedAlphabetically(
+                    (edges as any) as Array<{node: {[field: string]: string}}>,
+                    'lastname',
+                    (first, second) => first >= second
+                )
+            ).toBe(true);
         });
     });
 

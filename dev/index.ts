@@ -84,10 +84,16 @@ const typeDefs = gql`
 
 interface IUserNode extends INode {
     id: number;
+    username: string;
+    firstname: string;
+    lastname: string;
+    age: number;
+    haircolor: string;
+    bio: string;
 }
 
 type ICreatorFilterArgs = FilterArgs<
-    'id' | 'username' | 'firstname' | 'age' | 'haircolor' | 'lastname'
+    'id' | 'username' | 'firstname' | 'age' | 'haircolor' | 'lastname' | 'bio'
 >;
 
 interface IUserInputArgs {
@@ -110,7 +116,8 @@ const resolvers = {
                 firstname: 'firstname',
                 age: 'age',
                 haircolor: 'haircolor',
-                lastname: 'lastname'
+                lastname: 'lastname',
+                bio: 'bio'
             };
 
             const nodeConnection = new ConnectionManager<

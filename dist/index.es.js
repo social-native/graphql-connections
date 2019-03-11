@@ -123,6 +123,10 @@ class ConnectionManager {
         else if ((after || before) && this.filterArgs) {
             throw Error('Can not use filters with a cursor');
         }
+        else if ((first && first < 1) || (last && last < 1)) {
+            console.log('erhere');
+            throw 'Page size must be greater than 0';
+        }
         // tslint:enable
     }
     /**
@@ -250,19 +254,16 @@ class ConnectionManager {
     }
     createCursorObj(result, nodes) {
         let firstResultId;
-        // let initialSort: ICursorObj<string>['initialSort'];
         let lastResultId;
         const { before, after } = this.cursorArgs;
         const prevCursor = before || after;
         if (prevCursor) {
             const prevCursorObj = this.cursorManager.getCursorObj(prevCursor);
             firstResultId = prevCursorObj.firstResultId;
-            // initialSort = prevCursorObj.initialSort;
             lastResultId = prevCursorObj.lastResultId;
         }
         else {
             firstResultId = nodes[0].id;
-            // initialSort = before || last ? 'desc' : 'asc';
         }
         // tslint:disable-line
         if (!this.hasNextPage(result) && !this.isPagingBackwards() && nodes.length > 0) {

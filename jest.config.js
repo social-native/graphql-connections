@@ -15,5 +15,6 @@ module.exports = {
     "modulePaths": [
         "<rootDir>/src",
         "<rootDir>/__tests__"
-    ]
+    ],
+    "testRegex": '(/__tests__/.*|(\\.|/))test.ts?$'
 }

@@ -130,6 +130,9 @@ class ConnectionManager<
     }
 
     public createEdges(queryResult: KnexQueryResult) {
+        if (queryResult.length < 1) {
+            return [];
+        }
         const nodes = this.createNodes(queryResult) as Node[];
         const cursorObj = this.createCursorObj(queryResult, nodes);
         return this.createEdgesFromNodes(nodes, cursorObj);
@@ -212,6 +215,9 @@ class ConnectionManager<
             throw Error('Can not use orderBy with a cursor');
         } else if ((after || before) && this.filterArgs) {
             throw Error('Can not use filters with a cursor');
+        } else if ((first != null && first <= 0) || (last != null && last <= 0)) {
+            console.log(first);
+            throw Error('Page size must be greater than 0');
         }
         // tslint:enable
     }

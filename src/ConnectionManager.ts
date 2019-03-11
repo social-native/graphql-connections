@@ -42,7 +42,7 @@ interface IIntermediateCursorObj<PublicAttributes> {
     // This will always be present
     firstResultId: number;
     // The last id found on the last page.
-    // This won't be present unless the last page has been reache
+    // This won't be present unless the last page has been reached
     lastResultId?: number;
     initialSort: 'asc' | 'desc';
     orderBy: PublicAttributes;
@@ -55,7 +55,7 @@ interface ICursorObj<PublicAttributes> extends IIntermediateCursorObj<PublicAttr
     // This will always be present
     firstResultId: number;
     // The last id found on the last page.
-    // This won't be present unless the last page has been reache
+    // This won't be present unless the last page has been reached
     lastResultId?: number;
     initialSort: 'asc' | 'desc';
     orderBy: PublicAttributes;
@@ -283,7 +283,7 @@ class ConnectionManager<
     }
 
     /**
-     * Compares the current pageing direction (as indicated `first` and `last` args)
+     * Compares the current paging direction (as indicated `first` and `last` args)
      * and compares to what the original sort direction was (as found in the cursor)
      */
     private isPagingBackwards() {
@@ -334,7 +334,7 @@ class ConnectionManager<
     }
 
     /**
-     * It is very likely the results we get back from the datastore
+     * It is very likely the results we get back from the data store
      * have additional fields than what the GQL type node supports.
      * Here we remove all attributes from the result nodes that are not in
      * the `nodeAttrs` list (keys of the attribute map).

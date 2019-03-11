@@ -41,7 +41,6 @@ const rejectionOf = (promise: Promise<any>) =>
         },
         reason => reason
     );
-// 'id' | 'username' | 'firstname' | 'age' | 'haircolor' | 'lastname' | 'bio'
 
 describe('Input args with', () => {
     describe('Page size', () => {
@@ -170,7 +169,7 @@ describe('Input args with', () => {
             expect(edges[0].node.id).toBe(9567);
         });
 
-        it('Can filter for age, hair and first name and last name', async () => {
+        it('Can filter for age, hair, first name and last name', async () => {
             // 1 person `age` N has brown `hair`, the `first name` Kenyon and the `last name` Summa
             // (10 people total across all `ages`)
             // Thus, there will be 7 people that match this query.

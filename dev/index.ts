@@ -119,8 +119,9 @@ const resolvers = {
                 IUserInputArgs['filter']
             >(cursorArgs, filterArgs, attributeMap);
 
-            nodeConnection.createQuery(queryBuilder);
-            const result = ((await queryBuilder.select()) || []) as KnexQueryResult;
+            const result = (await nodeConnection
+                .createQuery(queryBuilder)
+                .select()) as KnexQueryResult;
 
             return {
                 pageInfo: nodeConnection.createPageInfo(result),
@@ -136,5 +137,6 @@ const app = new Koa();
 server.applyMiddleware({app});
 
 app.listen({port: 4000}, () =>
+    // tslint:disable-next-line
     console.log(`🚀 Server ready at http://localhost:4000${server.graphqlPath}`)
 );

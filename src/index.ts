@@ -1,4 +1,4 @@
 import {ConnectionManager, INode, ICursorArgs, FilterArgs} from './ConnectionManager';
-import {CursorManager, ICursorManager} from './CursorManager';
+import {CursorEncoder, ICursorEncoder} from './CursorEncoder';
 
-export {ConnectionManager, CursorManager, INode, ICursorArgs, FilterArgs, ICursorManager};
+export {ConnectionManager, CursorEncoder, INode, ICursorArgs, FilterArgs, ICursorEncoder};

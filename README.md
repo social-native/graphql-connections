@@ -4,7 +4,10 @@
 
 This repo contains the code to handle 1-to-Many connections. Or in other words, when a node has many edges.
 
-It can be used to create a cursor for the edges and handle movement through the edges using existing cursors.
+It can be used to:
+
+1. Create a cursor for paging through a node's edges
+2. Handle movement through a node's edges using an existing cursors.
 
 ## Run locally
 
@@ -14,9 +17,15 @@ It can be used to create a cursor for the edges and handle movement through the 
 4. Visit the GraphQL playground [http://localhost:4000/graphql](http://localhost:4000/graphql)
 5. Run some queries!
 
-```
+```graphql
 query {
-  users(cursor:{first:100, orderBy: "haircolor"}, filter: [{field:"id", value: "19990", operator:">"}]) {
+  users(
+    cursor:{first: 100, orderBy: "haircolor"}, 
+    filter: [
+      {field: "id", operator: ">", value: "19990"},
+      {field: "age", operator: "<", value: "90"},
+    ]
+  ) {
     pageInfo {
       hasNextPage
       hasPreviousPage
@@ -35,9 +44,13 @@ query {
 }
 ```
 
-```
+```graphql
 query {
-  users(cursor:{first:10, after: "eyJmaXJzdFJlc3VsdElkIjoxOTk5MiwibGFzdFJlc3VsdElkIjoxOTk5OSwiaW5pdGlhbFNvcnQiOiJhc2MiLCJmaWx0ZXJzIjpbWyJpZCIsIj4iLCIxOTk5MCJdXSwib3JkZXJCeSI6ImhhaXJjb2xvciIsImlkIjoxOTk5NX0"}) {
+  users(
+    cursor:{
+      first: 10, 
+      after: "eyJmaXJzdFJlc3VsdElkIjoxOTk5MiwibGFzdFJlc3VsdE"
+   }) {
     pageInfo {
       hasNextPage
       hasPreviousPage
@@ -60,7 +73,7 @@ query {
 
 ### Overview:
 
-```javascript
+```typescript
 // import the manager and relevant types
 import {ConnectionManager, INode, ICursorArgs, FilterArgs} from 'snpkg-snapi-connections';
 
@@ -93,7 +106,7 @@ resolver = () => {
 
 The nodes used in a conection need a type. For example, in this case we create an `ICreatorNode`
 
-```
+```typescript
 interface ICreatorNode extends INode {
     id: number;
     createdAt: string;
@@ -108,7 +121,7 @@ This will likely be `ICursorArgs` unless you are doing something special.
 
 The filter type needs to know about attributes that can be filterd on:
 
-```
+```typescript
 type ICreatorFilterArgs = FilterArgs<'id' | 'createdAt'>;
 ```
 
@@ -118,7 +131,7 @@ type ICreatorFilterArgs = FilterArgs<'id' | 'createdAt'>;
 
 `cursorArgs` should be a graphql input type that matches:
 
-```
+```graphql
 input InputCursorParams {
     first: Int
     last: Int
@@ -132,7 +145,7 @@ input InputCursorParams {
 
 `filterArgs` should be a graphql input type that matches:
 
-```
+```graphql
 input Filter {
     field: String!
     operator: String!
@@ -148,7 +161,7 @@ type InputFilterParams = [Filter]
 
  ex:
 
- ```
+ ```typescript
 const attributeMap = {
     id: 'id',
     createdAt: 'created_at'

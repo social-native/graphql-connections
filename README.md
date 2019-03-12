@@ -77,8 +77,8 @@ async creators(_, {cursor: cursorArgs, filter: filterArgs}: ICreatorInputArgs) {
 
     const nodeConnection = new ConnectionManager<
         ICreatorNode,
-        ICreatorInputArgs['cursor'],
-        ICreatorInputArgs['filter']
+        ICursorArgs,
+        ICreatorFilterArgs
     >(cursorArgs, filterArgs, attributeMap);
 
     ...
@@ -174,16 +174,16 @@ const attributeMap = {
 ### 5. Add the connection query to the queryBuilder
 
 ```
-nodeConnection.createQuery(queryBuilder);
+const appliedQuery = nodeConnection.createQuery(queryBuilder.clone());
 ```
 
 ### 6. Wait for the query to execute
 
 ```
-const result = await queryBuilder.select()
+const result = await appliedQuery.select()
 ```
 
-### 7. Add relevant fields to Connection type
+### 7. Use the connection object to return relevant `connection` type fields
 
 ```
 async creators(_, {cursor: cursorArgs, filter: filterArgs}: ICreatorInputArgs) {

@@ -1,5 +1,6 @@
 import {QueryBuilder} from 'knex';
 import {CursorEncoder, ICursorEncoder} from './CursorEncoder';
+import CurrentCursor from './CurrentCursor';
 
 // The shape of input args for a cursor
 interface ICursorArgs {
@@ -31,34 +32,22 @@ interface IFilterMap {
 }
 
 interface IConfig<CursorObj> {
-    defaultLimit?: number;
-    cursorManager?: ICursorEncoder<CursorObj>;
+    cursorEncoder?: ICursorEncoder<CursorObj>;
     filterMap?: IFilterMap; // maps an input operator to a sql where operator
 }
 
 interface IIntermediateCursorObj<PublicAttributes> {
-    id?: number;
-    // The first id found on the first page
-    // This will always be present
-    firstResultId: number;
-    // The last id found on the last page.
-    // This won't be present unless the last page has been reached
-    lastResultId?: number;
     initialSort: 'asc' | 'desc';
     orderBy: PublicAttributes;
     filters: string[][];
 }
 
 interface ICursorObj<PublicAttributes> extends IIntermediateCursorObj<PublicAttributes> {
-    id: number;
-    // The first id found on the first page
-    // This will always be present
-    firstResultId: number;
-    // The last id found on the last page.
-    // This won't be present unless the last page has been reached
-    lastResultId?: number;
     initialSort: 'asc' | 'desc';
     orderBy: PublicAttributes;
+    // The position of the cursor item from the beginning of the query
+    position: number;
+    filters: string[][];
 }
 
 interface IAttributeMap {
@@ -75,53 +64,32 @@ const defaultFilterMap = {
 };
 
 // tslint:disable:max-classes-per-file
-class ConnectionManager<
-    Node extends INode,
-    CursorArgs extends ICursorArgs,
-    SpecificFilterArgs extends FilterArgs<any>
-> {
-    public defaultLimit: number; // actual limit value used
-    public limit: number;
-
-    private cursorArgs: CursorArgs;
-    private filterArgs: SpecificFilterArgs;
-    private cursorManager: ICursorEncoder<ICursorObj<string>>;
-    private previousCursor?: string;
+class ConnectionManager<Node extends INode, SpecificFilterArgs extends FilterArgs<any>> {
+    private currentCursor: CurrentCursor<SpecificFilterArgs>;
+    private cursorEncoder: ICursorEncoder<ICursorObj<string>>;
     private attributeMap: IAttributeMap;
     private filterMap: IFilterMap;
-    private orderBy: string;
-    private orderDirection: 'asc' | 'desc';
-    private filters: string[][]; // [['username', '=', 'haxor1'], ['created_at', '>=', '90002012']]
 
     constructor(
-        cursorArgs: CursorArgs,
+        cursorArgs: ICursorArgs,
         filterArgs: SpecificFilterArgs,
         attributeMap: IAttributeMap,
         config: IConfig<ICursorObj<string>> = {}
     ) {
-        this.defaultLimit = config.defaultLimit || 1000;
-        this.cursorArgs = cursorArgs;
-        this.filterArgs = filterArgs;
-        this.cursorManager = config.cursorManager || CursorEncoder;
+        this.currentCursor = new CurrentCursor<SpecificFilterArgs>(cursorArgs, filterArgs);
+
+        this.cursorEncoder = config.cursorEncoder || CursorEncoder;
         this.attributeMap = attributeMap;
         this.filterMap = config.filterMap || defaultFilterMap;
-
-        this.limit = this.calcLimit();
-        this.previousCursor = this.calcPreviousCursor();
-        const {orderBy, orderDirection} = this.calcOrder();
-        this.orderBy = orderBy;
-        this.orderDirection = orderDirection;
-        this.filters = this.calcFilters();
-
-        this.validateArgs();
     }
 
     public createQuery(queryBuilder: QueryBuilder) {
-        this.appLimit(queryBuilder);
+        this.applyLimit(queryBuilder);
         this.applyOrder(queryBuilder);
-        this.applyStartingId(queryBuilder);
+        this.applyOffset(queryBuilder);
         this.applyFilter(queryBuilder);
 
+        console.log(queryBuilder.clone().toString());
         return queryBuilder;
     }
 
@@ -137,92 +105,7 @@ class ConnectionManager<
             return [];
         }
         const nodes = this.createNodes(queryResult) as Node[];
-        const cursorObj = this.encodeToCursorObj(queryResult, nodes);
-        return this.createEdgesFromNodes(nodes, cursorObj);
-    }
-
-    /**
-     * Sets the limit for the NodeConnectionMaestro instance
-     */
-    private calcLimit() {
-        const {first, last} = this.cursorArgs;
-        return first || last || this.defaultLimit;
-    }
-
-    /**
-     * Sets the orderDirection and orderBy for the NodeConnectionMaestro instance
-     */
-    private calcOrder() {
-        let orderDirection;
-        let orderBy: string;
-
-        // tslint:disable-line
-        if (this.previousCursor) {
-            const prevCursorObj = this.cursorManager.decodeFromCursor(this.previousCursor);
-            orderBy = prevCursorObj.orderBy;
-            orderDirection = prevCursorObj.initialSort;
-        } else {
-            orderBy = this.cursorArgs.orderBy || 'id';
-            orderDirection = this.cursorArgs.last || this.cursorArgs.before ? 'desc' : 'asc';
-        }
-
-        return {orderBy, orderDirection: orderDirection as 'desc' | 'asc'};
-    }
-
-    /**
-     * Extracts the previous cursor from the resolver cursorArgs
-     */
-    private calcPreviousCursor() {
-        const {before, after} = this.cursorArgs;
-        return before || after;
-    }
-
-    private calcFilters() {
-        if (this.previousCursor) {
-            return this.cursorManager.decodeFromCursor(this.previousCursor).filters;
-        }
-
-        if (!this.filterArgs) {
-            return [];
-        }
-
-        return this.filterArgs.reduce(
-            (builtFilters, {field, value, operator}) => {
-                builtFilters.push([field, operator, value]);
-                return builtFilters;
-            },
-            [] as string[][]
-        );
-    }
-
-    /**
-     * Validates that the user is using the connection query correctly
-     * For the most part this means that they are either using
-     *   `first` and `after` together
-     *    or
-     *   `last` and `before` together
-     */
-    private validateArgs() {
-        const {first, last, before, after, orderBy} = this.cursorArgs;
-
-        // tslint:disable
-        if (first && last) {
-            throw Error('Can not mix `first` and `last`');
-        } else if (before && after) {
-            throw Error('Can not mix `before` and `after`');
-        } else if (before && first) {
-            throw Error('Can not mix `before` and `first`');
-        } else if (after && last) {
-            throw Error('Can not mix `after` and `last`');
-        } else if ((after || before) && orderBy) {
-            throw Error('Can not use orderBy with a cursor');
-        } else if ((after || before) && this.filterArgs) {
-            throw Error('Can not use filters with a cursor');
-        } else if ((first != null && first <= 0) || (last != null && last <= 0)) {
-            console.log(first);
-            throw Error('Page size must be greater than 0');
-        }
-        // tslint:enable
+        return this.createEdgesFromNodes(nodes);
     }
 
     /**
@@ -230,8 +113,8 @@ class ConnectionManager<
      *     Note: The limit added to the query builder is limit + 1
      *     to allow us to see if there would be additional pages
      */
-    private appLimit(queryBuilder: QueryBuilder) {
-        queryBuilder.limit(this.limit + 1); // add one to figure out if there are more results
+    private applyLimit(queryBuilder: QueryBuilder) {
+        queryBuilder.limit(this.currentCursor.limit + 1); // add one to figure out if there are more results
     }
 
     /**
@@ -242,23 +125,22 @@ class ConnectionManager<
      */
     private applyOrder(queryBuilder: QueryBuilder) {
         // map from node attribute names to sql column names
-        const orderBy = this.attributeMap[this.orderBy] || 'id';
+        const orderBy = this.attributeMap[this.currentCursor.orderBy] || 'id';
+        const direction = this.currentCursor.orderDirection;
 
-        let direction;
-        // set the reverse order if paging backwards
-        if (this.isPagingBackwards()) {
-            direction = this.orderDirection === 'asc' ? 'desc' : 'asc';
-        } else {
-            direction = this.orderDirection;
-        }
         queryBuilder.orderBy(orderBy, direction);
+    }
+
+    private applyOffset(queryBuilder: QueryBuilder) {
+        const offset = this.currentCursor.offset;
+        queryBuilder.offset(offset);
     }
 
     /**
      * Adds filters to the sql query builder
      */
     private applyFilter(queryBuilder: QueryBuilder) {
-        this.filters.forEach(filter => {
+        this.currentCursor.filters.forEach(filter => {
             queryBuilder.andWhere(
                 this.attributeMap[filter[0]], // map attribute name to sql attribute name
                 this.filterMap[filter[1]], // map operator to sql attribute
@@ -268,44 +150,16 @@ class ConnectionManager<
     }
 
     /**
-     * If a previous cursor is present, this allows the new query to
-     * pick up from where the old cursor left off
-     */
-    private applyStartingId(queryBuilder: QueryBuilder) {
-        const {before, after} = this.cursorArgs;
-        if (before) {
-            queryBuilder.where('id', '<', this.cursorManager.decodeFromCursor(before).id);
-        } else if (after) {
-            queryBuilder.where('id', '>', this.cursorManager.decodeFromCursor(after).id);
-        }
-    }
-
-    /**
      * We over extend the limit size by 1.
      * If the results are larger in size than the limit
      * we can assume there are additional pages.
      */
     private hasNextPage(result: KnexQueryResult) {
-        return result.length > this.limit;
-    }
-
-    /**
-     * Compares the current paging direction (as indicated `first` and `last` args)
-     * and compares to what the original sort direction was (as found in the cursor)
-     */
-    private isPagingBackwards() {
-        if (!this.previousCursor) {
-            return false;
+        if (this.currentCursor.isPagingBackwards) {
+            return this.currentCursor.indexPosition - this.currentCursor.limit > 0;
         }
 
-        const {first, last, before, after} = this.cursorArgs;
-        const prevCursorObj = this.cursorManager.decodeFromCursor(this.previousCursor);
-
-        // tslint:disable-line
-        return !!(
-            (prevCursorObj.initialSort === 'asc' && (last || before)) ||
-            (prevCursorObj.initialSort === 'desc' && (first || after))
-        );
+        return result.length > this.currentCursor.limit;
     }
 
     /**
@@ -316,34 +170,14 @@ class ConnectionManager<
     private hasPrevPage(result: KnexQueryResult) {
         // if there is no cursor, than this is the first page
         // which means there is no previous page
-        if (!this.previousCursor) {
-            console.log('has no previous cursor');
+        if (!this.currentCursor.previousCursor) {
             return false;
         }
 
-        const prevCursorObj = this.cursorManager.decodeFromCursor(this.previousCursor);
-        if (this.isPagingBackwards()) {
-            // If we are going in the direction that is opposite from the initial query,
-            // we always have a previous page unless the lastResultId is both: present and included in the current
-            // search results
-
-            console.log('paging backwards');
-            const lastResultId = prevCursorObj.lastResultId;
-            return lastResultId
-                ? result.reduce((acc, r) => r.id !== lastResultId && acc, true)
-                : true;
+        if (this.currentCursor.isPagingBackwards) {
+            return this.currentCursor.limit < result.length;
         } else {
-            console.log('paging forwards');
-            // If we are going in the direction of the original query
-            // we only have a previous page if the first item in the first search isn't present in the current
-            // search results
-            const firstResultId = prevCursorObj.firstResultId;
-            console.log(firstResultId);
-            const a = result
-                .slice(0, this.limit)
-                .reduce((acc, r) => r.id !== firstResultId && acc, true);
-            console.log('result', a);
-            return a;
+            return this.currentCursor.indexPosition > 0;
         }
     }
 
@@ -365,45 +199,34 @@ class ConnectionManager<
                 });
                 return {...node};
             })
-            .slice(0, this.limit);
+            .slice(0, this.currentCursor.limit);
     }
 
-    private encodeToCursorObj(result: KnexQueryResult, nodes: Node[]) {
-        let firstResultId: ICursorObj<string>['firstResultId'];
-        let lastResultId: ICursorObj<string>['lastResultId'];
+    private createEdgesFromNodes(nodes: Node[]) {
+        const initialSort = this.currentCursor.orderDirection;
+        const filters = this.currentCursor.filters;
+        const orderBy = this.currentCursor.orderBy;
 
-        const {before, after} = this.cursorArgs;
-        const prevCursor = before || after;
+        return nodes.map((node, index) => {
+            let position: number;
+            if (this.currentCursor.isPagingBackwards) {
+                position = this.currentCursor.indexPosition - (index + 1);
+            } else {
+                position = this.currentCursor.indexPosition + index + 1;
+            }
 
-        if (prevCursor) {
-            const prevCursorObj = this.cursorManager.decodeFromCursor(prevCursor);
-            firstResultId = prevCursorObj.firstResultId;
-            lastResultId = prevCursorObj.lastResultId;
-        } else {
-            // get smallest id in set
-            const nodeWithMinId = nodes.reduce((a, b) => (a.id < b.id ? a : b));
-            firstResultId = nodeWithMinId.id;
-        }
-
-        // tslint:disable-line
-        if (!this.hasNextPage(result) && !this.isPagingBackwards() && nodes.length > 0) {
-            lastResultId = nodes.slice(-1)[0].id;
-        }
-
-        return {
-            firstResultId,
-            lastResultId,
-            initialSort: this.orderDirection,
-            filters: this.filters,
-            orderBy: this.orderBy
-        };
-    }
-
-    private createEdgesFromNodes(nodes: Node[], cursorObj: IIntermediateCursorObj<string>) {
-        return nodes.map(node => ({
-            cursor: this.cursorManager.encodeToCursor({...cursorObj, id: node.id}),
-            node
-        }));
+            // TODO remove index
+            return {
+                cursor: this.cursorEncoder.encodeToCursor({
+                    initialSort,
+                    filters,
+                    orderBy,
+                    // id: node.id,
+                    position
+                }),
+                node: {...node, id: position}
+            };
+        });
     }
 }
 

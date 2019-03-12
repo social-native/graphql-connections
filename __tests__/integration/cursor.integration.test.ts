@@ -23,14 +23,14 @@ const attributeMap = {
 const createConnection = async (cursorArgs: IUserCursorArgs, filterArgs: IUserFilterArgs) => {
     const queryBuilder = knexClient.queryBuilder().from('mock');
 
-    const connection = new ConnectionManager<IUserNode, IUserCursorArgs, IUserFilterArgs>(
+    const connection = new ConnectionManager<IUserNode, IUserFilterArgs>(
         cursorArgs,
         filterArgs,
         attributeMap
     );
     connection.createQuery(queryBuilder);
     const select = queryBuilder.select();
-    // console.log(select.toString());
+    console.log(select.toString());
     // const result = ((await queryBuilder.select()) || []) as KnexQueryResult;
     const result = (await select) as KnexQueryResult;
     const pageInfo = connection.createPageInfo(result);
@@ -95,7 +95,7 @@ describe('Cursor from', () => {
                 );
                 expect(pageThreePageInfo.hasNextPage).toBe(false);
                 expect(pageThreePageInfo.hasPreviousPage).toBe(true);
-                expect(pageThreeEdges.length).toBe(51);
+                expect(pageThreeEdges.length).toBe(300);
                 expect(validateNodesHaveAttributes(pageThreeEdges, {haircolor: 'brown'})).toBe(
                     true
                 );

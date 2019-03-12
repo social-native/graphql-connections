@@ -120,11 +120,11 @@ const resolvers = {
                 bio: 'bio'
             };
 
-            const nodeConnection = new ConnectionManager<
-                IUserNode,
-                IUserInputArgs['cursor'],
-                IUserInputArgs['filter']
-            >(cursorArgs, filterArgs, attributeMap);
+            const nodeConnection = new ConnectionManager<IUserNode, IUserInputArgs['filter']>(
+                cursorArgs,
+                filterArgs,
+                attributeMap
+            );
 
             const result = (await nodeConnection
                 .createQuery(queryBuilder.clone())

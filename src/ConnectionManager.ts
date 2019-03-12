@@ -70,7 +70,8 @@ const defaultFilterMap = {
     '>=': '>=',
     '=': '=',
     '<': '<',
-    '<=': '<='
+    '<=': '<=',
+    '<>': '<>'
 };
 
 // tslint:disable:max-classes-per-file
@@ -116,10 +117,12 @@ class ConnectionManager<
     }
 
     public createQuery(queryBuilder: QueryBuilder) {
-        this.setLimit(queryBuilder);
-        this.setOrder(queryBuilder);
-        this.setStartingId(queryBuilder);
-        this.setFilter(queryBuilder);
+        this.appLimit(queryBuilder);
+        this.applyOrder(queryBuilder);
+        this.applyStartingId(queryBuilder);
+        this.applyFilter(queryBuilder);
+
+        return queryBuilder;
     }
 
     public createPageInfo(queryResult: KnexQueryResult) {
@@ -227,7 +230,7 @@ class ConnectionManager<
      *     Note: The limit added to the query builder is limit + 1
      *     to allow us to see if there would be additional pages
      */
-    private setLimit(queryBuilder: QueryBuilder) {
+    private appLimit(queryBuilder: QueryBuilder) {
         queryBuilder.limit(this.limit + 1); // add one to figure out if there are more results
     }
 
@@ -237,7 +240,7 @@ class ConnectionManager<
      * of either a `last` limit or `before` cursor
      *
      */
-    private setOrder(queryBuilder: QueryBuilder) {
+    private applyOrder(queryBuilder: QueryBuilder) {
         // map from node attribute names to sql column names
         const orderBy = this.attributeMap[this.orderBy] || 'id';
 
@@ -254,7 +257,7 @@ class ConnectionManager<
     /**
      * Adds filters to the sql query builder
      */
-    private setFilter(queryBuilder: QueryBuilder) {
+    private applyFilter(queryBuilder: QueryBuilder) {
         this.filters.forEach(filter => {
             queryBuilder.andWhere(
                 this.attributeMap[filter[0]], // map attribute name to sql attribute name
@@ -268,7 +271,7 @@ class ConnectionManager<
      * If a previous cursor is present, this allows the new query to
      * pick up from where the old cursor left off
      */
-    private setStartingId(queryBuilder: QueryBuilder) {
+    private applyStartingId(queryBuilder: QueryBuilder) {
         const {before, after} = this.cursorArgs;
         if (before) {
             queryBuilder.where('id', '<', this.cursorManager.decodeFromCursor(before).id);

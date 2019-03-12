@@ -127,7 +127,7 @@ const resolvers = {
             >(cursorArgs, filterArgs, attributeMap);
 
             const result = (await nodeConnection
-                .createQuery(queryBuilder)
+                .createQuery(queryBuilder.clone())
                 .select()) as KnexQueryResult;
 
             return {

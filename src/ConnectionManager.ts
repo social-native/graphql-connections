@@ -1,5 +1,5 @@
 import {QueryBuilder} from 'knex';
-import {CursorManager, ICursorManager} from './CursorManager';
+import {CursorEncoder, ICursorEncoder} from './CursorEncoder';
 
 // The shape of input args for a cursor
 interface ICursorArgs {
@@ -32,7 +32,7 @@ interface IFilterMap {
 
 interface IConfig<CursorObj> {
     defaultLimit?: number;
-    cursorManager?: ICursorManager<CursorObj>;
+    cursorManager?: ICursorEncoder<CursorObj>;
     filterMap?: IFilterMap; // maps an input operator to a sql where operator
 }
 
@@ -42,7 +42,7 @@ interface IIntermediateCursorObj<PublicAttributes> {
     // This will always be present
     firstResultId: number;
     // The last id found on the last page.
-    // This won't be present unless the last page has been reache
+    // This won't be present unless the last page has been reached
     lastResultId?: number;
     initialSort: 'asc' | 'desc';
     orderBy: PublicAttributes;
@@ -55,7 +55,7 @@ interface ICursorObj<PublicAttributes> extends IIntermediateCursorObj<PublicAttr
     // This will always be present
     firstResultId: number;
     // The last id found on the last page.
-    // This won't be present unless the last page has been reache
+    // This won't be present unless the last page has been reached
     lastResultId?: number;
     initialSort: 'asc' | 'desc';
     orderBy: PublicAttributes;
@@ -70,7 +70,8 @@ const defaultFilterMap = {
     '>=': '>=',
     '=': '=',
     '<': '<',
-    '<=': '<='
+    '<=': '<=',
+    '<>': '<>'
 };
 
 // tslint:disable:max-classes-per-file
@@ -84,7 +85,7 @@ class ConnectionManager<
 
     private cursorArgs: CursorArgs;
     private filterArgs: SpecificFilterArgs;
-    private cursorManager: ICursorManager<ICursorObj<string>>;
+    private cursorManager: ICursorEncoder<ICursorObj<string>>;
     private previousCursor?: string;
     private attributeMap: IAttributeMap;
     private filterMap: IFilterMap;
@@ -101,7 +102,7 @@ class ConnectionManager<
         this.defaultLimit = config.defaultLimit || 1000;
         this.cursorArgs = cursorArgs;
         this.filterArgs = filterArgs;
-        this.cursorManager = config.cursorManager || CursorManager;
+        this.cursorManager = config.cursorManager || CursorEncoder;
         this.attributeMap = attributeMap;
         this.filterMap = config.filterMap || defaultFilterMap;
 
@@ -116,10 +117,11 @@ class ConnectionManager<
     }
 
     public createQuery(queryBuilder: QueryBuilder) {
-        this.setLimit(queryBuilder);
-        this.setOrder(queryBuilder);
-        this.setStartingId(queryBuilder);
-        this.setFilter(queryBuilder);
+        this.applyLimit(queryBuilder);
+        this.applyOrder(queryBuilder);
+        this.applyStartingId(queryBuilder);
+        this.applyFilter(queryBuilder);
+        return queryBuilder;
     }
 
     public createPageInfo(queryResult: KnexQueryResult) {
@@ -155,7 +157,7 @@ class ConnectionManager<
 
         // tslint:disable-line
         if (this.previousCursor) {
-            const prevCursorObj = this.cursorManager.getCursorObj(this.previousCursor);
+            const prevCursorObj = this.cursorManager.decodeFromCursor(this.previousCursor);
             orderBy = prevCursorObj.orderBy;
             orderDirection = prevCursorObj.initialSort;
         } else {
@@ -176,7 +178,7 @@ class ConnectionManager<
 
     private calcFilters() {
         if (this.previousCursor) {
-            return this.cursorManager.getCursorObj(this.previousCursor).filters;
+            return this.cursorManager.decodeFromCursor(this.previousCursor).filters;
         }
 
         if (!this.filterArgs) {
@@ -227,7 +229,7 @@ class ConnectionManager<
      *     Note: The limit added to the query builder is limit + 1
      *     to allow us to see if there would be additional pages
      */
-    private setLimit(queryBuilder: QueryBuilder) {
+    private applyLimit(queryBuilder: QueryBuilder) {
         queryBuilder.limit(this.limit + 1); // add one to figure out if there are more results
     }
 
@@ -237,7 +239,7 @@ class ConnectionManager<
      * of either a `last` limit or `before` cursor
      *
      */
-    private setOrder(queryBuilder: QueryBuilder) {
+    private applyOrder(queryBuilder: QueryBuilder) {
         // map from node attribute names to sql column names
         const orderBy = this.attributeMap[this.orderBy] || 'id';
 
@@ -254,7 +256,7 @@ class ConnectionManager<
     /**
      * Adds filters to the sql query builder
      */
-    private setFilter(queryBuilder: QueryBuilder) {
+    private applyFilter(queryBuilder: QueryBuilder) {
         this.filters.forEach(filter => {
             queryBuilder.andWhere(
                 this.attributeMap[filter[0]], // map attribute name to sql attribute name
@@ -268,12 +270,12 @@ class ConnectionManager<
      * If a previous cursor is present, this allows the new query to
      * pick up from where the old cursor left off
      */
-    private setStartingId(queryBuilder: QueryBuilder) {
+    private applyStartingId(queryBuilder: QueryBuilder) {
         const {before, after} = this.cursorArgs;
         if (before) {
-            queryBuilder.where('id', '<', this.cursorManager.getCursorObj(before).id);
+            queryBuilder.where('id', '<', this.cursorManager.decodeFromCursor(before).id);
         } else if (after) {
-            queryBuilder.where('id', '>', this.cursorManager.getCursorObj(after).id);
+            queryBuilder.where('id', '>', this.cursorManager.decodeFromCursor(after).id);
         }
     }
 
@@ -287,7 +289,7 @@ class ConnectionManager<
     }
 
     /**
-     * Compares the current pageing direction (as indicated `first` and `last` args)
+     * Compares the current paging direction (as indicated `first` and `last` args)
      * and compares to what the original sort direction was (as found in the cursor)
      */
     private isPagingBackwards() {
@@ -296,7 +298,7 @@ class ConnectionManager<
         }
 
         const {first, last, before, after} = this.cursorArgs;
-        const prevCursorObj = this.cursorManager.getCursorObj(this.previousCursor);
+        const prevCursorObj = this.cursorManager.decodeFromCursor(this.previousCursor);
 
         // tslint:disable-line
         return !!(
@@ -318,7 +320,7 @@ class ConnectionManager<
             return false;
         }
 
-        const prevCursorObj = this.cursorManager.getCursorObj(this.previousCursor);
+        const prevCursorObj = this.cursorManager.decodeFromCursor(this.previousCursor);
         if (this.isPagingBackwards()) {
             // If we are going in the direction that is opposite from the initial query,
             // we always have a previous page unless the lastResultId is both: present and included in the current
@@ -345,7 +347,7 @@ class ConnectionManager<
     }
 
     /**
-     * It is very likely the results we get back from the datastore
+     * It is very likely the results we get back from the data store
      * have additional fields than what the GQL type node supports.
      * Here we remove all attributes from the result nodes that are not in
      * the `nodeAttrs` list (keys of the attribute map).
@@ -373,7 +375,7 @@ class ConnectionManager<
         const prevCursor = before || after;
 
         if (prevCursor) {
-            const prevCursorObj = this.cursorManager.getCursorObj(prevCursor);
+            const prevCursorObj = this.cursorManager.decodeFromCursor(prevCursor);
             firstResultId = prevCursorObj.firstResultId;
             lastResultId = prevCursorObj.lastResultId;
         } else {
@@ -396,7 +398,7 @@ class ConnectionManager<
 
     private createEdgesFromNodes(nodes: Node[], cursorObj: IIntermediateCursorObj<string>) {
         return nodes.map(node => ({
-            cursor: this.cursorManager.createCursor({...cursorObj, id: node.id}),
+            cursor: this.cursorManager.encodeToCursor({...cursorObj, id: node.id}),
             node
         }));
     }

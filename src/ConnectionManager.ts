@@ -70,8 +70,7 @@ const defaultFilterMap = {
     '>=': '>=',
     '=': '=',
     '<': '<',
-    '<=': '<=',
-    '<>': '<>'
+    '<=': '<='
 };
 
 // tslint:disable:max-classes-per-file
@@ -117,11 +116,10 @@ class ConnectionManager<
     }
 
     public createQuery(queryBuilder: QueryBuilder) {
-        this.applyLimit(queryBuilder);
-        this.applyOrder(queryBuilder);
-        this.applyStartingId(queryBuilder);
-        this.applyFilter(queryBuilder);
-        return queryBuilder;
+        this.setLimit(queryBuilder);
+        this.setOrder(queryBuilder);
+        this.setStartingId(queryBuilder);
+        this.setFilter(queryBuilder);
     }
 
     public createPageInfo(queryResult: KnexQueryResult) {
@@ -136,7 +134,7 @@ class ConnectionManager<
             return [];
         }
         const nodes = this.createNodes(queryResult) as Node[];
-        const cursorObj = this.createCursorObj(queryResult, nodes);
+        const cursorObj = this.encodeToCursorObj(queryResult, nodes);
         return this.createEdgesFromNodes(nodes, cursorObj);
     }
 
@@ -229,7 +227,7 @@ class ConnectionManager<
      *     Note: The limit added to the query builder is limit + 1
      *     to allow us to see if there would be additional pages
      */
-    private applyLimit(queryBuilder: QueryBuilder) {
+    private setLimit(queryBuilder: QueryBuilder) {
         queryBuilder.limit(this.limit + 1); // add one to figure out if there are more results
     }
 
@@ -239,7 +237,7 @@ class ConnectionManager<
      * of either a `last` limit or `before` cursor
      *
      */
-    private applyOrder(queryBuilder: QueryBuilder) {
+    private setOrder(queryBuilder: QueryBuilder) {
         // map from node attribute names to sql column names
         const orderBy = this.attributeMap[this.orderBy] || 'id';
 
@@ -256,7 +254,7 @@ class ConnectionManager<
     /**
      * Adds filters to the sql query builder
      */
-    private applyFilter(queryBuilder: QueryBuilder) {
+    private setFilter(queryBuilder: QueryBuilder) {
         this.filters.forEach(filter => {
             queryBuilder.andWhere(
                 this.attributeMap[filter[0]], // map attribute name to sql attribute name
@@ -270,7 +268,7 @@ class ConnectionManager<
      * If a previous cursor is present, this allows the new query to
      * pick up from where the old cursor left off
      */
-    private applyStartingId(queryBuilder: QueryBuilder) {
+    private setStartingId(queryBuilder: QueryBuilder) {
         const {before, after} = this.cursorArgs;
         if (before) {
             queryBuilder.where('id', '<', this.cursorManager.decodeFromCursor(before).id);
@@ -316,7 +314,7 @@ class ConnectionManager<
         // if there is no cursor, than this is the first page
         // which means there is no previous page
         if (!this.previousCursor) {
-            // console.log('has no previous cursor');
+            console.log('has no previous cursor');
             return false;
         }
 
@@ -326,22 +324,22 @@ class ConnectionManager<
             // we always have a previous page unless the lastResultId is both: present and included in the current
             // search results
 
-            // console.log('paging backwards');
+            console.log('paging backwards');
             const lastResultId = prevCursorObj.lastResultId;
             return lastResultId
                 ? result.reduce((acc, r) => r.id !== lastResultId && acc, true)
                 : true;
         } else {
-            // console.log('paging forwards');
+            console.log('paging forwards');
             // If we are going in the direction of the original query
             // we only have a previous page if the first item in the first search isn't present in the current
             // search results
             const firstResultId = prevCursorObj.firstResultId;
-            // console.log(firstResultId);
+            console.log(firstResultId);
             const a = result
                 .slice(0, this.limit)
                 .reduce((acc, r) => r.id !== firstResultId && acc, true);
-            // console.log('result', a);
+            console.log('result', a);
             return a;
         }
     }
@@ -367,7 +365,7 @@ class ConnectionManager<
             .slice(0, this.limit);
     }
 
-    private createCursorObj(result: KnexQueryResult, nodes: Node[]) {
+    private encodeToCursorObj(result: KnexQueryResult, nodes: Node[]) {
         let firstResultId: ICursorObj<string>['firstResultId'];
         let lastResultId: ICursorObj<string>['lastResultId'];
 
@@ -379,7 +377,9 @@ class ConnectionManager<
             firstResultId = prevCursorObj.firstResultId;
             lastResultId = prevCursorObj.lastResultId;
         } else {
-            firstResultId = nodes[0].id;
+            // get smallest id in set
+            const nodeWithMinId = nodes.reduce((a, b) => (a.id < b.id ? a : b));
+            firstResultId = nodeWithMinId.id;
         }
 
         // tslint:disable-line

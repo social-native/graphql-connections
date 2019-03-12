@@ -93,7 +93,7 @@ describe('Input args with', () => {
             expect(e.message).toEqual('Can not mix `first` and `last`');
         });
 
-        it('Can handle cases where page size doesnt make sense', async () => {
+        it("Can handle cases where page size doesn't make sense", async () => {
             const cursorArgs = {first: 0};
             const filterArgs = [] as Array<{}>;
 
@@ -116,7 +116,7 @@ describe('Input args with', () => {
             expect(edges[0].node.id).toBe(8761); // first person with red hair in the db
         });
 
-        it('Can filter for "greather than" range', async () => {
+        it('Can filter for "greater than" range', async () => {
             const cursorArgs = {};
             const filterArgs = [{field: 'age', operator: '>', value: '100'}];
             const {pageInfo, edges} = await createConnection(cursorArgs, filterArgs as any);

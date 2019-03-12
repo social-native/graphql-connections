@@ -21,7 +21,7 @@ query {
       hasNextPage
       hasPreviousPage
     }
-	edges {
+    edges {
       cursor
       node {
         username
@@ -43,7 +43,7 @@ query {
       hasPreviousPage
     }
     edges {
-  		cursor
+      cursor
       node {
         username
         lastname
@@ -85,7 +85,7 @@ async creators(_, {cursor: cursorArgs, filter: filterArgs}: ICreatorInputArgs) {
 
 ```
 
-#### 3. Define Types specific to the resolver
+### 3. Define Types specific to the resolver
 
 ##### Define a `Node` type
 
@@ -110,7 +110,7 @@ The filter type needs to know about attributes that can be filterd on:
 type ICreatorFilterArgs = FilterArgs<'id' | 'createdAt'>;
 ```
 
-#### 4. Pass in arguments to the constructor
+### 4. Pass in arguments to the constructor
 
 ##### Cursor args
 
@@ -119,12 +119,12 @@ type ICreatorFilterArgs = FilterArgs<'id' | 'createdAt'>;
 ```
 input InputCursorParams {
     """
-     Number of edges to return at most
-     """
+    Number of edges to return at most
+    """
     first: Int
     """
-     Number of edges to return at most 
-     """
+    Number of edges to return at most 
+    """
     last: Int
     """
     Previous cursor.
@@ -171,19 +171,19 @@ const attributeMap = {
 };
 ```
 
-#### 5. Add the connection query to the queryBuilder
+### 5. Add the connection query to the queryBuilder
 
 ```
 nodeConnection.createQuery(queryBuilder);
 ```
 
-#### 6. Wait for the query to execute
+### 6. Wait for the query to execute
 
 ```
 const result = await queryBuilder.select()
 ```
 
-#### 7. Add relevant fields to Connection type
+### 7. Add relevant fields to Connection type
 
 ```
 async creators(_, {cursor: cursorArgs, filter: filterArgs}: ICreatorInputArgs) {

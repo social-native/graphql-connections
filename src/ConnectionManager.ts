@@ -314,6 +314,7 @@ class ConnectionManager<
         // if there is no cursor, than this is the first page
         // which means there is no previous page
         if (!this.previousCursor) {
+            // console.log('has no previous cursor');
             return false;
         }
 
@@ -322,18 +323,24 @@ class ConnectionManager<
             // If we are going in the direction that is opposite from the initial query,
             // we always have a previous page unless the lastResultId is both: present and included in the current
             // search results
+
+            // console.log('paging backwards');
             const lastResultId = prevCursorObj.lastResultId;
             return lastResultId
                 ? result.reduce((acc, r) => r.id !== lastResultId && acc, true)
                 : true;
         } else {
+            // console.log('paging forwards');
             // If we are going in the direction of the original query
             // we only have a previous page if the first item in the first search isn't present in the current
             // search results
             const firstResultId = prevCursorObj.firstResultId;
-            return result
+            // console.log(firstResultId);
+            const a = result
                 .slice(0, this.limit)
                 .reduce((acc, r) => r.id !== firstResultId && acc, true);
+            // console.log('result', a);
+            return a;
         }
     }
 

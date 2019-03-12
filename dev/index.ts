@@ -6,7 +6,7 @@ import {ConnectionManager, INode, ICursorArgs, FilterArgs} from '../src';
 const knexClient = knex({
     client: 'sqlite3',
     connection: {
-        filename: './db/dev.sqlite3'
+        filename: './db/test.sqlite3'
     }
 });
 

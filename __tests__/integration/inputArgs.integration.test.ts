@@ -1,6 +1,7 @@
 import knex from 'knex';
 import {ConnectionManager} from '../../src';
 import {IUserNode, IUserCursorArgs, IUserFilterArgs, KnexQueryResult} from '../types';
+import {rejectionOf, validateFieldIsOrderedAlphabetically} from '../utils';
 
 const knexClient = knex({
     client: 'sqlite3',
@@ -34,30 +35,6 @@ const createConnection = async (cursorArgs: IUserCursorArgs, filterArgs: IUserFi
     return {pageInfo, edges};
 };
 
-const rejectionOf = (promise: Promise<any>) =>
-    promise.then(
-        value => {
-            throw value;
-        },
-        reason => reason
-    );
-
-const validateFieldIsOrderedAlphabetically = (
-    edges: Array<{node: {[attr: string]: string}}>,
-    field: string,
-    compareFn: (stringOne: string, stringTwo: string) => boolean
-) => {
-    return edges.reduce((acc: boolean, {node}, index, arr) => {
-        if (arr.length > index + 1) {
-            const first = node[field];
-            const second = arr[index + 1].node[field];
-            return acc && compareFn(first, second);
-        } else {
-            return acc;
-        }
-    }, true);
-};
-
 describe('Input args with', () => {
     describe('OrderBy', () => {
         it('Can order results by a given field', async () => {
@@ -68,7 +45,6 @@ describe('Input args with', () => {
             expect(pageInfo.hasNextPage).toBe(false); // there are 100 people with gray hair
             expect(pageInfo.hasPreviousPage).toBe(false);
             expect(edges.length).toBe(100); // 100 people have gray hair. See db/seeds/README.md
-            expect(edges[0].node.id).toBe(9360); // first person with red hair in the db
             expect(
                 validateFieldIsOrderedAlphabetically(
                     (edges as any) as Array<{node: {[field: string]: string}}>,
@@ -235,7 +211,6 @@ describe('Input args with', () => {
             expect(pageInfo.hasNextPage).toBe(true); // there are 100 people with gray hair
             expect(pageInfo.hasPreviousPage).toBe(false);
             expect(edges.length).toBe(98); // 100 people have gray hair. See db/seeds/README.md
-            expect(edges[0].node.id).toBe(9270); // first person with red hair in the db
             expect(
                 validateFieldIsOrderedAlphabetically(
                     (edges as any) as Array<{node: {[field: string]: string}}>,

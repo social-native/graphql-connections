@@ -37,7 +37,7 @@ interface ICursorObj<PublicAttributes> extends IIntermediateCursorObj<PublicAttr
     filters: string[][];
 }
 
-export default class CurrentCursor<SpecificFilterArgs extends FilterArgs<any>> {
+export default class QueryContext<SpecificFilterArgs extends FilterArgs<any>> {
     public limit: number;
     public orderDirection: 'asc' | 'desc';
     public orderBy: string;

@@ -1,6 +1,8 @@
-import {QueryBuilder} from 'knex';
+import {QueryBuilder as Knex} from 'knex';
 import {CursorEncoder, ICursorEncoder} from './CursorEncoder';
-import CurrentCursor from './CurrentCursor';
+import QueryContext from './QueryContext';
+import KnexQueryBuilder from './KnexQueryBuilder';
+import {IQueryBuilder} from './types';
 
 // The shape of input args for a cursor
 interface ICursorArgs {
@@ -65,8 +67,10 @@ const defaultFilterMap = {
 
 // tslint:disable:max-classes-per-file
 class ConnectionManager<Node extends INode, SpecificFilterArgs extends FilterArgs<any>> {
-    private currentCursor: CurrentCursor<SpecificFilterArgs>;
+    private queryContext: QueryContext<SpecificFilterArgs>;
+    private queryBuilder: IQueryBuilder<Knex>;
     private cursorEncoder: ICursorEncoder<ICursorObj<string>>;
+
     private attributeMap: IAttributeMap;
     private filterMap: IFilterMap;
 
@@ -76,21 +80,19 @@ class ConnectionManager<Node extends INode, SpecificFilterArgs extends FilterArg
         attributeMap: IAttributeMap,
         config: IConfig<ICursorObj<string>> = {}
     ) {
-        this.currentCursor = new CurrentCursor<SpecificFilterArgs>(cursorArgs, filterArgs);
-
+        this.queryContext = new QueryContext<SpecificFilterArgs>(cursorArgs, filterArgs);
         this.cursorEncoder = config.cursorEncoder || CursorEncoder;
         this.attributeMap = attributeMap;
         this.filterMap = config.filterMap || defaultFilterMap;
+        this.queryBuilder = new KnexQueryBuilder<SpecificFilterArgs>(
+            this.queryContext,
+            this.attributeMap,
+            this.filterMap
+        );
     }
 
-    public createQuery(queryBuilder: QueryBuilder) {
-        this.applyLimit(queryBuilder);
-        this.applyOrder(queryBuilder);
-        this.applyOffset(queryBuilder);
-        this.applyFilter(queryBuilder);
-
-        console.log(queryBuilder.clone().toString());
-        return queryBuilder;
+    public createQuery(queryBuilder: Knex) {
+        return this.queryBuilder.applyQuery(queryBuilder);
     }
 
     public createPageInfo(queryResult: KnexQueryResult) {
@@ -109,57 +111,16 @@ class ConnectionManager<Node extends INode, SpecificFilterArgs extends FilterArg
     }
 
     /**
-     * Adds the limit to the query builder.
-     *     Note: The limit added to the query builder is limit + 1
-     *     to allow us to see if there would be additional pages
-     */
-    private applyLimit(queryBuilder: QueryBuilder) {
-        queryBuilder.limit(this.currentCursor.limit + 1); // add one to figure out if there are more results
-    }
-
-    /**
-     * Changes the order to descending if the we are paginating backwards
-     * The fact that we are paginating backwards is indicated by the presence
-     * of either a `last` limit or `before` cursor
-     *
-     */
-    private applyOrder(queryBuilder: QueryBuilder) {
-        // map from node attribute names to sql column names
-        const orderBy = this.attributeMap[this.currentCursor.orderBy] || 'id';
-        const direction = this.currentCursor.orderDirection;
-
-        queryBuilder.orderBy(orderBy, direction);
-    }
-
-    private applyOffset(queryBuilder: QueryBuilder) {
-        const offset = this.currentCursor.offset;
-        queryBuilder.offset(offset);
-    }
-
-    /**
-     * Adds filters to the sql query builder
-     */
-    private applyFilter(queryBuilder: QueryBuilder) {
-        this.currentCursor.filters.forEach(filter => {
-            queryBuilder.andWhere(
-                this.attributeMap[filter[0]], // map attribute name to sql attribute name
-                this.filterMap[filter[1]], // map operator to sql attribute
-                filter[2]
-            );
-        });
-    }
-
-    /**
      * We over extend the limit size by 1.
      * If the results are larger in size than the limit
      * we can assume there are additional pages.
      */
     private hasNextPage(result: KnexQueryResult) {
-        if (this.currentCursor.isPagingBackwards) {
-            return this.currentCursor.indexPosition - this.currentCursor.limit > 0;
+        if (this.queryContext.isPagingBackwards) {
+            return this.queryContext.indexPosition - this.queryContext.limit > 0;
         }
 
-        return result.length > this.currentCursor.limit;
+        return result.length > this.queryContext.limit;
     }
 
     /**
@@ -170,14 +131,14 @@ class ConnectionManager<Node extends INode, SpecificFilterArgs extends FilterArg
     private hasPrevPage(result: KnexQueryResult) {
         // if there is no cursor, than this is the first page
         // which means there is no previous page
-        if (!this.currentCursor.previousCursor) {
+        if (!this.queryContext.previousCursor) {
             return false;
         }
 
-        if (this.currentCursor.isPagingBackwards) {
-            return this.currentCursor.limit < result.length;
+        if (this.queryContext.isPagingBackwards) {
+            return this.queryContext.limit < result.length;
         } else {
-            return this.currentCursor.indexPosition > 0;
+            return this.queryContext.indexPosition > 0;
         }
     }
 
@@ -199,20 +160,20 @@ class ConnectionManager<Node extends INode, SpecificFilterArgs extends FilterArg
                 });
                 return {...node};
             })
-            .slice(0, this.currentCursor.limit);
+            .slice(0, this.queryContext.limit);
     }
 
     private createEdgesFromNodes(nodes: Node[]) {
-        const initialSort = this.currentCursor.orderDirection;
-        const filters = this.currentCursor.filters;
-        const orderBy = this.currentCursor.orderBy;
+        const initialSort = this.queryContext.orderDirection;
+        const filters = this.queryContext.filters;
+        const orderBy = this.queryContext.orderBy;
 
         return nodes.map((node, index) => {
             let position: number;
-            if (this.currentCursor.isPagingBackwards) {
-                position = this.currentCursor.indexPosition - (index + 1);
+            if (this.queryContext.isPagingBackwards) {
+                position = this.queryContext.indexPosition - (index + 1);
             } else {
-                position = this.currentCursor.indexPosition + index + 1;
+                position = this.queryContext.indexPosition + index + 1;
             }
 
             // TODO remove index

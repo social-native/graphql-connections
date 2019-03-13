@@ -23,7 +23,7 @@ const attributeMap = {
 const createConnection = async (cursorArgs: IUserCursorArgs, filterArgs: IUserFilterArgs) => {
     const queryBuilder = knexClient.queryBuilder().from('mock');
 
-    const connection = new ConnectionManager<IUserNode, IUserCursorArgs, IUserFilterArgs>(
+    const connection = new ConnectionManager<IUserNode, IUserFilterArgs>(
         cursorArgs,
         filterArgs,
         attributeMap
@@ -80,7 +80,8 @@ describe('Input args with', () => {
             expect(pageInfo.hasNextPage).toBe(true);
             expect(pageInfo.hasPreviousPage).toBe(false);
             expect(edges.length).toBe(100);
-            expect(edges[0].node.id).toBe(10000); // last item
+            // console.log(edges);
+            expect(edges[0].node.id).toBe(9900); // last item
         });
 
         it('Cant work with both first and last size args', async () => {

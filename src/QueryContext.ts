@@ -1,40 +1,9 @@
-import {CursorEncoder, ICursorEncoder} from './CursorEncoder';
+import CursorEncoder from './CursorEncoder';
+import {ICursorArgs, FilterArgs, ICursorEncoder, ICursorObj} from './types';
 
-// The shape of input args for a cursor
-interface ICursorArgs {
-    first?: number;
-    last?: number;
-    before?: string;
-    after?: string;
-    orderBy?: string;
-}
-
-interface IFilter<Fields> {
-    value: string;
-    operator: string;
-    field: Fields;
-}
-
-// The shape of input args for filters
-type FilterArgs<Fields> = Array<IFilter<Fields>>;
-
-interface IConfig<CursorObj> {
+interface IQueryContextConfig<CursorObj> {
     defaultLimit?: number;
     cursorEncoder?: ICursorEncoder<CursorObj>;
-}
-
-interface IIntermediateCursorObj<PublicAttributes> {
-    initialSort: 'asc' | 'desc';
-    orderBy: PublicAttributes;
-    filters: string[][];
-}
-
-interface ICursorObj<PublicAttributes> extends IIntermediateCursorObj<PublicAttributes> {
-    initialSort: 'asc' | 'desc';
-    orderBy: PublicAttributes;
-    // The position of the cursor item from the beginning of the query
-    position: number;
-    filters: string[][];
 }
 
 export default class QueryContext<SpecificFilterArgs extends FilterArgs<any>> {
@@ -54,7 +23,7 @@ export default class QueryContext<SpecificFilterArgs extends FilterArgs<any>> {
     constructor(
         cursorArgs: ICursorArgs,
         filterArgs: SpecificFilterArgs,
-        config: IConfig<ICursorObj<string>> = {}
+        config: IQueryContextConfig<ICursorObj<string>> = {}
     ) {
         this.cursorArgs = cursorArgs;
         this.validateArgs();

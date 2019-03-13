@@ -1,26 +1,16 @@
 import {QueryBuilder as Knex} from 'knex';
-import {CursorEncoder, ICursorEncoder} from './CursorEncoder';
+import CursorEncoder from './CursorEncoder';
 import QueryContext from './QueryContext';
 import KnexQueryBuilder from './KnexQueryBuilder';
-import {IQueryBuilder} from './types';
-
-// The shape of input args for a cursor
-interface ICursorArgs {
-    first?: number;
-    last?: number;
-    before?: string;
-    after?: string;
-    orderBy?: string;
-}
-
-interface IFilter<Fields> {
-    value: string;
-    operator: string;
-    field: Fields;
-}
-
-// The shape of input args for filters
-type FilterArgs<Fields> = Array<IFilter<Fields>>;
+import {
+    IQueryBuilder,
+    ICursorEncoder,
+    ICursorArgs,
+    FilterArgs,
+    ICursorObj,
+    IAttributeMap,
+    IFilterMap
+} from './types';
 
 type KnexQueryResult = Array<{[attributeName: string]: any}>;
 
@@ -29,31 +19,9 @@ interface INode {
     id: number;
 }
 
-interface IFilterMap {
-    [inputOperator: string]: string;
-}
-
-interface IConfig<CursorObj> {
+interface IConnectionManagerConfig<CursorObj> {
     cursorEncoder?: ICursorEncoder<CursorObj>;
     filterMap?: IFilterMap; // maps an input operator to a sql where operator
-}
-
-interface IIntermediateCursorObj<PublicAttributes> {
-    initialSort: 'asc' | 'desc';
-    orderBy: PublicAttributes;
-    filters: string[][];
-}
-
-interface ICursorObj<PublicAttributes> extends IIntermediateCursorObj<PublicAttributes> {
-    initialSort: 'asc' | 'desc';
-    orderBy: PublicAttributes;
-    // The position of the cursor item from the beginning of the query
-    position: number;
-    filters: string[][];
-}
-
-interface IAttributeMap {
-    [nodeAttribute: string]: string;
 }
 
 const defaultFilterMap = {
@@ -78,7 +46,7 @@ class ConnectionManager<Node extends INode, SpecificFilterArgs extends FilterArg
         cursorArgs: ICursorArgs,
         filterArgs: SpecificFilterArgs,
         attributeMap: IAttributeMap,
-        config: IConfig<ICursorObj<string>> = {}
+        config: IConnectionManagerConfig<ICursorObj<string>> = {}
     ) {
         this.queryContext = new QueryContext<SpecificFilterArgs>(cursorArgs, filterArgs);
         this.cursorEncoder = config.cursorEncoder || CursorEncoder;

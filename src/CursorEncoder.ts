@@ -1,9 +1,4 @@
-interface ICursorEncoder<CursorObj> {
-    encodeToCursor: (cursorObj: CursorObj) => string;
-    decodeFromCursor: (cursor: string) => CursorObj;
-}
-
-class CursorEncoder {
+export default class CursorEncoder {
     public static encodeToCursor<CursorObj>(cursorObj: CursorObj) {
         const buff = Buffer.from(JSON.stringify(cursorObj));
         return buff.toString('base64');
@@ -15,5 +10,3 @@ class CursorEncoder {
         return JSON.parse(json) as CursorObj;
     }
 }
-
-export {CursorEncoder, ICursorEncoder};

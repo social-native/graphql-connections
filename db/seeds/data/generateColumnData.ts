@@ -12,19 +12,19 @@ const generateColumnData = <DataType>(
     total: number
 ) => {
     // generate number of unique data
-    let unqiueDataArr = [] as DataType[];
+    let uniqueDataArr = [] as DataType[];
     Object.keys(uniqueData).forEach(data => {
         const count = uniqueData[data];
 
         const dataToFill = config.dataIsNumber ? +data : data;
         const newData = Array(count).fill(dataToFill);
-        unqiueDataArr = [...unqiueDataArr, ...newData];
+        uniqueDataArr = [...uniqueDataArr, ...newData];
     });
 
     const randomDataArr = [] as DataType[];
 
     // uniqueness checkers
-    const checkIfInUnique = (data: DataType) => unqiueDataArr.includes(data);
+    const checkIfInUnique = (data: DataType) => uniqueDataArr.includes(data);
     const checkIfInRandom = (data: DataType) => randomDataArr.includes(data);
     let isAlreadySeen: (data: DataType) => boolean;
     if (config.makeRandomUnique) {
@@ -34,7 +34,7 @@ const generateColumnData = <DataType>(
     }
 
     // generate random data
-    Array(total - unqiueDataArr.length)
+    Array(total - uniqueDataArr.length)
         .fill(undefined)
         .forEach(() => {
             let newData = (config.fakerFn() as unknown) as DataType;
@@ -45,7 +45,7 @@ const generateColumnData = <DataType>(
         });
 
     // return unique and random data
-    return {uniqueData: unqiueDataArr, randomData: randomDataArr};
+    return {uniqueData: uniqueDataArr, randomData: randomDataArr};
 };
 
 export default generateColumnData;

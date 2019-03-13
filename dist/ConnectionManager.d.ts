@@ -1,5 +1,5 @@
 import { QueryBuilder as Knex } from 'knex';
-import { ICursorEncoder, ICursorObj, IAttributeMap, IFilterMap, INode, IInputArgs } from './types';
+import { ICursorEncoder, ICursorObj, IAttributeMap, IFilterMap, INode, IInputArgs, NodeTransformer } from './types';
 /**
  * ConnectionManager
  *
@@ -11,9 +11,10 @@ import { ICursorEncoder, ICursorObj, IAttributeMap, IFilterMap, INode, IInputArg
 declare type KnexQueryResult = Array<{
     [attributeName: string]: any;
 }>;
-interface IConnectionManagerConfig<CursorObj> {
+interface IConnectionManagerConfig<CursorObj, Node> {
     cursorEncoder?: ICursorEncoder<CursorObj>;
     filterMap?: IFilterMap;
+    nodeTransformer?: NodeTransformer<Node>;
 }
 export default class ConnectionManager<Node extends INode> {
     private queryContext;
@@ -22,7 +23,8 @@ export default class ConnectionManager<Node extends INode> {
     private queryResult?;
     private attributeMap;
     private filterMap;
-    constructor(inputArgs: IInputArgs, attributeMap: IAttributeMap, config?: IConnectionManagerConfig<ICursorObj<string>>);
+    private nodeTransformer?;
+    constructor(inputArgs: IInputArgs, attributeMap: IAttributeMap, config?: IConnectionManagerConfig<ICursorObj<string>, Node>);
     createQuery(queryBuilder: Knex): Knex;
     addResult(result: KnexQueryResult): void;
     readonly pageInfo: {

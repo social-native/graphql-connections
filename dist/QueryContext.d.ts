@@ -45,9 +45,13 @@ export default class QueryContext implements IQueryContext {
      */
     private calcLimit;
     /**
-     * Sets the orderDirection and orderBy for the desired query result
+     * Sets the orderBy for the desired query result
      */
-    private calcOrder;
+    private calcOrderBy;
+    /**
+     * Sets the orderDirection for the desired query result
+     */
+    private calcOrderDirection;
     /**
      * Extracts the previous cursor from the resolver cursorArgs
      */

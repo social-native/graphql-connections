@@ -1,4 +1,4 @@
-import { IQueryContext, IAttributeMap, ICursorEncoder, ICursorObj, IQueryResult, INode } from 'types';
+import { IQueryContext, IAttributeMap, ICursorEncoder, ICursorObj, IQueryResult, INode, NodeTransformer } from 'types';
 /**
  * QueryResult
  *
@@ -9,8 +9,9 @@ interface IEdge<Node> {
     cursor: string;
     node: Node;
 }
-interface IQueryResultConfig<CursorObj> {
+interface IQueryResultConfig<CursorObj, Node> {
     cursorEncoder?: ICursorEncoder<CursorObj>;
+    nodeTransformer?: NodeTransformer<Node>;
 }
 export default class QueryResult<Result extends Array<{
     [field: string]: any;
@@ -21,7 +22,8 @@ export default class QueryResult<Result extends Array<{
     private queryContext;
     private attributeMap;
     private cursorEncoder;
-    constructor(result: Result, queryContext: QueryContext, attributeMap: IAttributeMap, config?: IQueryResultConfig<ICursorObj<string>>);
+    private nodeTansformer?;
+    constructor(result: Result, queryContext: QueryContext, attributeMap: IAttributeMap, config?: IQueryResultConfig<ICursorObj<string>, Node>);
     readonly pageInfo: {
         hasPreviousPage: boolean;
         hasNextPage: boolean;

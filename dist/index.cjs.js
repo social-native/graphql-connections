@@ -14,6 +14,10 @@ class CursorEncoder {
     }
 }
 
+const ORDER_DIRECTION = {
+    asc: 'asc',
+    desc: 'desc'
+};
 class QueryContext {
     constructor(inputArgs = {}, config = {}) {
         this.inputArgs = { page: {}, cursor: {}, filter: [], order: {}, ...inputArgs };
@@ -26,9 +30,8 @@ class QueryContext {
         // the index position of the cursor in the total result set
         this.indexPosition = this.calcIndexPosition();
         this.limit = this.calcLimit();
-        const { orderBy, orderDirection } = this.calcOrder();
-        this.orderBy = orderBy;
-        this.orderDirection = orderDirection;
+        this.orderBy = this.calcOrderBy();
+        this.orderDirection = this.calcOrderDirection();
         this.filters = this.calcFilters();
         this.offset = this.calcOffset();
     }
@@ -44,8 +47,8 @@ class QueryContext {
         const { before, after } = this.inputArgs.cursor;
         const prevCursorObj = this.cursorEncoder.decodeFromCursor(this.previousCursor);
         // tslint:disable-line
-        return !!((prevCursorObj.initialSort === 'asc' && (last || before)) ||
-            (prevCursorObj.initialSort === 'desc' && (first || after)));
+        return !!((prevCursorObj.initialSort === ORDER_DIRECTION.asc && (last || before)) ||
+            (prevCursorObj.initialSort === ORDER_DIRECTION.desc && (first || after)));
     }
     /**
      * Sets the limit for the desired query result
@@ -63,26 +66,31 @@ class QueryContext {
         return limit;
     }
     /**
-     * Sets the orderDirection and orderBy for the desired query result
+     * Sets the orderBy for the desired query result
      */
-    calcOrder() {
-        let orderDirection;
-        let orderBy;
-        // tslint:disable-line
+    calcOrderBy() {
         if (this.previousCursor) {
             const prevCursorObj = this.cursorEncoder.decodeFromCursor(this.previousCursor);
-            orderBy = prevCursorObj.orderBy;
-            orderDirection = prevCursorObj.initialSort;
+            return prevCursorObj.orderBy;
         }
         else {
-            orderBy = this.inputArgs.order.orderBy || 'id';
-            orderDirection =
-                this.inputArgs.page.last || this.inputArgs.cursor.before ? 'desc' : 'asc';
+            return this.inputArgs.order.orderBy || 'id';
         }
-        return {
-            orderBy,
-            orderDirection: orderDirection
-        };
+    }
+    /**
+     * Sets the orderDirection for the desired query result
+     */
+    calcOrderDirection() {
+        if (this.previousCursor) {
+            const prevCursorObj = this.cursorEncoder.decodeFromCursor(this.previousCursor);
+            return prevCursorObj.initialSort;
+        }
+        else {
+            const dir = this.inputArgs.page.last || this.inputArgs.cursor.before
+                ? ORDER_DIRECTION.desc
+                : ORDER_DIRECTION.asc;
+            return dir;
+        }
     }
     /**
      * Extracts the previous cursor from the resolver cursorArgs
@@ -223,6 +231,7 @@ class QueryResult {
         this.queryContext = queryContext;
         this.attributeMap = attributeMap;
         this.cursorEncoder = config.cursorEncoder || CursorEncoder;
+        this.nodeTansformer = config.nodeTransformer;
         if (this.result.length < 1) {
             this.nodes = [];
             this.edges = [];
@@ -299,6 +308,13 @@ class QueryResult {
      * Furthermore, we also trim down the result set to be within the limit size;
      */
     createNodes() {
+        let nodeTansformer;
+        if (this.nodeTansformer) {
+            nodeTansformer = this.nodeTansformer;
+        }
+        else {
+            nodeTansformer = (node) => node;
+        }
         return this.result
             .map(node => {
             const attributes = Object.keys(node);
@@ -307,7 +323,8 @@ class QueryResult {
                     delete node[attr];
                 }
             });
-            return { ...node };
+            const newNode = { ...node };
+            return nodeTansformer(newNode);
         })
             .slice(0, this.queryContext.limit);
     }
@@ -345,6 +362,7 @@ const defaultFilterMap = {
 class ConnectionManager {
     constructor(inputArgs, attributeMap, config = {}) {
         this.cursorEncoder = config.cursorEncoder || CursorEncoder;
+        this.nodeTransformer = config.nodeTransformer;
         // 1. Create QueryContext
         this.queryContext = new QueryContext(inputArgs, {
             cursorEncoder: this.cursorEncoder
@@ -359,7 +377,7 @@ class ConnectionManager {
     }
     addResult(result) {
         // 3. Create QueryResult
-        this.queryResult = new QueryResult(result, this.queryContext, this.attributeMap, { cursorEncoder: this.cursorEncoder });
+        this.queryResult = new QueryResult(result, this.queryContext, this.attributeMap, { cursorEncoder: this.cursorEncoder, nodeTransformer: this.nodeTransformer });
     }
     get pageInfo() {
         if (!this.queryResult) {

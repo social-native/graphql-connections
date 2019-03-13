@@ -3,19 +3,15 @@ export interface IFilter<Fields> {
     operator: string;
     field: Fields;
 }
-export interface ICursorArgs {
-    first?: number;
-    last?: number;
-    before?: string;
-    after?: string;
-    orderBy?: string;
-}
 export interface ICursorObj<PublicAttributes> {
     initialSort: 'asc' | 'desc';
     orderBy: PublicAttributes;
     position: number;
     filters: string[][];
 }
+export declare type NodeTransformer<Node> = (node: {
+    [fields: string]: any;
+}) => Node;
 export interface IInputArgs {
     cursor?: {
         before?: string;

@@ -76,12 +76,10 @@ describe('Input args with', () => {
                 cursorArgs,
                 (filterArgs as any) as IUserFilterArgs
             );
-
             expect(pageInfo.hasNextPage).toBe(true);
             expect(pageInfo.hasPreviousPage).toBe(false);
             expect(edges.length).toBe(100);
-            // console.log(edges);
-            expect(edges[0].node.id).toBe(9900); // last item
+            expect(edges.slice(-1)[0].node.id).toBe(9901); // last item
         });
 
         it('Cant work with both first and last size args', async () => {

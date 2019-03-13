@@ -178,22 +178,19 @@ class ConnectionManager<Node extends INode, SpecificFilterArgs extends FilterArg
             let position: number;
             if (this.queryContext.isPagingBackwards) {
                 const distFromEnd = nodesLength - index;
-                console.log(nodesLength, index, distFromEnd, this.queryContext.indexPosition);
                 position = this.queryContext.indexPosition - distFromEnd;
             } else {
                 position = this.queryContext.indexPosition + index + 1;
             }
 
-            // TODO remove index
             return {
                 cursor: this.cursorEncoder.encodeToCursor({
                     initialSort,
                     filters,
                     orderBy,
-                    // id: node.id,
                     position
                 }),
-                node: {...node, id: position}
+                node: {...node}
             };
         });
     }

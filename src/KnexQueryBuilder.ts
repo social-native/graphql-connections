@@ -24,7 +24,6 @@ export default class KnexQueryBuilder<SpecificFilterArgs extends FilterArgs<any>
         this.applyOffset(queryBuilder);
         this.applyFilter(queryBuilder);
 
-        console.log(queryBuilder.clone().toString());
         return queryBuilder;
     }
     /**

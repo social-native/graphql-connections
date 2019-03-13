@@ -4,18 +4,6 @@ export interface IFilter<Fields> {
     field: Fields;
 }
 
-// The shape of input args for filters
-// export type Filters<Fields = string> = Array<IFilter<Fields>>;
-
-// The shape of input args for a cursor
-export interface ICursorArgs {
-    first?: number;
-    last?: number;
-    before?: string;
-    after?: string;
-    orderBy?: string;
-}
-
 export interface ICursorObj<PublicAttributes> {
     initialSort: 'asc' | 'desc';
     orderBy: PublicAttributes;

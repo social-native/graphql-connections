@@ -28,6 +28,11 @@ interface IQueryContextConfig<CursorObj> {
     cursorEncoder?: ICursorEncoder<CursorObj>;
 }
 
+const ORDER_DIRECTION = {
+    asc: 'asc',
+    desc: 'desc'
+};
+
 export default class QueryContext implements IQueryContext {
     public limit: number;
     public orderDirection: 'asc' | 'desc';
@@ -54,9 +59,8 @@ export default class QueryContext implements IQueryContext {
         // the index position of the cursor in the total result set
         this.indexPosition = this.calcIndexPosition();
         this.limit = this.calcLimit();
-        const {orderBy, orderDirection} = this.calcOrder();
-        this.orderBy = orderBy;
-        this.orderDirection = orderDirection;
+        this.orderBy = this.calcOrderBy();
+        this.orderDirection = this.calcOrderDirection();
         this.filters = this.calcFilters();
         this.offset = this.calcOffset();
     }
@@ -76,8 +80,8 @@ export default class QueryContext implements IQueryContext {
 
         // tslint:disable-line
         return !!(
-            (prevCursorObj.initialSort === 'asc' && (last || before)) ||
-            (prevCursorObj.initialSort === 'desc' && (first || after))
+            (prevCursorObj.initialSort === ORDER_DIRECTION.asc && (last || before)) ||
+            (prevCursorObj.initialSort === ORDER_DIRECTION.desc && (first || after))
         );
     }
 
@@ -99,27 +103,31 @@ export default class QueryContext implements IQueryContext {
     }
 
     /**
-     * Sets the orderDirection and orderBy for the desired query result
+     * Sets the orderBy for the desired query result
      */
-    private calcOrder() {
-        let orderDirection;
-        let orderBy: string;
-
-        // tslint:disable-line
+    private calcOrderBy() {
         if (this.previousCursor) {
             const prevCursorObj = this.cursorEncoder.decodeFromCursor(this.previousCursor);
-            orderBy = prevCursorObj.orderBy;
-            orderDirection = prevCursorObj.initialSort;
+            return prevCursorObj.orderBy;
         } else {
-            orderBy = this.inputArgs.order.orderBy || 'id';
-            orderDirection =
-                this.inputArgs.page.last || this.inputArgs.cursor.before ? 'desc' : 'asc';
+            return this.inputArgs.order.orderBy || 'id';
         }
+    }
 
-        return {
-            orderBy,
-            orderDirection: orderDirection as 'desc' | 'asc'
-        };
+    /**
+     * Sets the orderDirection for the desired query result
+     */
+    private calcOrderDirection() {
+        if (this.previousCursor) {
+            const prevCursorObj = this.cursorEncoder.decodeFromCursor(this.previousCursor);
+            return prevCursorObj.initialSort;
+        } else {
+            const dir =
+                this.inputArgs.page.last || this.inputArgs.cursor.before
+                    ? ORDER_DIRECTION.desc
+                    : ORDER_DIRECTION.asc;
+            return (dir as any) as 'asc' | 'desc';
+        }
     }
 
     /**

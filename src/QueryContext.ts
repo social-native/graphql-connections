@@ -1,6 +1,13 @@
 import CursorEncoder from './CursorEncoder';
 import {ICursorArgs, FilterArgs, ICursorEncoder, ICursorObj, IQueryContext} from './types';
 
+/**
+ * QueryContext
+ *
+ * Sets the context for the current connection based on input resolver args
+ *
+ */
+
 interface IQueryContextConfig<CursorObj> {
     defaultLimit?: number;
     cursorEncoder?: ICursorEncoder<CursorObj>;

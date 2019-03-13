@@ -2,6 +2,13 @@ import QueryContext from './QueryContext';
 import {QueryBuilder as Knex} from 'knex';
 import {FilterArgs, IFilterMap, IAttributeMap, IQueryBuilder} from './types';
 
+/**
+ * KnexQueryBuilder
+ *
+ * A QueryBuilder that creates a query from the QueryContext using Knex
+ *
+ */
+
 export default class KnexQueryBuilder<SpecificFilterArgs extends FilterArgs<any>>
     implements IQueryBuilder<Knex> {
     private queryContext: QueryContext<SpecificFilterArgs>;

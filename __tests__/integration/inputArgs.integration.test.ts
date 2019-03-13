@@ -25,8 +25,9 @@ const createConnection = async (cursorArgs: IUserCursorArgs, filterArgs: IUserFi
     );
     connection.createQuery(queryBuilder);
     const result = ((await queryBuilder.select()) || []) as KnexQueryResult;
-    const pageInfo = connection.createPageInfo(result);
-    const edges = connection.createEdges(result);
+    connection.addResult(result);
+    const pageInfo = connection.pageInfo;
+    const edges = connection.edges;
     return {pageInfo, edges};
 };
 

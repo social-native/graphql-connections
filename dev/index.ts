@@ -60,6 +60,8 @@ const typeDefs = gql`
     type PageInfo {
         hasPreviousPage: Boolean!
         hasNextPage: Boolean!
+        startCursor: String!
+        endCursor: String!
     }
 
     type QueryUserConnection implements IConnection {
@@ -125,9 +127,11 @@ const resolvers = {
                 .createQuery(queryBuilder.clone())
                 .select()) as KnexQueryResult;
 
+            nodeConnection.addResult(result);
+
             return {
-                pageInfo: nodeConnection.createPageInfo(result),
-                edges: nodeConnection.createEdges(result)
+                pageInfo: nodeConnection.pageInfo,
+                edges: nodeConnection.edges
             };
         }
     }

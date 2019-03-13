@@ -25,9 +25,7 @@ export interface ICursorObj<PublicAttributes> {
 }
 
 // The shape of a connection node
-export interface INode {
-    id: number;
-}
+export interface INode extends Array<{[field: string]: any}> {}
 
 export interface IAttributeMap {
     [nodeField: string]: string;
@@ -47,6 +45,8 @@ export interface IQueryContext<F> {
     filterArgs: F;
     previousCursor?: string;
     indexPosition: number;
+
+    isPagingBackwards: boolean;
 }
 
 // CursorEncoder
@@ -58,4 +58,20 @@ export interface ICursorEncoder<CursorObj> {
 // QueryBuilder
 export interface IQueryBuilder<Builder> {
     applyQuery: (queryBuilder: Builder) => Builder;
+}
+
+// QueryResult
+export interface IQueryResult<Node> {
+    nodes: Node[];
+    edges: Array<{cursor: string; node: Node}>;
+    pageInfo: {
+        hasNextPage: boolean;
+        hasPreviousPage: boolean;
+        startCursor: string;
+        endCursor: string;
+    };
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
+    startCursor: string;
+    endCursor: string;
 }

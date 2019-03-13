@@ -1,6 +1,6 @@
 import knex from 'knex';
-import {ConnectionManager} from '../../src';
-import {IUserNode, IUserCursorArgs, IUserFilterArgs, KnexQueryResult} from '../types';
+import {ConnectionManager, IInputArgs} from '../../src';
+import {IUserNode, KnexQueryResult} from '../types';
 import {rejectionOf, validateFieldIsOrderedAlphabetically} from '../utils';
 import {test as testConfig} from '../../knexfile';
 const knexClient = knex(testConfig);
@@ -15,14 +15,9 @@ const attributeMap = {
     bio: 'bio'
 };
 
-const createConnection = async (cursorArgs: IUserCursorArgs, filterArgs: IUserFilterArgs) => {
+const createConnection = async (inputArgs: IInputArgs) => {
     const queryBuilder = knexClient.queryBuilder().from('mock');
-
-    const connection = new ConnectionManager<IUserNode, IUserFilterArgs>(
-        cursorArgs,
-        filterArgs,
-        attributeMap
-    );
+    const connection = new ConnectionManager<IUserNode>(inputArgs, attributeMap);
     connection.createQuery(queryBuilder);
     const result = ((await queryBuilder.select()) || []) as KnexQueryResult;
     connection.addResult(result);
@@ -34,9 +29,10 @@ const createConnection = async (cursorArgs: IUserCursorArgs, filterArgs: IUserFi
 describe('Input args with', () => {
     describe('OrderBy', () => {
         it('Can order results by a given field', async () => {
-            const cursorArgs = {first: 200, orderBy: 'firstname'};
-            const filterArgs = [{field: 'haircolor', operator: '=', value: 'gray'}];
-            const {pageInfo, edges} = await createConnection(cursorArgs, filterArgs as any);
+            const page = {first: 200};
+            const order = {orderBy: 'firstname'};
+            const filter = [{field: 'haircolor', operator: '=', value: 'gray'}];
+            const {pageInfo, edges} = await createConnection({page, order, filter});
 
             expect(pageInfo.hasNextPage).toBe(false); // there are 100 people with gray hair
             expect(pageInfo.hasPreviousPage).toBe(false);
@@ -52,12 +48,8 @@ describe('Input args with', () => {
     });
     describe('Page size', () => {
         it('Can be set to get the first 10 edges', async () => {
-            const cursorArgs = {first: 10};
-            const filterArgs = [] as Array<{}>;
-            const {pageInfo, edges} = await createConnection(
-                cursorArgs,
-                (filterArgs as any) as IUserFilterArgs
-            );
+            const page = {first: 10};
+            const {pageInfo, edges} = await createConnection({page});
 
             expect(pageInfo.hasNextPage).toBe(true);
             expect(pageInfo.hasPreviousPage).toBe(false);
@@ -66,12 +58,9 @@ describe('Input args with', () => {
         });
 
         it('Can be set to get the last 100 edges', async () => {
-            const cursorArgs = {last: 100};
-            const filterArgs = [] as Array<{}>;
-            const {pageInfo, edges} = await createConnection(
-                cursorArgs,
-                (filterArgs as any) as IUserFilterArgs
-            );
+            const page = {last: 100};
+            const {pageInfo, edges} = await createConnection({page});
+
             expect(pageInfo.hasNextPage).toBe(true);
             expect(pageInfo.hasPreviousPage).toBe(false);
             expect(edges.length).toBe(100);
@@ -79,31 +68,24 @@ describe('Input args with', () => {
         });
 
         it('Cant work with both first and last size args', async () => {
-            const cursorArgs = {first: 10, last: 87};
-            const filterArgs = [] as Array<{}>;
+            const page = {first: 10, last: 87};
 
-            const e = await rejectionOf(
-                createConnection(cursorArgs, (filterArgs as any) as IUserFilterArgs)
-            );
+            const e = await rejectionOf(createConnection({page}));
             expect(e.message).toEqual('Can not mix `first` and `last`');
         });
 
         it("Can handle cases where page size doesn't make sense", async () => {
-            const cursorArgs = {first: 0};
-            const filterArgs = [] as Array<{}>;
+            const page = {first: 0};
 
-            const e = await rejectionOf(
-                createConnection(cursorArgs, (filterArgs as any) as IUserFilterArgs)
-            );
+            const e = await rejectionOf(createConnection({page}));
             expect(e.message).toEqual('Page size must be greater than 0');
         });
     });
 
     describe('Single Filters', () => {
         it('Can filter for equality', async () => {
-            const cursorArgs = {};
-            const filterArgs = [{field: 'haircolor', operator: '=', value: 'red'}];
-            const {pageInfo, edges} = await createConnection(cursorArgs, filterArgs as any);
+            const filter = [{field: 'haircolor', operator: '=', value: 'red'}];
+            const {pageInfo, edges} = await createConnection({filter});
 
             expect(pageInfo.hasNextPage).toBe(false);
             expect(pageInfo.hasPreviousPage).toBe(false);
@@ -112,9 +94,8 @@ describe('Input args with', () => {
         });
 
         it('Can filter for "greater than" range', async () => {
-            const cursorArgs = {};
-            const filterArgs = [{field: 'age', operator: '>', value: '100'}];
-            const {pageInfo, edges} = await createConnection(cursorArgs, filterArgs as any);
+            const filter = [{field: 'age', operator: '>', value: '100'}];
+            const {pageInfo, edges} = await createConnection({filter});
 
             expect(pageInfo.hasNextPage).toBe(false);
             expect(pageInfo.hasPreviousPage).toBe(false);
@@ -123,9 +104,8 @@ describe('Input args with', () => {
         });
 
         it('Can filter for "less than" range', async () => {
-            const cursorArgs = {};
-            const filterArgs = [{field: 'age', operator: '<', value: '30'}];
-            const {pageInfo, edges} = await createConnection(cursorArgs, filterArgs as any);
+            const filter = [{field: 'age', operator: '<', value: '30'}];
+            const {pageInfo, edges} = await createConnection({filter});
 
             expect(pageInfo.hasNextPage).toBe(false);
             expect(pageInfo.hasPreviousPage).toBe(false);
@@ -134,9 +114,8 @@ describe('Input args with', () => {
         });
 
         it('Can filter for "greater than inclusive" range', async () => {
-            const cursorArgs = {};
-            const filterArgs = [{field: 'age', operator: '>=', value: '100'}];
-            const {pageInfo, edges} = await createConnection(cursorArgs, filterArgs as any);
+            const filter = [{field: 'age', operator: '>=', value: '100'}];
+            const {pageInfo, edges} = await createConnection({filter});
 
             expect(pageInfo.hasNextPage).toBe(true);
             expect(pageInfo.hasPreviousPage).toBe(false);
@@ -145,9 +124,8 @@ describe('Input args with', () => {
         });
 
         it('Can filter for "less than inclusive" range', async () => {
-            const cursorArgs = {};
-            const filterArgs = [{field: 'age', operator: '<=', value: '30'}];
-            const {pageInfo, edges} = await createConnection(cursorArgs, filterArgs as any);
+            const filter = [{field: 'age', operator: '<=', value: '30'}];
+            const {pageInfo, edges} = await createConnection({filter});
 
             expect(pageInfo.hasNextPage).toBe(true);
             expect(pageInfo.hasPreviousPage).toBe(false);
@@ -161,13 +139,12 @@ describe('Input args with', () => {
             // 8 people `age` N have brown `hair` and the `first name` Nerissa (80 people total across all `ages`)
             // Thus, there will be 24 people that match this query.
             // See db/seeds/README.md case B for more info.
-            const cursorArgs = {};
-            const filterArgs = [
+            const filter = [
                 {field: 'haircolor', operator: '=', value: 'brown'},
                 {field: 'age', operator: '>', value: '80'},
                 {field: 'firstname', operator: '=', value: 'Nerissa'}
             ];
-            const {pageInfo, edges} = await createConnection(cursorArgs, filterArgs as any);
+            const {pageInfo, edges} = await createConnection({filter});
 
             expect(pageInfo.hasNextPage).toBe(false);
             expect(pageInfo.hasPreviousPage).toBe(false);
@@ -180,15 +157,14 @@ describe('Input args with', () => {
             // (10 people total across all `ages`)
             // Thus, there will be 7 people that match this query.
             // See db/seeds/README.md case B for more info.
-            const cursorArgs = {};
-            const filterArgs = [
+            const filter = [
                 {field: 'haircolor', operator: '=', value: 'brown'},
                 {field: 'age', operator: '<=', value: '80'},
                 {field: 'firstname', operator: '=', value: 'Kenyon'},
                 {field: 'lastname', operator: '=', value: 'Summa'}
             ];
 
-            const {pageInfo, edges} = await createConnection(cursorArgs, filterArgs as any);
+            const {pageInfo, edges} = await createConnection({filter});
 
             expect(pageInfo.hasNextPage).toBe(false);
             expect(pageInfo.hasPreviousPage).toBe(false);
@@ -199,9 +175,10 @@ describe('Input args with', () => {
 
     describe('Filters, page size, orderBy', () => {
         it('Can get the last 100 people with gray hair', async () => {
-            const cursorArgs = {last: 98, orderBy: 'lastname'};
-            const filterArgs = [{field: 'haircolor', operator: '=', value: 'gray'}];
-            const {pageInfo, edges} = await createConnection(cursorArgs, filterArgs as any);
+            const page = {last: 98};
+            const order = {orderBy: 'lastname'};
+            const filter = [{field: 'haircolor', operator: '=', value: 'gray'}];
+            const {pageInfo, edges} = await createConnection({filter, page, order});
 
             expect(pageInfo.hasNextPage).toBe(true); // there are 100 people with gray hair
             expect(pageInfo.hasPreviousPage).toBe(false);
@@ -218,13 +195,13 @@ describe('Input args with', () => {
 
     describe('Filters that return no results', () => {
         it('Can be handled properly', async () => {
-            const cursorArgs = {last: 98};
-            const filterArgs = [
+            const page = {last: 98};
+            const filter = [
                 {field: 'haircolor', operator: '=', value: 'gray'},
                 {field: 'age', operator: '>', value: '120'}
             ];
 
-            const {pageInfo, edges} = await createConnection(cursorArgs, filterArgs as any);
+            const {pageInfo, edges} = await createConnection({filter, page});
             expect(pageInfo.hasNextPage).toBe(false);
             expect(pageInfo.hasPreviousPage).toBe(false);
             expect(edges.length).toBe(0);

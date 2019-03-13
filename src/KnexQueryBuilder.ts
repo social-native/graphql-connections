@@ -1,6 +1,6 @@
 import QueryContext from './QueryContext';
 import {QueryBuilder as Knex} from 'knex';
-import {FilterArgs, IFilterMap, IAttributeMap, IQueryBuilder} from './types';
+import {IFilterMap, IAttributeMap, IQueryBuilder} from './types';
 
 /**
  * KnexQueryBuilder
@@ -9,23 +9,18 @@ import {FilterArgs, IFilterMap, IAttributeMap, IQueryBuilder} from './types';
  *
  */
 
-export default class KnexQueryBuilder<SpecificFilterArgs extends FilterArgs<any>>
-    implements IQueryBuilder<Knex> {
-    private queryContext: QueryContext<SpecificFilterArgs>;
+export default class KnexQueryBuilder implements IQueryBuilder<Knex> {
+    private queryContext: QueryContext;
     private attributeMap: IAttributeMap;
     private filterMap: IFilterMap;
 
-    constructor(
-        queryContext: QueryContext<SpecificFilterArgs>,
-        attributeMap: IAttributeMap,
-        filterMap: IFilterMap
-    ) {
+    constructor(queryContext: QueryContext, attributeMap: IAttributeMap, filterMap: IFilterMap) {
         this.queryContext = queryContext;
         this.attributeMap = attributeMap;
         this.filterMap = filterMap;
     }
 
-    public applyQuery(queryBuilder: Knex) {
+    public createQuery(queryBuilder: Knex) {
         this.applyLimit(queryBuilder);
         this.applyOrder(queryBuilder);
         this.applyOffset(queryBuilder);

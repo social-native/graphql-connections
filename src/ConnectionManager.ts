@@ -7,12 +7,11 @@ import {
     IQueryContext,
     ICursorEncoder,
     IQueryResult,
-    ICursorArgs,
-    FilterArgs,
     ICursorObj,
     IAttributeMap,
     IFilterMap,
-    INode
+    INode,
+    IInputArgs
 } from './types';
 import QueryResult from 'QueryResult';
 
@@ -42,11 +41,8 @@ const defaultFilterMap = {
 };
 
 // tslint:disable:max-classes-per-file
-export default class ConnectionManager<
-    Node extends INode,
-    SpecificFilterArgs extends FilterArgs<any>
-> {
-    private queryContext: QueryContext<SpecificFilterArgs>;
+export default class ConnectionManager<Node extends INode> {
+    private queryContext: QueryContext;
     private queryBuilder: IQueryBuilder<Knex>;
     private cursorEncoder: ICursorEncoder<ICursorObj<string>>;
     private queryResult?: IQueryResult<Node>;
@@ -55,18 +51,19 @@ export default class ConnectionManager<
     private filterMap: IFilterMap;
 
     constructor(
-        cursorArgs: ICursorArgs,
-        filterArgs: SpecificFilterArgs,
+        inputArgs: IInputArgs,
         attributeMap: IAttributeMap,
         config: IConnectionManagerConfig<ICursorObj<string>> = {}
     ) {
         this.cursorEncoder = config.cursorEncoder || CursorEncoder;
-        this.queryContext = new QueryContext<SpecificFilterArgs>(cursorArgs, filterArgs, {
+        // 1. Create QueryContext
+        this.queryContext = new QueryContext(inputArgs, {
             cursorEncoder: this.cursorEncoder
         });
         this.attributeMap = attributeMap;
         this.filterMap = config.filterMap || defaultFilterMap;
-        this.queryBuilder = new KnexQueryBuilder<SpecificFilterArgs>(
+        // 2. Create QueryBuilder
+        this.queryBuilder = new KnexQueryBuilder(
             this.queryContext,
             this.attributeMap,
             this.filterMap
@@ -74,15 +71,17 @@ export default class ConnectionManager<
     }
 
     public createQuery(queryBuilder: Knex) {
-        return this.queryBuilder.applyQuery(queryBuilder);
+        return this.queryBuilder.createQuery(queryBuilder);
     }
 
     public addResult(result: KnexQueryResult) {
-        this.queryResult = new QueryResult<
-            KnexQueryResult,
-            IQueryContext<SpecificFilterArgs>,
-            Node
-        >(result, this.queryContext, this.attributeMap, {cursorEncoder: this.cursorEncoder});
+        // 3. Create QueryResult
+        this.queryResult = new QueryResult<KnexQueryResult, IQueryContext, Node>(
+            result,
+            this.queryContext,
+            this.attributeMap,
+            {cursorEncoder: this.cursorEncoder}
+        );
     }
 
     public get pageInfo() {

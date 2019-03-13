@@ -1,21 +1,40 @@
-import { ICursorArgs, FilterArgs, ICursorEncoder, ICursorObj, IQueryContext } from './types';
+import { ICursorEncoder, ICursorObj, IQueryContext, IInputArgs, IFilter } from './types';
+/**
+ * QueryContext
+ *
+ * Sets the context for the current connection based on input resolver args
+ *
+ */
+interface IQueryContextInputArgs extends IInputArgs {
+    cursor: {
+        before?: string;
+        after?: string;
+    };
+    page: {
+        first?: number;
+        last?: number;
+    };
+    order: {
+        orderBy?: string;
+    };
+    filter: Array<IFilter<string>>;
+}
 interface IQueryContextConfig<CursorObj> {
     defaultLimit?: number;
     cursorEncoder?: ICursorEncoder<CursorObj>;
 }
-export default class QueryContext<SpecificFilterArgs extends FilterArgs<any>> implements IQueryContext<SpecificFilterArgs> {
+export default class QueryContext implements IQueryContext {
     limit: number;
     orderDirection: 'asc' | 'desc';
     orderBy: string;
     filters: string[][];
     offset: number;
-    cursorArgs: ICursorArgs;
-    filterArgs: SpecificFilterArgs;
+    inputArgs: IQueryContextInputArgs;
     previousCursor?: string;
     indexPosition: number;
     private defaultLimit;
     private cursorEncoder;
-    constructor(cursorArgs: ICursorArgs, filterArgs: SpecificFilterArgs, config?: IQueryContextConfig<ICursorObj<string>>);
+    constructor(inputArgs?: IInputArgs, config?: IQueryContextConfig<ICursorObj<string>>);
     /**
      * Compares the current paging direction (as indicated `first` and `last` args)
      * and compares to what the original sort direction was (as found in the cursor)
@@ -33,21 +52,24 @@ export default class QueryContext<SpecificFilterArgs extends FilterArgs<any>> im
      * Extracts the previous cursor from the resolver cursorArgs
      */
     private calcPreviousCursor;
+    /**
+     * Extracts the filters from the resolver filterArgs
+     */
     private calcFilters;
     /**
-     * Gets the index position of the cursor in the total result set
+     * Gets the index position of the cursor in the total possible result set
      */
     private calcIndexPosition;
     /**
-     * Gets the offset the current query should start at in the current result set
+     * Gets the offset that the current query should start at in the total possible result set
      */
     private calcOffset;
     /**
      * Validates that the user is using the connection query correctly
      * For the most part this means that they are either using
-     *   `first` and `after` together
+     *   `first` and/or `after` together
      *    or
-     *   `last` and `before` together
+     *   `last` and/or `before` together
      */
     private validateArgs;
 }

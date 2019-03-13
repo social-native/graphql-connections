@@ -1,5 +1,5 @@
 import CursorEncoder from './CursorEncoder';
-import {ICursorArgs, FilterArgs, ICursorEncoder, ICursorObj, IQueryContext} from './types';
+import {ICursorEncoder, ICursorObj, IQueryContext, IInputArgs, IFilter} from './types';
 
 /**
  * QueryContext
@@ -8,32 +8,41 @@ import {ICursorArgs, FilterArgs, ICursorEncoder, ICursorObj, IQueryContext} from
  *
  */
 
+interface IQueryContextInputArgs extends IInputArgs {
+    cursor: {
+        before?: string;
+        after?: string;
+    };
+    page: {
+        first?: number;
+        last?: number;
+    };
+    order: {
+        orderBy?: string;
+    };
+    filter: Array<IFilter<string>>;
+}
+
 interface IQueryContextConfig<CursorObj> {
     defaultLimit?: number;
     cursorEncoder?: ICursorEncoder<CursorObj>;
 }
 
-export default class QueryContext<SpecificFilterArgs extends FilterArgs<any>>
-    implements IQueryContext<SpecificFilterArgs> {
+export default class QueryContext implements IQueryContext {
     public limit: number;
     public orderDirection: 'asc' | 'desc';
     public orderBy: string;
     public filters: string[][]; // [['username', '=', 'haxor1'], ['created_at', '>=', '90002012']]
     public offset: number;
-    public cursorArgs: ICursorArgs;
-    public filterArgs: SpecificFilterArgs;
+    public inputArgs: IQueryContextInputArgs;
     public previousCursor?: string;
     public indexPosition: number;
 
     private defaultLimit: number; // actual limit value used
     private cursorEncoder: ICursorEncoder<ICursorObj<string>>;
 
-    constructor(
-        cursorArgs: ICursorArgs,
-        filterArgs: SpecificFilterArgs,
-        config: IQueryContextConfig<ICursorObj<string>> = {}
-    ) {
-        this.cursorArgs = cursorArgs;
+    constructor(inputArgs: IInputArgs = {}, config: IQueryContextConfig<ICursorObj<string>> = {}) {
+        this.inputArgs = {page: {}, cursor: {}, filter: [], order: {}, ...inputArgs};
         this.validateArgs();
 
         // private
@@ -41,7 +50,6 @@ export default class QueryContext<SpecificFilterArgs extends FilterArgs<any>>
         this.defaultLimit = config.defaultLimit || 1000;
 
         // public
-        this.filterArgs = filterArgs;
         this.previousCursor = this.calcPreviousCursor();
         // the index position of the cursor in the total result set
         this.indexPosition = this.calcIndexPosition();
@@ -62,7 +70,8 @@ export default class QueryContext<SpecificFilterArgs extends FilterArgs<any>>
             return false;
         }
 
-        const {first, last, before, after} = this.cursorArgs;
+        const {first, last} = this.inputArgs.page;
+        const {before, after} = this.inputArgs.cursor;
         const prevCursorObj = this.cursorEncoder.decodeFromCursor(this.previousCursor);
 
         // tslint:disable-line
@@ -76,7 +85,7 @@ export default class QueryContext<SpecificFilterArgs extends FilterArgs<any>>
      * Sets the limit for the desired query result
      */
     private calcLimit() {
-        const {first, last} = this.cursorArgs;
+        const {first, last} = this.inputArgs.page;
 
         const limit = first || last || this.defaultLimit;
         // If you are paging backwards, you need to make sure that the limit
@@ -102,18 +111,22 @@ export default class QueryContext<SpecificFilterArgs extends FilterArgs<any>>
             orderBy = prevCursorObj.orderBy;
             orderDirection = prevCursorObj.initialSort;
         } else {
-            orderBy = this.cursorArgs.orderBy || 'id';
-            orderDirection = this.cursorArgs.last || this.cursorArgs.before ? 'desc' : 'asc';
+            orderBy = this.inputArgs.order.orderBy || 'id';
+            orderDirection =
+                this.inputArgs.page.last || this.inputArgs.cursor.before ? 'desc' : 'asc';
         }
 
-        return {orderBy, orderDirection: orderDirection as 'desc' | 'asc'};
+        return {
+            orderBy,
+            orderDirection: orderDirection as 'desc' | 'asc'
+        };
     }
 
     /**
      * Extracts the previous cursor from the resolver cursorArgs
      */
     private calcPreviousCursor() {
-        const {before, after} = this.cursorArgs;
+        const {before, after} = this.inputArgs.cursor;
         return before || after;
     }
 
@@ -125,11 +138,11 @@ export default class QueryContext<SpecificFilterArgs extends FilterArgs<any>>
             return this.cursorEncoder.decodeFromCursor(this.previousCursor).filters;
         }
 
-        if (!this.filterArgs) {
+        if (!this.inputArgs.filter) {
             return [];
         }
 
-        return this.filterArgs.reduce(
+        return this.inputArgs.filter.reduce(
             (builtFilters, {field, value, operator}) => {
                 builtFilters.push([field, operator, value]);
                 return builtFilters;
@@ -168,7 +181,12 @@ export default class QueryContext<SpecificFilterArgs extends FilterArgs<any>>
      *   `last` and/or `before` together
      */
     private validateArgs() {
-        const {first, last, before, after, orderBy} = this.cursorArgs;
+        if (!this.inputArgs) {
+            throw Error('Input args are required');
+        }
+        const {first, last} = this.inputArgs.page;
+        const {before, after} = this.inputArgs.cursor;
+        const {orderBy} = this.inputArgs.order;
 
         // tslint:disable
         if (first && last) {
@@ -181,7 +199,7 @@ export default class QueryContext<SpecificFilterArgs extends FilterArgs<any>>
             throw Error('Can not mix `after` and `last`');
         } else if ((after || before) && orderBy) {
             throw Error('Can not use orderBy with a cursor');
-        } else if ((after || before) && this.filterArgs) {
+        } else if ((after || before) && this.inputArgs.filter.length > 0) {
             throw Error('Can not use filters with a cursor');
         } else if ((first != null && first <= 0) || (last != null && last <= 0)) {
             throw Error('Page size must be greater than 0');

@@ -19,7 +19,7 @@ interface IQueryResultConfig<CursorObj> {
 
 export default class QueryResult<
     Result extends Array<{[field: string]: any}>,
-    QueryContext extends IQueryContext<any>,
+    QueryContext extends IQueryContext,
     Node extends INode
 > implements IQueryResult<Node> {
     public nodes: Node[];

@@ -8,7 +8,7 @@ export {
     INode,
     ICursorArgs,
     IFilter,
-    FilterArgs,
+    IInputArgs,
     ICursorEncoder,
     IQueryContext,
     IQueryBuilder

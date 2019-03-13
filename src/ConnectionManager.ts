@@ -9,15 +9,11 @@ import {
     FilterArgs,
     ICursorObj,
     IAttributeMap,
-    IFilterMap
+    IFilterMap,
+    INode
 } from './types';
 
 type KnexQueryResult = Array<{[attributeName: string]: any}>;
-
-// The shape of a connection node
-interface INode {
-    id: number;
-}
 
 interface IConnectionManagerConfig<CursorObj> {
     cursorEncoder?: ICursorEncoder<CursorObj>;
@@ -34,7 +30,10 @@ const defaultFilterMap = {
 };
 
 // tslint:disable:max-classes-per-file
-class ConnectionManager<Node extends INode, SpecificFilterArgs extends FilterArgs<any>> {
+export default class ConnectionManager<
+    Node extends INode,
+    SpecificFilterArgs extends FilterArgs<any>
+> {
     private queryContext: QueryContext<SpecificFilterArgs>;
     private queryBuilder: IQueryBuilder<Knex>;
     private cursorEncoder: ICursorEncoder<ICursorObj<string>>;
@@ -164,4 +163,4 @@ class ConnectionManager<Node extends INode, SpecificFilterArgs extends FilterArg
     }
 }
 
-export {ConnectionManager, INode, ICursorArgs, FilterArgs};
+// export {ConnectionManager, INode, ICursorArgs, FilterArgs};

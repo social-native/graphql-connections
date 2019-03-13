@@ -1,4 +1,14 @@
-import {ConnectionManager, INode, ICursorArgs, FilterArgs} from './ConnectionManager';
-import {CursorEncoder, ICursorEncoder} from './CursorEncoder';
+export {default as ConnectionManager} from './ConnectionManager';
+export {default as QueryContext} from './QueryContext';
+export {default as CursorEncoder} from './CursorEncoder';
+export {default as KnexQueryBuilder} from './KnexQueryBuilder';
 
-export {ConnectionManager, CursorEncoder, INode, ICursorArgs, FilterArgs, ICursorEncoder};
+export {
+    INode,
+    ICursorArgs,
+    IFilter,
+    FilterArgs,
+    ICursorEncoder,
+    IQueryContext,
+    IQueryBuilder
+} from './types';

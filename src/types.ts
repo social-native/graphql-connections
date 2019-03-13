@@ -1,8 +1,11 @@
-interface IFilter<Fields> {
+export interface IFilter<Fields> {
     value: string;
     operator: string;
     field: Fields;
 }
+
+// The shape of input args for filters
+export type FilterArgs<Fields> = Array<IFilter<Fields>>;
 
 // The shape of input args for a cursor
 export interface ICursorArgs {
@@ -21,14 +24,29 @@ export interface ICursorObj<PublicAttributes> {
     filters: string[][];
 }
 
-// The shape of input args for filters
-export type FilterArgs<Fields> = Array<IFilter<Fields>>;
+// The shape of a connection node
+export interface INode {
+    id: number;
+}
 
 export interface IAttributeMap {
     [nodeField: string]: string;
 }
 export interface IFilterMap {
     [nodeField: string]: string;
+}
+
+// QueryContext
+export interface IQueryContext<F> {
+    limit: number;
+    orderDirection: 'asc' | 'desc';
+    orderBy: string;
+    filters: string[][]; // [['username', '=', 'haxor1'], ['created_at', '>=', '90002012']]
+    offset: number;
+    cursorArgs: ICursorArgs;
+    filterArgs: F;
+    previousCursor?: string;
+    indexPosition: number;
 }
 
 // CursorEncoder

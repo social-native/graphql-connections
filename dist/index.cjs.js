@@ -315,6 +315,9 @@ class ConnectionManager {
         });
     }
 }
+// export {ConnectionManager, INode, ICursorArgs, FilterArgs};
 
 exports.ConnectionManager = ConnectionManager;
+exports.QueryContext = QueryContext;
 exports.CursorEncoder = CursorEncoder;
+exports.KnexQueryBuilder = KnexQueryBuilder;

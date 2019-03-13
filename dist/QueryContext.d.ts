@@ -1,33 +1,9 @@
-import { ICursorEncoder } from './CursorEncoder';
-interface ICursorArgs {
-    first?: number;
-    last?: number;
-    before?: string;
-    after?: string;
-    orderBy?: string;
-}
-interface IFilter<Fields> {
-    value: string;
-    operator: string;
-    field: Fields;
-}
-declare type FilterArgs<Fields> = Array<IFilter<Fields>>;
-interface IConfig<CursorObj> {
+import { ICursorArgs, FilterArgs, ICursorEncoder, ICursorObj, IQueryContext } from './types';
+interface IQueryContextConfig<CursorObj> {
     defaultLimit?: number;
     cursorEncoder?: ICursorEncoder<CursorObj>;
 }
-interface IIntermediateCursorObj<PublicAttributes> {
-    initialSort: 'asc' | 'desc';
-    orderBy: PublicAttributes;
-    filters: string[][];
-}
-interface ICursorObj<PublicAttributes> extends IIntermediateCursorObj<PublicAttributes> {
-    initialSort: 'asc' | 'desc';
-    orderBy: PublicAttributes;
-    position: number;
-    filters: string[][];
-}
-export default class QueryContext<SpecificFilterArgs extends FilterArgs<any>> {
+export default class QueryContext<SpecificFilterArgs extends FilterArgs<any>> implements IQueryContext<SpecificFilterArgs> {
     limit: number;
     orderDirection: 'asc' | 'desc';
     orderBy: string;
@@ -39,7 +15,7 @@ export default class QueryContext<SpecificFilterArgs extends FilterArgs<any>> {
     indexPosition: number;
     private defaultLimit;
     private cursorEncoder;
-    constructor(cursorArgs: ICursorArgs, filterArgs: SpecificFilterArgs, config?: IConfig<ICursorObj<string>>);
+    constructor(cursorArgs: ICursorArgs, filterArgs: SpecificFilterArgs, config?: IQueryContextConfig<ICursorObj<string>>);
     /**
      * Compares the current paging direction (as indicated `first` and `last` args)
      * and compares to what the original sort direction was (as found in the cursor)

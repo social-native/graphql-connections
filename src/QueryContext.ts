@@ -1,12 +1,13 @@
 import CursorEncoder from './CursorEncoder';
-import {ICursorArgs, FilterArgs, ICursorEncoder, ICursorObj} from './types';
+import {ICursorArgs, FilterArgs, ICursorEncoder, ICursorObj, IQueryContext} from './types';
 
 interface IQueryContextConfig<CursorObj> {
     defaultLimit?: number;
     cursorEncoder?: ICursorEncoder<CursorObj>;
 }
 
-export default class QueryContext<SpecificFilterArgs extends FilterArgs<any>> {
+export default class QueryContext<SpecificFilterArgs extends FilterArgs<any>>
+    implements IQueryContext<SpecificFilterArgs> {
     public limit: number;
     public orderDirection: 'asc' | 'desc';
     public orderBy: string;

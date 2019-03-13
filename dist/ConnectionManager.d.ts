@@ -1,52 +1,19 @@
 import { QueryBuilder as Knex } from 'knex';
-import { ICursorEncoder } from './CursorEncoder';
-interface ICursorArgs {
-    first?: number;
-    last?: number;
-    before?: string;
-    after?: string;
-    orderBy?: string;
-}
-interface IFilter<Fields> {
-    value: string;
-    operator: string;
-    field: Fields;
-}
-declare type FilterArgs<Fields> = Array<IFilter<Fields>>;
+import { ICursorEncoder, ICursorArgs, FilterArgs, ICursorObj, IAttributeMap, IFilterMap, INode } from './types';
 declare type KnexQueryResult = Array<{
     [attributeName: string]: any;
 }>;
-interface INode {
-    id: number;
-}
-interface IFilterMap {
-    [inputOperator: string]: string;
-}
-interface IConfig<CursorObj> {
+interface IConnectionManagerConfig<CursorObj> {
     cursorEncoder?: ICursorEncoder<CursorObj>;
     filterMap?: IFilterMap;
 }
-interface IIntermediateCursorObj<PublicAttributes> {
-    initialSort: 'asc' | 'desc';
-    orderBy: PublicAttributes;
-    filters: string[][];
-}
-interface ICursorObj<PublicAttributes> extends IIntermediateCursorObj<PublicAttributes> {
-    initialSort: 'asc' | 'desc';
-    orderBy: PublicAttributes;
-    position: number;
-    filters: string[][];
-}
-interface IAttributeMap {
-    [nodeAttribute: string]: string;
-}
-declare class ConnectionManager<Node extends INode, SpecificFilterArgs extends FilterArgs<any>> {
+export default class ConnectionManager<Node extends INode, SpecificFilterArgs extends FilterArgs<any>> {
     private queryContext;
     private queryBuilder;
     private cursorEncoder;
     private attributeMap;
     private filterMap;
-    constructor(cursorArgs: ICursorArgs, filterArgs: SpecificFilterArgs, attributeMap: IAttributeMap, config?: IConfig<ICursorObj<string>>);
+    constructor(cursorArgs: ICursorArgs, filterArgs: SpecificFilterArgs, attributeMap: IAttributeMap, config?: IConnectionManagerConfig<ICursorObj<string>>);
     createQuery(queryBuilder: Knex): Knex;
     createPageInfo(queryResult: KnexQueryResult): {
         hasPreviousPage: boolean;
@@ -78,4 +45,4 @@ declare class ConnectionManager<Node extends INode, SpecificFilterArgs extends F
     private createNodes;
     private createEdgesFromNodes;
 }
-export { ConnectionManager, INode, ICursorArgs, FilterArgs };
+export {};

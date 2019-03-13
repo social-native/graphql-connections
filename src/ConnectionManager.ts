@@ -27,7 +27,7 @@ import QueryResult from 'QueryResult';
 
 type KnexQueryResult = Array<{[attributeName: string]: any}>;
 
-interface IConnectionManagerConfig<CursorObj, Node> {
+interface IConnectionManagerConfig<CursorObj> {
     cursorEncoder?: ICursorEncoder<CursorObj>;
     filterMap?: IFilterMap; // maps an input operator to a sql where operator
     nodeTransformer?: (node: any) => any;
@@ -56,7 +56,7 @@ export default class ConnectionManager<Node extends INode> {
     constructor(
         inputArgs: IInputArgs,
         attributeMap: IAttributeMap,
-        config: IConnectionManagerConfig<ICursorObj<string>, Node> = {}
+        config: IConnectionManagerConfig<ICursorObj<string>> = {}
     ) {
         this.cursorEncoder = config.cursorEncoder || CursorEncoder;
         this.nodeTransformer = config.nodeTransformer;

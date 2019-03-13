@@ -21,16 +21,9 @@ const attributeMap = {
 };
 
 interface ITransformedNode extends IUserNode {
-    id: number;
-    // username: string;
-    // firstname: string;
-    // lastname: string;
-    // age: number;
-    // haircolor: string;
-    // bio: string;
-
     color: string;
 }
+
 describe('Customizing the ConnectionManager', () => {
     describe('Node transformer', () => {
         it('Can transform a node', async () => {

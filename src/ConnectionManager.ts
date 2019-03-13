@@ -30,7 +30,7 @@ type KnexQueryResult = Array<{[attributeName: string]: any}>;
 interface IConnectionManagerConfig<CursorObj, Node> {
     cursorEncoder?: ICursorEncoder<CursorObj>;
     filterMap?: IFilterMap; // maps an input operator to a sql where operator
-    nodeTransformer?: NodeTransformer<Node>;
+    nodeTransformer?: (node: any) => any;
 }
 
 const defaultFilterMap = {

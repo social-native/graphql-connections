@@ -43,7 +43,7 @@ describe('Customizing the ConnectionManager', () => {
                 };
             };
             const nodeConnection = new ConnectionManager<ITransformedNode>({page}, attributeMap, {
-                nodeTransformer: transformer as any
+                nodeTransformer: transformer
             });
 
             const queryBuilder = knexClient.queryBuilder().from('mock');

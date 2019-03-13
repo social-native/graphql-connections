@@ -100,7 +100,16 @@ export default class QueryContext<SpecificFilterArgs extends FilterArgs<any>> {
      */
     private calcLimit() {
         const {first, last} = this.cursorArgs;
-        return first || last || this.defaultLimit;
+
+        const limit = first || last || this.defaultLimit;
+        // If you are paging backwards, you need to make sure that the limit
+        // isn't greater or equal to the index position.
+        // This is because the limit is used to calculate the offset.
+        // You don't want to offset larger than the set size.
+        if (this.isPagingBackwards) {
+            return limit < this.indexPosition ? limit : this.indexPosition - 1;
+        }
+        return limit;
     }
 
     /**
@@ -165,7 +174,8 @@ export default class QueryContext<SpecificFilterArgs extends FilterArgs<any>> {
      */
     private calcOffset() {
         if (this.isPagingBackwards) {
-            return this.indexPosition - this.limit;
+            const offset = this.indexPosition - (this.limit + 1);
+            return offset < 0 ? 0 : offset;
         }
         return this.indexPosition;
     }

@@ -97,7 +97,7 @@ class ConnectionManager<Node extends INode, SpecificFilterArgs extends FilterArg
 
     public createPageInfo(queryResult: KnexQueryResult) {
         return {
-            hasPreviousPage: this.hasPrevPage(queryResult),
+            hasPreviousPage: this.hasPrevPage(),
             hasNextPage: this.hasNextPage(queryResult)
         };
     }
@@ -117,7 +117,9 @@ class ConnectionManager<Node extends INode, SpecificFilterArgs extends FilterArg
      */
     private hasNextPage(result: KnexQueryResult) {
         if (this.queryContext.isPagingBackwards) {
-            return this.queryContext.indexPosition - this.queryContext.limit > 0;
+            // If you are paging backwards, you only have another page if the
+            // offset (aka the limit) is less then the set size (the index position - 1)
+            return this.queryContext.indexPosition - (this.queryContext.limit + 1) > 0;
         }
 
         return result.length > this.queryContext.limit;
@@ -128,7 +130,7 @@ class ConnectionManager<Node extends INode, SpecificFilterArgs extends FilterArg
      * If this id is in the result set and we are paging away from it, then we don't have a previous page.
      * Otherwise, we will always have a previous page unless we are on the first page.
      */
-    private hasPrevPage(result: KnexQueryResult) {
+    private hasPrevPage() {
         // if there is no cursor, than this is the first page
         // which means there is no previous page
         if (!this.queryContext.previousCursor) {
@@ -136,7 +138,10 @@ class ConnectionManager<Node extends INode, SpecificFilterArgs extends FilterArg
         }
 
         if (this.queryContext.isPagingBackwards) {
-            return this.queryContext.limit < result.length;
+            // return this.queryContext.limit < result.length;
+            // If you are paging backwards, you have to be paging from
+            // somewhere. Thus you always have a previous page.
+            return true;
         } else {
             return this.queryContext.indexPosition > 0;
         }
@@ -168,10 +173,13 @@ class ConnectionManager<Node extends INode, SpecificFilterArgs extends FilterArg
         const filters = this.queryContext.filters;
         const orderBy = this.queryContext.orderBy;
 
+        const nodesLength = nodes.length;
         return nodes.map((node, index) => {
             let position: number;
             if (this.queryContext.isPagingBackwards) {
-                position = this.queryContext.indexPosition - (index + 1);
+                const distFromEnd = nodesLength - index;
+                console.log(nodesLength, index, distFromEnd, this.queryContext.indexPosition);
+                position = this.queryContext.indexPosition - distFromEnd;
             } else {
                 position = this.queryContext.indexPosition + index + 1;
             }

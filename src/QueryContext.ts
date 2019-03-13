@@ -204,7 +204,6 @@ export default class QueryContext<SpecificFilterArgs extends FilterArgs<any>> {
         } else if ((after || before) && this.filterArgs) {
             throw Error('Can not use filters with a cursor');
         } else if ((first != null && first <= 0) || (last != null && last <= 0)) {
-            console.log(first);
             throw Error('Page size must be greater than 0');
         }
         // tslint:enable

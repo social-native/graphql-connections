@@ -2,13 +2,8 @@ import knex from 'knex';
 import {ConnectionManager} from '../../src';
 import {IUserNode, IUserCursorArgs, IUserFilterArgs, KnexQueryResult} from '../types';
 import {rejectionOf, validateFieldIsOrderedAlphabetically} from '../utils';
-
-const knexClient = knex({
-    client: 'sqlite3',
-    connection: {
-        filename: './db/test.sqlite3'
-    }
-});
+import {test as testConfig} from '../../knexfile';
+const knexClient = knex(testConfig);
 
 const attributeMap = {
     id: 'id',

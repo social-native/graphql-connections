@@ -2,13 +2,8 @@ import Koa from 'koa';
 import {ApolloServer, gql} from 'apollo-server-koa';
 import knex from 'knex';
 import {ConnectionManager, INode, ICursorArgs, FilterArgs} from '../src';
-
-const knexClient = knex({
-    client: 'sqlite3',
-    connection: {
-        filename: './db/test.sqlite3'
-    }
-});
+import {development as developmentConfig} from '../knexfile';
+const knexClient = knex(developmentConfig);
 
 // Construct a schema, using GraphQL schema language
 const typeDefs = gql`

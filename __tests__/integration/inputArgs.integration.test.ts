@@ -93,6 +93,28 @@ describe('Input args with', () => {
             expect(edges[0].node.id).toBe(8761); // first person with red hair in the db
         });
 
+        it('Can filter for "not equal"', async () => {
+            // filter out everyone by those who are age 110
+            const filter = [
+                {field: 'age', operator: '<>', value: '10'},
+                {field: 'age', operator: '<>', value: '20'},
+                {field: 'age', operator: '<>', value: '30'},
+                {field: 'age', operator: '<>', value: '40'},
+                {field: 'age', operator: '<>', value: '50'},
+                {field: 'age', operator: '<>', value: '60'},
+                {field: 'age', operator: '<>', value: '70'},
+                {field: 'age', operator: '<>', value: '80'},
+                {field: 'age', operator: '<>', value: '90'},
+                {field: 'age', operator: '<>', value: '100'}
+            ];
+            const {pageInfo, edges} = await createConnection({filter});
+
+            expect(pageInfo.hasNextPage).toBe(false);
+            expect(pageInfo.hasPreviousPage).toBe(false);
+            expect(edges.length).toBe(1000); // 1000 people are older than 100. See db/seeds/README.md
+            expect(edges[0].node.id).toBe(5185); // first person older than 100 (age 110) in the db
+        });
+
         it('Can filter for "greater than" range', async () => {
             const filter = [{field: 'age', operator: '>', value: '100'}];
             const {pageInfo, edges} = await createConnection({filter});

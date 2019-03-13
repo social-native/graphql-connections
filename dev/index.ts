@@ -1,7 +1,7 @@
 import Koa from 'koa';
 import {ApolloServer, gql} from 'apollo-server-koa';
 import knex from 'knex';
-import {ConnectionManager, INode, ICursorArgs, FilterArgs} from '../src';
+import {ConnectionManager, INode, IInputArgs} from '../src';
 import {development as developmentConfig} from '../knexfile';
 const knexClient = knex(developmentConfig);
 
@@ -17,7 +17,7 @@ const typeDefs = gql`
         haircolor: String
     }
 
-    input InputCursorParams {
+    input InputPageParams {
         """
         Number of edges to return at most
         """
@@ -26,6 +26,9 @@ const typeDefs = gql`
         Number of edges to return at most
         """
         last: Int
+    }
+
+    input InputCursorParams {
         """
         Previous cursor.
         Returns edges after this cursor
@@ -36,6 +39,9 @@ const typeDefs = gql`
         Returns edges before this cursor
         """
         before: String
+    }
+
+    input InputOrderParams {
         """
         Ordering of the results.
         Should be an attribute on the Nodes in the connection
@@ -74,8 +80,15 @@ const typeDefs = gql`
         node: User
     }
 
+    input UserInputParams {
+        page: InputPageParams
+        order: InputOrderParams
+        cursor: InputCursorParams
+        filter: [Filter]
+    }
+
     type Query {
-        users(cursor: InputCursorParams, filter: [Filter]): QueryUserConnection
+        users(input: UserInputParams): QueryUserConnection
     }
 `;
 
@@ -89,23 +102,13 @@ interface IUserNode extends INode {
     bio: string;
 }
 
-type ICreatorFilterArgs = FilterArgs<
-    'id' | 'username' | 'firstname' | 'age' | 'haircolor' | 'lastname' | 'bio'
->;
-
-interface IUserInputArgs {
-    cursor: ICursorArgs;
-    filter: ICreatorFilterArgs;
-}
-
 type KnexQueryResult = Array<{[attributeName: string]: any}>;
 
 // Provide resolver functions for your schema fields
 const resolvers = {
     Query: {
-        async users(_: any, {cursor: cursorArgs, filter: filterArgs}: IUserInputArgs) {
+        async users(_: any, {input: inputArgs}: {input: IInputArgs}) {
             const queryBuilder = knexClient.from('mock');
-
             // maps node types to sql column names
             const attributeMap = {
                 id: 'id',
@@ -117,11 +120,7 @@ const resolvers = {
                 bio: 'bio'
             };
 
-            const nodeConnection = new ConnectionManager<IUserNode, IUserInputArgs['filter']>(
-                cursorArgs,
-                filterArgs,
-                attributeMap
-            );
+            const nodeConnection = new ConnectionManager<IUserNode>(inputArgs, attributeMap);
 
             const result = (await nodeConnection
                 .createQuery(queryBuilder.clone())

@@ -12,6 +12,8 @@ export interface ICursorObj<PublicAttributes> {
     filters: string[][];
 }
 
+export type NodeTransformer<Node> = (node: {[fields: string]: any}) => Node;
+
 export interface IInputArgs {
     cursor?: {
         before?: string;

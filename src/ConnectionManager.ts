@@ -11,7 +11,8 @@ import {
     IAttributeMap,
     IFilterMap,
     INode,
-    IInputArgs
+    IInputArgs,
+    NodeTransformer
 } from './types';
 import QueryResult from 'QueryResult';
 
@@ -26,9 +27,10 @@ import QueryResult from 'QueryResult';
 
 type KnexQueryResult = Array<{[attributeName: string]: any}>;
 
-interface IConnectionManagerConfig<CursorObj> {
+interface IConnectionManagerConfig<CursorObj, Node> {
     cursorEncoder?: ICursorEncoder<CursorObj>;
     filterMap?: IFilterMap; // maps an input operator to a sql where operator
+    nodeTransformer?: NodeTransformer<Node>;
 }
 
 const defaultFilterMap = {
@@ -49,13 +51,16 @@ export default class ConnectionManager<Node extends INode> {
 
     private attributeMap: IAttributeMap;
     private filterMap: IFilterMap;
+    private nodeTransformer?: NodeTransformer<Node>;
 
     constructor(
         inputArgs: IInputArgs,
         attributeMap: IAttributeMap,
-        config: IConnectionManagerConfig<ICursorObj<string>> = {}
+        config: IConnectionManagerConfig<ICursorObj<string>, Node> = {}
     ) {
         this.cursorEncoder = config.cursorEncoder || CursorEncoder;
+        this.nodeTransformer = config.nodeTransformer;
+
         // 1. Create QueryContext
         this.queryContext = new QueryContext(inputArgs, {
             cursorEncoder: this.cursorEncoder
@@ -80,7 +85,7 @@ export default class ConnectionManager<Node extends INode> {
             result,
             this.queryContext,
             this.attributeMap,
-            {cursorEncoder: this.cursorEncoder}
+            {cursorEncoder: this.cursorEncoder, nodeTransformer: this.nodeTransformer}
         );
     }
 

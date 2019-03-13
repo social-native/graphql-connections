@@ -1,4 +1,12 @@
-import {IQueryContext, IAttributeMap, ICursorEncoder, ICursorObj, IQueryResult, INode} from 'types';
+import {
+    IQueryContext,
+    IAttributeMap,
+    ICursorEncoder,
+    ICursorObj,
+    IQueryResult,
+    INode,
+    NodeTransformer
+} from 'types';
 import {CursorEncoder} from 'index';
 
 /**
@@ -13,8 +21,9 @@ interface IEdge<Node> {
     node: Node;
 }
 
-interface IQueryResultConfig<CursorObj> {
+interface IQueryResultConfig<CursorObj, Node> {
     cursorEncoder?: ICursorEncoder<CursorObj>;
+    nodeTransformer?: NodeTransformer<Node>;
 }
 
 export default class QueryResult<
@@ -28,17 +37,19 @@ export default class QueryResult<
     private queryContext: QueryContext;
     private attributeMap: IAttributeMap;
     private cursorEncoder: ICursorEncoder<ICursorObj<string>>;
+    private nodeTansformer?: NodeTransformer<Node>;
 
     constructor(
         result: Result,
         queryContext: QueryContext,
         attributeMap: IAttributeMap,
-        config: IQueryResultConfig<ICursorObj<string>> = {}
+        config: IQueryResultConfig<ICursorObj<string>, Node> = {}
     ) {
         this.result = result;
         this.queryContext = queryContext;
         this.attributeMap = attributeMap;
         this.cursorEncoder = config.cursorEncoder || CursorEncoder;
+        this.nodeTansformer = config.nodeTransformer;
 
         if (this.result.length < 1) {
             this.nodes = [];
@@ -124,6 +135,13 @@ export default class QueryResult<
      * Furthermore, we also trim down the result set to be within the limit size;
      */
     private createNodes() {
+        let nodeTansformer: NodeTransformer<Node>;
+        if (this.nodeTansformer) {
+            nodeTansformer = this.nodeTansformer;
+        } else {
+            nodeTansformer = (node: any) => node;
+        }
+
         return this.result
             .map(node => {
                 const attributes = Object.keys(node);
@@ -132,7 +150,8 @@ export default class QueryResult<
                         delete node[attr];
                     }
                 });
-                return {...node} as Node;
+                const newNode = {...node};
+                return nodeTansformer(newNode);
             })
             .slice(0, this.queryContext.limit);
     }

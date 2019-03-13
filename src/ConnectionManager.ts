@@ -83,12 +83,16 @@ export default class ConnectionManager<
      * we can assume there are additional pages.
      */
     private hasNextPage(result: KnexQueryResult) {
+        // If you are paging backwards, you only have another page if the
+        // offset (aka the limit) is less then the result set size (aka: index position - 1)
         if (this.queryContext.isPagingBackwards) {
-            // If you are paging backwards, you only have another page if the
-            // offset (aka the limit) is less then the set size (the index position - 1)
             return this.queryContext.indexPosition - (this.queryContext.limit + 1) > 0;
         }
 
+        // Otherwise, if you aren't paging backwards, you will have another page
+        // if more results were fetched than what was asked for.
+        // This is possible b/c we over extend the limit size by 1
+        // in the QueryBuilder
         return result.length > this.queryContext.limit;
     }
 
@@ -98,20 +102,21 @@ export default class ConnectionManager<
      * Otherwise, we will always have a previous page unless we are on the first page.
      */
     private hasPrevPage() {
-        // if there is no cursor, than this is the first page
-        // which means there is no previous page
+        // If there is no cursor, then this is the first page
+        // Which means there is no previous page
         if (!this.queryContext.previousCursor) {
             return false;
         }
 
+        // If you are paging backwards, you have to be paging from
+        // somewhere. Thus you always have a previous page.
         if (this.queryContext.isPagingBackwards) {
-            // return this.queryContext.limit < result.length;
-            // If you are paging backwards, you have to be paging from
-            // somewhere. Thus you always have a previous page.
             return true;
-        } else {
-            return this.queryContext.indexPosition > 0;
         }
+
+        // If you have a previous cursor and you are not paging backwards you have to be
+        // on a page besides the first one. This means you have a previous page.
+        return true;
     }
 
     /**
@@ -142,13 +147,9 @@ export default class ConnectionManager<
 
         const nodesLength = nodes.length;
         return nodes.map((node, index) => {
-            let position: number;
-            if (this.queryContext.isPagingBackwards) {
-                const distFromEnd = nodesLength - index;
-                position = this.queryContext.indexPosition - distFromEnd;
-            } else {
-                position = this.queryContext.indexPosition + index + 1;
-            }
+            const position = this.queryContext.isPagingBackwards
+                ? this.queryContext.indexPosition - nodesLength - index
+                : this.queryContext.indexPosition + index + 1;
 
             return {
                 cursor: this.cursorEncoder.encodeToCursor({
@@ -162,5 +163,3 @@ export default class ConnectionManager<
         });
     }
 }
-
-// export {ConnectionManager, INode, ICursorArgs, FilterArgs};

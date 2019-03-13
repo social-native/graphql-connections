@@ -30,14 +30,14 @@ export default class QueryContext<SpecificFilterArgs extends FilterArgs<any>>
         this.validateArgs();
 
         // private
-        this.defaultLimit = config.defaultLimit || 1000;
-        this.filterArgs = filterArgs;
         this.cursorEncoder = config.cursorEncoder || CursorEncoder;
+        this.defaultLimit = config.defaultLimit || 1000;
+
+        // public
+        this.filterArgs = filterArgs;
         this.previousCursor = this.calcPreviousCursor();
         // the index position of the cursor in the total result set
         this.indexPosition = this.calcIndexPosition();
-
-        // public
         this.limit = this.calcLimit();
         const {orderBy, orderDirection} = this.calcOrder();
         this.orderBy = orderBy;
@@ -110,6 +110,9 @@ export default class QueryContext<SpecificFilterArgs extends FilterArgs<any>>
         return before || after;
     }
 
+    /**
+     * Extracts the filters from the resolver filterArgs
+     */
     private calcFilters() {
         if (this.previousCursor) {
             return this.cursorEncoder.decodeFromCursor(this.previousCursor).filters;
@@ -129,7 +132,7 @@ export default class QueryContext<SpecificFilterArgs extends FilterArgs<any>>
     }
 
     /**
-     * Gets the index position of the cursor in the total result set
+     * Gets the index position of the cursor in the total possible result set
      */
     private calcIndexPosition() {
         if (this.previousCursor) {
@@ -140,7 +143,7 @@ export default class QueryContext<SpecificFilterArgs extends FilterArgs<any>>
     }
 
     /**
-     * Gets the offset the current query should start at in the current result set
+     * Gets the offset that the current query should start at in the total possible result set
      */
     private calcOffset() {
         if (this.isPagingBackwards) {
@@ -153,9 +156,9 @@ export default class QueryContext<SpecificFilterArgs extends FilterArgs<any>>
     /**
      * Validates that the user is using the connection query correctly
      * For the most part this means that they are either using
-     *   `first` and `after` together
+     *   `first` and/or `after` together
      *    or
-     *   `last` and `before` together
+     *   `last` and/or `before` together
      */
     private validateArgs() {
         const {first, last, before, after, orderBy} = this.cursorArgs;

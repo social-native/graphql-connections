@@ -27,7 +27,7 @@ export default class KnexQueryBuilder<SpecificFilterArgs extends FilterArgs<any>
         return queryBuilder;
     }
     /**
-     * Adds the limit to the query builder.
+     * Adds the limit to the sql query builder.
      *     Note: The limit added to the query builder is limit + 1
      *     to allow us to see if there would be additional pages
      */
@@ -36,10 +36,7 @@ export default class KnexQueryBuilder<SpecificFilterArgs extends FilterArgs<any>
     }
 
     /**
-     * Changes the order to descending if the we are paginating backwards
-     * The fact that we are paginating backwards is indicated by the presence
-     * of either a `last` limit or `before` cursor
-     *
+     * Adds the order to the sql query builder.
      */
     private applyOrder(queryBuilder: Knex) {
         // map from node attribute names to sql column names
@@ -60,8 +57,8 @@ export default class KnexQueryBuilder<SpecificFilterArgs extends FilterArgs<any>
     private applyFilter(queryBuilder: Knex) {
         this.queryContext.filters.forEach(filter => {
             queryBuilder.andWhere(
-                this.attributeMap[filter[0]], // map attribute name to sql attribute name
-                this.filterMap[filter[1]], // map operator to sql attribute
+                this.attributeMap[filter[0]], // map node field name to sql attribute name
+                this.filterMap[filter[1]], // map operator to sql comparison operator
                 filter[2]
             );
         });

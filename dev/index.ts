@@ -1,14 +1,9 @@
 import Koa from 'koa';
 import {ApolloServer, gql} from 'apollo-server-koa';
 import knex from 'knex';
-import {ConnectionManager, INode, ICursorArgs, FilterArgs} from '../src';
-
-const knexClient = knex({
-    client: 'sqlite3',
-    connection: {
-        filename: './db/dev.sqlite3'
-    }
-});
+import {ConnectionManager, INode, IInputArgs} from '../src';
+import {development as developmentConfig} from '../knexfile';
+const knexClient = knex(developmentConfig);
 
 // Construct a schema, using GraphQL schema language
 const typeDefs = gql`
@@ -22,7 +17,7 @@ const typeDefs = gql`
         haircolor: String
     }
 
-    input InputCursorParams {
+    input InputPageParams {
         """
         Number of edges to return at most
         """
@@ -31,6 +26,9 @@ const typeDefs = gql`
         Number of edges to return at most
         """
         last: Int
+    }
+
+    input InputCursorParams {
         """
         Previous cursor.
         Returns edges after this cursor
@@ -41,6 +39,9 @@ const typeDefs = gql`
         Returns edges before this cursor
         """
         before: String
+    }
+
+    input InputOrderParams {
         """
         Ordering of the results.
         Should be an attribute on the Nodes in the connection
@@ -65,6 +66,8 @@ const typeDefs = gql`
     type PageInfo {
         hasPreviousPage: Boolean!
         hasNextPage: Boolean!
+        startCursor: String!
+        endCursor: String!
     }
 
     type QueryUserConnection implements IConnection {
@@ -77,22 +80,26 @@ const typeDefs = gql`
         node: User
     }
 
+    input UserInputParams {
+        page: InputPageParams
+        order: InputOrderParams
+        cursor: InputCursorParams
+        filter: [Filter]
+    }
+
     type Query {
-        users(cursor: InputCursorParams, filter: [Filter]): QueryUserConnection
+        users(input: UserInputParams): QueryUserConnection
     }
 `;
 
 interface IUserNode extends INode {
     id: number;
-}
-
-type ICreatorFilterArgs = FilterArgs<
-    'id' | 'username' | 'firstname' | 'age' | 'haircolor' | 'lastname'
->;
-
-interface IUserInputArgs {
-    cursor: ICursorArgs;
-    filter: ICreatorFilterArgs;
+    username: string;
+    firstname: string;
+    lastname: string;
+    age: number;
+    haircolor: string;
+    bio: string;
 }
 
 type KnexQueryResult = Array<{[attributeName: string]: any}>;
@@ -100,9 +107,8 @@ type KnexQueryResult = Array<{[attributeName: string]: any}>;
 // Provide resolver functions for your schema fields
 const resolvers = {
     Query: {
-        async users(_: any, {cursor: cursorArgs, filter: filterArgs}: IUserInputArgs) {
+        async users(_: any, {input: inputArgs}: {input: IInputArgs}) {
             const queryBuilder = knexClient.from('mock');
-
             // maps node types to sql column names
             const attributeMap = {
                 id: 'id',
@@ -110,22 +116,21 @@ const resolvers = {
                 firstname: 'firstname',
                 age: 'age',
                 haircolor: 'haircolor',
-                lastname: 'lastname'
+                lastname: 'lastname',
+                bio: 'bio'
             };
 
-            const nodeConnection = new ConnectionManager<
-                IUserNode,
-                IUserInputArgs['cursor'],
-                IUserInputArgs['filter']
-            >(cursorArgs, filterArgs, attributeMap);
+            const nodeConnection = new ConnectionManager<IUserNode>(inputArgs, attributeMap);
 
             const result = (await nodeConnection
-                .createQuery(queryBuilder)
+                .createQuery(queryBuilder.clone())
                 .select()) as KnexQueryResult;
 
+            nodeConnection.addResult(result);
+
             return {
-                pageInfo: nodeConnection.createPageInfo(result),
-                edges: nodeConnection.createEdges(result)
+                pageInfo: nodeConnection.pageInfo,
+                edges: nodeConnection.edges
             };
         }
     }

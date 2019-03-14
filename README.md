@@ -7,7 +7,7 @@ This repo contains the code to handle 1-to-Many connections. Or in other words, 
 It can be used to:
 
 1. Create a cursor for paging through a node's edges
-2. Handle movement through a node's edges using an existing cursors.
+2. Handle movement through a node's edges using an existing cursor.
 
 ## Run locally
 
@@ -20,11 +20,14 @@ It can be used to:
 ```graphql
 query {
   users(
-    cursor:{first: 100, orderBy: "haircolor"}, 
-    filter: [
-      {field: "id", operator: ">", value: "19990"},
-      {field: "age", operator: "<", value: "90"},
-    ]
+    input: {
+      page: {first: 100},
+      order: {orderBy: "haircolor"},
+      filter: [
+        {field: "id", operator: ">", value: "19990"},
+        {field: "age", operator: "<", value: "90"},
+      ]
+    }
   ) {
     pageInfo {
       hasNextPage
@@ -47,9 +50,9 @@ query {
 ```graphql
 query {
   users(
-    cursor:{
-      first: 10, 
-      after: "eyJmaXJzdFJlc3VsdElkIjoxOTk5MiwibGFzdFJlc3VsdE"
+    input:{
+      page: {first: 10},
+      cursor: {after: "eyJmaXJzdFJlc3VsdElkIjoxOTk5MiwibGFzdFJlc3VsdE"}
    }) {
     pageInfo {
       hasNextPage
@@ -71,19 +74,17 @@ query {
 
 ## How to use
 
-### Overview:
+### Overview
 
 ```typescript
 // import the manager and relevant types
-import {ConnectionManager, INode, ICursorArgs, FilterArgs} from 'snpkg-snapi-connections';
+import {ConnectionManager, INode} from 'snpkg-snapi-connections';
 
 resolver = () => {
     // create a new node connection instance
     const nodeConnection = new ConnectionManager<
-        ICreatorNode,
-        ICursorArgs,
-        ICreatorFilterArgs
-    >(cursorArgs, filterArgs, attributeMap);
+        IUserNode,
+    >(inputArgs, attributeMap);
 
     // apply the connection to the queryBuilder
     const appliedQuery = nodeConnection.createQuery(queryBuilder.clone());
@@ -91,71 +92,59 @@ resolver = () => {
     // run the query
     const result = await appliedQuery.select()
 
+    // add the result to the nodeConnection
+    nodeConnection.addResult(result);
+
     // return the relevant connection information from the resolver
     return {
-        pageInfo: nodeConnection.createPageInfo(result),
-        edges: nodeConnection.createEdges(result)
+        pageInfo: nodeConnection.pageInfo,
+        edges: nodeConnection.edges
     };
 }
 ```
 
 
-### Types
+To correctly initialize, you will need to supply a `Node` type, the `inputArgs` args, and a `attributeMap` map:
 
 ##### `Node`
 
-The nodes used in a conection need a type. For example, in this case we create an `ICreatorNode`
+The nodes that are part of a connection need a type. For example, in this case we create an `IUserNode`
 
 ```typescript
-interface ICreatorNode extends INode {
+interface IUserNode extends INode {
     id: number;
     createdAt: string;
 }
 ```
 
-##### `Cursor`
+##### inputArgs
 
-This will likely be `ICursorArgs` unless you are doing something special.
-
-##### `Filter`
-
-The filter type needs to know about attributes that can be filterd on:
+InputArgs supports `page`, `cursor`, `filter`, and `order`:
 
 ```typescript
-type ICreatorFilterArgs = FilterArgs<'id' | 'createdAt'>;
-```
+interface IInputArgs {
+    cursor?: {
+        before?: string;
+        after?: string;
+    };
+    page?: {
+        first?: number;
+        last?: number;
+    };
+    order?: {
+        orderBy?: string;
+    };
+    filter?: Array<IFilter<string>>;
+}
 
-### Arguments
-
-##### Cursor args
-
-`cursorArgs` should be a graphql input type that matches:
-
-```graphql
-input InputCursorParams {
-    first: Int
-    last: Int
-    after: String
-    before: String
-    orderBy: String
+interface IFilter<Fields> {
+    value: string;
+    operator: string;
+    field: Fields;
 }
 ```
 
-##### Filter args
-
-`filterArgs` should be a graphql input type that matches:
-
-```graphql
-input Filter {
-    field: String!
-    operator: String!
-    value: String!
-}
-
-type InputFilterParams = [Filter]
-```
-
-##### Attribute Map
+##### attributeMap
 
 `attributeMap` is a map of GraphQL field names to SQL column names
 
@@ -166,4 +155,14 @@ const attributeMap = {
     id: 'id',
     createdAt: 'created_at'
 };
+```
+
+### Extensions
+
+To extend the connection to a new datastore or to use an adapter besides `Knex`, you will need to create a new `QueryBuilder`. See `src/KnexQueryBuilder` for an example of what a query builder looks like. It should have the type signature:
+
+```typescript
+interface IQueryBuilder<Builder> {
+    createQuery: (queryBuilder: Builder) => Builder;
+}
 ```

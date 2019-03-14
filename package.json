@@ -20,7 +20,7 @@
     "lint": "./node_modules/tslint/bin/tslint --project ./tsconfig.json",
     "prettier": "./node_modules/.bin/prettier \"src/**/*\"",
     "dep-check": "node ./scripts/dependency-check.js",
-    "knex": "node ./node_modules/.bin/ts-node --project tsconfig.dev.json ./node_modules/.bin/knex",
+    "knex": "node ./node_modules/.bin/ts-node --project tsconfig.dev.json ./node_modules/.bin/knex --knexfile knexfile.ts",
     "seed:make": "npm run knex -- -x ts seed:make",
     "seed:run": "npm run knex seed:run",
     "migrate:latest": "npm run knex migrate:latest",

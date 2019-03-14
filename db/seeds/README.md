@@ -69,22 +69,23 @@ All usernames are unique
 | 100  | gray |
 | 400 | `null`
 
-##
-
-Cases
+## Cases
 
 ### Case A
-600 people `age` N have brown `hair` (6000 people total across all `ages`)
-200 people `age` N have black `hair` (2000 people total across all `ages`)
-100 people `age` N have blonde `hair` (1000 people total across all `ages`)
-50 people `age` N have red `hair` (500 people total across all `ages`)
-10 people `age` N have gray `hair` (100 people total across all `ages`)
-40 people `age` N dont have a `hair` color listed (400 people total across all `ages`)
+
+- 600 people `age` N have brown `hair` (6000 people total across all `ages`)
+- 200 people `age` N have black `hair` (2000 people total across all `ages`)
+- 100 people `age` N have blonde `hair` (1000 people total across all `ages`)
+- 50 people `age` N have red `hair` (500 people total across all `ages`)
+- 10 people `age` N have gray `hair` (100 people total across all `ages`)
+- 40 people `age` N dont have a `hair` color listed (400 people total across all `ages`)
 
 ### Case B
-16 people `age` N have brown `hair` and the `first name` Kenyon (160 people total across all `ages`)
-8 people `age` N have brown `hair` and the `first name` Nerissa (80 people total across all `ages`)
+
+- 16 people `age` N have brown `hair` and the `first name` Kenyon (160 people total across all `ages`)
+- 8 people `age` N have brown `hair` and the `first name` Nerissa (80 people total across all `ages`)
 
 ### Case C
-1 person `age` N has brown `hair`, the `first name` Kenyon and the `last name` Summa (10 people total across all `ages`)
+
+- 1 person `age` N has brown `hair`, the `first name` Kenyon and the `last name` Summa (10 people total across all `ages`)
 

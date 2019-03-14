@@ -3,7 +3,7 @@
 
 ## About
 
-This repo contains the code to handle 1-to-Many connections. Or in other words, when a node has many edges.
+`SNPKG-SNAPI-Connections` helps handle the traversal of edges between nodes. 
 
 It can be used to:
 

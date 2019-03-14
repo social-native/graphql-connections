@@ -170,3 +170,17 @@ interface IQueryBuilder<Builder> {
 }
 ```
 
+### Architecture
+
+Internally, the `ConnectionManager` manages the orchestration of the `QueryContext`, `QueryBuilder`, and `QueryResult`. 
+
+The orchestration follows the steps:
+
+1. The `QueryContext` extracts the connection attributes from the input connection arguments. 
+2. The `QueryBuilder` (or `KnexQueryBuilder` in the default case) consumes the connection attributes and builds a query. The query is submitted to the database by the use and the result is sent to the `QueryResult`. 
+3. The `QueryResult` uses the result to build the `edges` (which contain a `cursor` and `node`) and extract the `page info`.
+
+This can be visualized as such:
+
+![Image of Architecture](https://docs.google.com/drawings/d/e/2PACX-1vRwtC2UiFwLXFDbmBNoq_6bD1YTyACV49SWHxfj2ce_K5T_XEZYlgGP7ntbcskoMVWqXp5C2Uj-K7Jj/pub?w=1163&amp;h=719)
+

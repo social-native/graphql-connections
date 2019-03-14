@@ -32,6 +32,8 @@ query {
     pageInfo {
       hasNextPage
       hasPreviousPage
+      startCursor
+      endCursor
     }
     edges {
       cursor
@@ -104,7 +106,7 @@ resolver = (obj, inputArgs) => {
 ```
 
 
-To correctly initialize, you will need to supply a `Node` type, the `inputArgs` args, and a `attributeMap` map:
+To correctly initialize, you will need to supply a `Node` type, the `inputArgs` args, and an `attributeMap` map:
 
 ##### `Node`
 
@@ -134,7 +136,7 @@ interface IInputArgs {
     order?: {
         orderBy?: string;
     };
-    filter?: Array<IFilter<'id' | 'createdAt'>>;
+    filter?: IFilter[];
 }
 
 interface IFilter<Fields> {
@@ -166,3 +168,4 @@ interface IQueryBuilder<Builder> {
     createQuery: (queryBuilder: Builder) => Builder;
 }
 ```
+

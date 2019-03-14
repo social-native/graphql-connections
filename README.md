@@ -127,25 +127,27 @@ InputArgs supports `page`, `cursor`, `filter`, and `order`:
 ```typescript
 interface IInputArgs {
     cursor?: {
-        before?: string;
-        after?: string;
+        before?: string; // cursor
+        after?: string; // cursor
     };
     page?: {
         first?: number;
         last?: number;
     };
     order?: {
-        orderBy?: string;
+        orderBy?: string; // node field
     };
     filter?: IFilter[];
 }
 
-interface IFilter<Fields> {
+interface IFilter {
     value: string;
     operator: string;
-    field: Fields;
+    field: string; // node field
 }
 ```
+
+Note: The default filter operators are the normal SQL comparison operators: `>`, `<`, `=`, `>=`, `<=`, and `<>`
 
 ##### attributeMap
 

@@ -177,7 +177,7 @@ Internally, the `ConnectionManager` manages the orchestration of the `QueryConte
 The orchestration follows the steps:
 
 1. The `QueryContext` extracts the connection attributes from the input connection arguments. 
-2. The `QueryBuilder` (or `KnexQueryBuilder` in the default case) consumes the connection attributes and builds a query. The query is submitted to the database by the use and the result is sent to the `QueryResult`. 
+2. The `QueryBuilder` (or `KnexQueryBuilder` in the default case) consumes the connection attributes and builds a query. The query is submitted to the database by the user and the result is sent to the `QueryResult`. 
 3. The `QueryResult` uses the result to build the `edges` (which contain a `cursor` and `node`) and extract the `page info`.
 
 This can be visualized as such:

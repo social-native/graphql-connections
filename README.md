@@ -83,7 +83,7 @@ query {
 // import the manager and relevant types
 import {ConnectionManager, INode} from 'snpkg-snapi-connections';
 
-resolver = (obj, inputArgs) => {
+resolver = async (obj, inputArgs) => {
     // create a new node connection instance
     const nodeConnection = new ConnectionManager<
         IUserNode,

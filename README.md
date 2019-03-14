@@ -134,7 +134,7 @@ interface IInputArgs {
     order?: {
         orderBy?: string;
     };
-    filter?: Array<IFilter<string>>;
+    filter?: Array<IFilter<'id' | 'createdAt'>>;
 }
 
 interface IFilter<Fields> {

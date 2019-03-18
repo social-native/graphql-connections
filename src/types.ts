@@ -27,12 +27,13 @@ export interface IInputArgs {
     filter?: Array<IFilter<string>>;
 }
 
-// The shape of a connection node
-// export interface INode {}
-
-export interface IAttributeMap {
+export interface IInAttributeMap {
     [nodeField: string]: string;
 }
+export interface IOutAttributeMap {
+    [sqlColumn: string]: string;
+}
+
 export interface IFilterMap {
     [nodeField: string]: string;
 }

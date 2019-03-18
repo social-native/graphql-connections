@@ -23,8 +23,11 @@ export interface IInputArgs {
     };
     filter?: Array<IFilter<string>>;
 }
-export interface IAttributeMap {
+export interface IInAttributeMap {
     [nodeField: string]: string;
+}
+export interface IOutAttributeMap {
+    [sqlColumn: string]: string;
 }
 export interface IFilterMap {
     [nodeField: string]: string;

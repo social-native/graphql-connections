@@ -1,4 +1,4 @@
-import { IQueryContext, IAttributeMap, ICursorObj, IQueryResult, IQueryResultOptions } from 'types';
+import { IQueryContext, IOutAttributeMap, ICursorObj, IQueryResult, IQueryResultOptions } from 'types';
 /**
  * QueryResult
  *
@@ -19,7 +19,7 @@ export default class QueryResult<Result extends Array<{
     private attributeMap;
     private cursorEncoder;
     private nodeTansformer?;
-    constructor(result: Result, queryContext: QueryContext, attributeMap: IAttributeMap, options?: IQueryResultOptions<ICursorObj<string>, Node>);
+    constructor(result: Result, queryContext: QueryContext, attributeMap: IOutAttributeMap, options?: IQueryResultOptions<ICursorObj<string>, Node>);
     readonly pageInfo: {
         hasPreviousPage: boolean;
         hasNextPage: boolean;

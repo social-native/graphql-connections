@@ -6,7 +6,8 @@ import {
     IQueryContext,
     IQueryResult,
     ICursorObj,
-    IAttributeMap,
+    IInAttributeMap,
+    IOutAttributeMap,
     IInputArgs,
     IQueryBuilderOptions,
     IQueryResultOptions,
@@ -37,24 +38,27 @@ export default class ConnectionManager<Node = {}> {
     private queryBuilder: IQueryBuilder<Knex>;
     private queryResult?: IQueryResult<Node>;
 
-    private attributeMap: IAttributeMap;
+    private inAttributeMap: IInAttributeMap;
+    private outAttributeMap: IOutAttributeMap;
     private options: IConnectionManagerOptions<ICursorObj<string>, Node>;
 
     constructor(
         inputArgs: IInputArgs,
-        attributeMap: IAttributeMap,
+        inAttributeMap: IInAttributeMap,
+        outAttributeMap: IOutAttributeMap,
         options?: IConnectionManagerOptions<ICursorObj<string>, Node>
     ) {
         this.options = options || {};
+        this.inAttributeMap = inAttributeMap;
+        this.outAttributeMap = outAttributeMap;
 
         // 1. Create QueryContext
         this.queryContext = new QueryContext(inputArgs, this.options.contextOptions);
 
         // 2. Create QueryBuilder
-        this.attributeMap = attributeMap;
         this.queryBuilder = new KnexQueryBuilder(
             this.queryContext,
-            this.attributeMap,
+            this.inAttributeMap,
             this.options.builderOptions
         );
     }
@@ -68,7 +72,7 @@ export default class ConnectionManager<Node = {}> {
         this.queryResult = new QueryResult<KnexQueryResult, IQueryContext, Node>(
             result,
             this.queryContext,
-            this.attributeMap,
+            this.outAttributeMap,
             this.options.resultOptions
         );
     }

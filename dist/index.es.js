@@ -356,20 +356,21 @@ class QueryResult {
 
 // tslint:disable:max-classes-per-file
 class ConnectionManager {
-    constructor(inputArgs, attributeMap, options) {
+    constructor(inputArgs, inAttributeMap, outAttributeMap, options) {
         this.options = options || {};
+        this.inAttributeMap = inAttributeMap;
+        this.outAttributeMap = outAttributeMap;
         // 1. Create QueryContext
         this.queryContext = new QueryContext(inputArgs, this.options.contextOptions);
         // 2. Create QueryBuilder
-        this.attributeMap = attributeMap;
-        this.queryBuilder = new KnexQueryBuilder(this.queryContext, this.attributeMap, this.options.builderOptions);
+        this.queryBuilder = new KnexQueryBuilder(this.queryContext, this.inAttributeMap, this.options.builderOptions);
     }
     createQuery(queryBuilder) {
         return this.queryBuilder.createQuery(queryBuilder);
     }
     addResult(result) {
         // 3. Create QueryResult
-        this.queryResult = new QueryResult(result, this.queryContext, this.attributeMap, this.options.resultOptions);
+        this.queryResult = new QueryResult(result, this.queryContext, this.outAttributeMap, this.options.resultOptions);
     }
     get pageInfo() {
         if (!this.queryResult) {

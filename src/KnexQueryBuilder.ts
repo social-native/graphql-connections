@@ -1,6 +1,6 @@
 import QueryContext from './QueryContext';
 import {QueryBuilder as Knex} from 'knex';
-import {IFilterMap, IAttributeMap, IQueryBuilder, IQueryBuilderOptions} from './types';
+import {IFilterMap, IInAttributeMap, IQueryBuilder, IQueryBuilderOptions} from './types';
 
 /**
  * KnexQueryBuilder
@@ -20,12 +20,12 @@ const defaultFilterMap = {
 
 export default class KnexQueryBuilder implements IQueryBuilder<Knex> {
     private queryContext: QueryContext;
-    private attributeMap: IAttributeMap;
+    private attributeMap: IInAttributeMap;
     private filterMap: IFilterMap;
 
     constructor(
         queryContext: QueryContext,
-        attributeMap: IAttributeMap,
+        attributeMap: IInAttributeMap,
         options: IQueryBuilderOptions = {}
     ) {
         this.queryContext = queryContext;

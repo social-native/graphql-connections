@@ -1,6 +1,6 @@
 import {
     IQueryContext,
-    IAttributeMap,
+    IOutAttributeMap,
     ICursorEncoder,
     ICursorObj,
     IQueryResult,
@@ -30,14 +30,14 @@ export default class QueryResult<
     public edges: Array<IEdge<Node>>;
     private result: Result;
     private queryContext: QueryContext;
-    private attributeMap: IAttributeMap;
+    private attributeMap: IOutAttributeMap;
     private cursorEncoder: ICursorEncoder<ICursorObj<string>>;
     private nodeTansformer?: NodeTransformer<Node>;
 
     constructor(
         result: Result,
         queryContext: QueryContext,
-        attributeMap: IAttributeMap,
+        attributeMap: IOutAttributeMap,
         options: IQueryResultOptions<ICursorObj<string>, Node> = {}
     ) {
         this.result = result;
@@ -146,7 +146,7 @@ export default class QueryResult<
                     }
                 });
                 const newNode = {...node};
-                return nodeTansformer(newNode as any);
+                return nodeTansformer(newNode);
             })
             .slice(0, this.queryContext.limit);
     }

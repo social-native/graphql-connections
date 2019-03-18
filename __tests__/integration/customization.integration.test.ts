@@ -1,4 +1,4 @@
-import {ConnectionManager, INode} from '../../src';
+import {ConnectionManager} from '../../src';
 import knex from 'knex';
 import {test as testConfig} from '../../knexfile';
 import {KnexQueryResult} from '../types';
@@ -6,8 +6,8 @@ import {validateNodesHaveAttributes} from '../utils';
 
 const knexClient = knex(testConfig);
 
-interface ITransformedNode extends INode {
-    id: number;
+interface ITransformedNode {
+    id: string;
     color: string;
 }
 

@@ -7,7 +7,6 @@ import {
     IQueryResult,
     ICursorObj,
     IAttributeMap,
-    INode,
     IInputArgs,
     IQueryBuilderOptions,
     IQueryResultOptions,
@@ -27,13 +26,13 @@ import QueryResult from 'QueryResult';
 type KnexQueryResult = Array<{[attributeName: string]: any}>;
 
 interface IConnectionManagerOptions<CursorObj, Node> {
-    contextOptions: IQueryContextOptions<CursorObj>;
-    resultOptions: IQueryResultOptions<CursorObj, Node>;
-    builderOptions: IQueryBuilderOptions;
+    contextOptions?: IQueryContextOptions<CursorObj>;
+    resultOptions?: IQueryResultOptions<CursorObj, Node>;
+    builderOptions?: IQueryBuilderOptions;
 }
 
 // tslint:disable:max-classes-per-file
-export default class ConnectionManager<Node extends INode> {
+export default class ConnectionManager<Node = {}> {
     private queryContext: QueryContext;
     private queryBuilder: IQueryBuilder<Knex>;
     private queryResult?: IQueryResult<Node>;
@@ -44,7 +43,7 @@ export default class ConnectionManager<Node extends INode> {
     constructor(
         inputArgs: IInputArgs,
         attributeMap: IAttributeMap,
-        options: IConnectionManagerOptions<ICursorObj<string>, Node>
+        options?: IConnectionManagerOptions<ICursorObj<string>, Node>
     ) {
         this.options = options || {};
 

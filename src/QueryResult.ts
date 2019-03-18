@@ -4,7 +4,6 @@ import {
     ICursorEncoder,
     ICursorObj,
     IQueryResult,
-    INode,
     NodeTransformer,
     IQueryResultOptions
 } from 'types';
@@ -25,7 +24,7 @@ interface IEdge<Node> {
 export default class QueryResult<
     Result extends Array<{[field: string]: any}>,
     QueryContext extends IQueryContext,
-    Node extends INode
+    Node = {}
 > implements IQueryResult<Node> {
     public nodes: Node[];
     public edges: Array<IEdge<Node>>;

@@ -28,7 +28,7 @@ export interface IInputArgs {
 }
 
 // The shape of a connection node
-export interface INode extends Array<{[field: string]: any}> {}
+// export interface INode {}
 
 export interface IAttributeMap {
     [nodeField: string]: string;

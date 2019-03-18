@@ -12,8 +12,6 @@ export interface ICursorObj<PublicAttributes> {
     filters: string[][];
 }
 
-export type NodeTransformer<Node> = (node: {[fields: string]: any}) => Node;
-
 export interface IInputArgs {
     cursor?: {
         before?: string;
@@ -53,6 +51,11 @@ export interface IQueryContext {
     isPagingBackwards: boolean;
 }
 
+export interface IQueryContextOptions<CursorObj> {
+    defaultLimit?: number;
+    cursorEncoder?: ICursorEncoder<CursorObj>;
+}
+
 // CursorEncoder
 export interface ICursorEncoder<CursorObj> {
     encodeToCursor: (cursorObj: CursorObj) => string;
@@ -62,6 +65,10 @@ export interface ICursorEncoder<CursorObj> {
 // QueryBuilder
 export interface IQueryBuilder<Builder> {
     createQuery: (queryBuilder: Builder) => Builder;
+}
+
+export interface IQueryBuilderOptions {
+    filterMap?: {[operator: string]: string};
 }
 
 // QueryResult
@@ -78,4 +85,11 @@ export interface IQueryResult<Node> {
     hasPrevPage: boolean;
     startCursor: string;
     endCursor: string;
+}
+
+export type NodeTransformer<Node> = (node: any) => Node;
+
+export interface IQueryResultOptions<CursorObj, Node> {
+    cursorEncoder?: ICursorEncoder<CursorObj>;
+    nodeTransformer?: NodeTransformer<Node>;
 }

@@ -5,7 +5,8 @@ import {
     ICursorObj,
     IQueryResult,
     INode,
-    NodeTransformer
+    NodeTransformer,
+    IQueryResultOptions
 } from 'types';
 import {CursorEncoder} from 'index';
 
@@ -19,11 +20,6 @@ import {CursorEncoder} from 'index';
 interface IEdge<Node> {
     cursor: string;
     node: Node;
-}
-
-interface IQueryResultConfig<CursorObj, Node> {
-    cursorEncoder?: ICursorEncoder<CursorObj>;
-    nodeTransformer?: NodeTransformer<Node>;
 }
 
 export default class QueryResult<
@@ -43,13 +39,13 @@ export default class QueryResult<
         result: Result,
         queryContext: QueryContext,
         attributeMap: IAttributeMap,
-        config: IQueryResultConfig<ICursorObj<string>, Node> = {}
+        options: IQueryResultOptions<ICursorObj<string>, Node> = {}
     ) {
         this.result = result;
         this.queryContext = queryContext;
         this.attributeMap = attributeMap;
-        this.cursorEncoder = config.cursorEncoder || CursorEncoder;
-        this.nodeTansformer = config.nodeTransformer;
+        this.cursorEncoder = options.cursorEncoder || CursorEncoder;
+        this.nodeTansformer = options.nodeTransformer;
 
         if (this.result.length < 1) {
             this.nodes = [];
@@ -151,7 +147,7 @@ export default class QueryResult<
                     }
                 });
                 const newNode = {...node};
-                return nodeTansformer(newNode);
+                return nodeTansformer(newNode as any);
             })
             .slice(0, this.queryContext.limit);
     }

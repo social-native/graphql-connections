@@ -1,5 +1,12 @@
 import CursorEncoder from './CursorEncoder';
-import {ICursorEncoder, ICursorObj, IQueryContext, IInputArgs, IFilter} from './types';
+import {
+    ICursorEncoder,
+    ICursorObj,
+    IQueryContext,
+    IInputArgs,
+    IFilter,
+    IQueryContextOptions
+} from './types';
 
 /**
  * QueryContext
@@ -23,11 +30,6 @@ interface IQueryContextInputArgs extends IInputArgs {
     filter: Array<IFilter<string>>;
 }
 
-interface IQueryContextConfig<CursorObj> {
-    defaultLimit?: number;
-    cursorEncoder?: ICursorEncoder<CursorObj>;
-}
-
 const ORDER_DIRECTION = {
     asc: 'asc',
     desc: 'desc'
@@ -46,13 +48,16 @@ export default class QueryContext implements IQueryContext {
     private defaultLimit: number; // actual limit value used
     private cursorEncoder: ICursorEncoder<ICursorObj<string>>;
 
-    constructor(inputArgs: IInputArgs = {}, config: IQueryContextConfig<ICursorObj<string>> = {}) {
+    constructor(
+        inputArgs: IInputArgs = {},
+        options: IQueryContextOptions<ICursorObj<string>> = {}
+    ) {
         this.inputArgs = {page: {}, cursor: {}, filter: [], order: {}, ...inputArgs};
         this.validateArgs();
 
         // private
-        this.cursorEncoder = config.cursorEncoder || CursorEncoder;
-        this.defaultLimit = config.defaultLimit || 1000;
+        this.cursorEncoder = options.cursorEncoder || CursorEncoder;
+        this.defaultLimit = options.defaultLimit || 1000;
 
         // public
         this.previousCursor = this.calcPreviousCursor();

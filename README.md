@@ -1,5 +1,12 @@
 # SNPKG-SNAPI-Connections :diamond_shape_with_a_dot_inside:
 
+## Install
+
+Install by referencing the github location and the release number:
+
+```
+npm install --save social-native/snpkg-snapi-connections#v1.0.0
+```
 
 ## About
 
@@ -240,7 +247,7 @@ interface ICursorEncoder<CursorObj> {
 }
 ```
 
-### Extensions
+## Extensions
 
 To extend the connection to a new datastore or to use an adapter besides `Knex`, you will need to create a new `QueryBuilder`. See `src/KnexQueryBuilder` for an example of what a query builder looks like. It should have the type signature:
 

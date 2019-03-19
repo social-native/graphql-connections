@@ -1,4 +1,4 @@
-import { IQueryContext, IOutAttributeMap, ICursorObj, IQueryResult, IQueryResultOptions } from 'types';
+import { IQueryContext, ICursorObj, IQueryResult, IQueryResultOptions } from 'types';
 /**
  * QueryResult
  *
@@ -16,10 +16,9 @@ export default class QueryResult<Result extends Array<{
     edges: Array<IEdge<Node>>;
     private result;
     private queryContext;
-    private attributeMap;
     private cursorEncoder;
     private nodeTansformer?;
-    constructor(result: Result, queryContext: QueryContext, attributeMap: IOutAttributeMap, options?: IQueryResultOptions<ICursorObj<string>, Node>);
+    constructor(result: Result, queryContext: QueryContext, options?: IQueryResultOptions<ICursorObj<string>, Node>);
     readonly pageInfo: {
         hasPreviousPage: boolean;
         hasNextPage: boolean;
@@ -32,11 +31,6 @@ export default class QueryResult<Result extends Array<{
      * we can assume there are additional pages.
      */
     readonly hasNextPage: boolean;
-    /**
-     * We record the id of the last result on the last page, if we ever get to it.
-     * If this id is in the result set and we are paging away from it, then we don't have a previous page.
-     * Otherwise, we will always have a previous page unless we are on the first page.
-     */
     readonly hasPrevPage: boolean;
     /**
      * The first cursor in the nodes list
@@ -49,9 +43,9 @@ export default class QueryResult<Result extends Array<{
     /**
      * It is very likely the results we get back from the data store
      * have additional fields than what the GQL type node supports.
-     * Here we remove all attributes from the result nodes that are not in
-     * the `nodeAttrs` list (keys of the attribute map).
-     * Furthermore, we also trim down the result set to be within the limit size;
+     * We trim down the result set to be within the limit size and we
+     * apply an optional transform to the result data as we iterate through it
+     * to make the Nodes.
      */
     private createNodes;
     private createEdgesFromNodes;

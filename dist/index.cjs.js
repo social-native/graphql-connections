@@ -213,7 +213,7 @@ class KnexQueryBuilder {
      */
     applyOrder(queryBuilder) {
         // map from node attribute names to sql column names
-        const orderBy = this.attributeMap[this.queryContext.orderBy] || 'id';
+        const orderBy = this.attributeMap[this.queryContext.orderBy] || this.attributeMap.id;
         const direction = this.queryContext.orderDirection;
         queryBuilder.orderBy(orderBy, direction);
     }
@@ -234,10 +234,9 @@ class KnexQueryBuilder {
 }
 
 class QueryResult {
-    constructor(result, queryContext, attributeMap, options = {}) {
+    constructor(result, queryContext, options = {}) {
         this.result = result;
         this.queryContext = queryContext;
-        this.attributeMap = attributeMap;
         this.cursorEncoder = options.cursorEncoder || CursorEncoder;
         this.nodeTansformer = options.nodeTransformer;
         if (this.result.length < 1) {
@@ -274,11 +273,6 @@ class QueryResult {
         // in the QueryBuilder
         return this.result.length > this.queryContext.limit;
     }
-    /**
-     * We record the id of the last result on the last page, if we ever get to it.
-     * If this id is in the result set and we are paging away from it, then we don't have a previous page.
-     * Otherwise, we will always have a previous page unless we are on the first page.
-     */
     get hasPrevPage() {
         // If there is no cursor, then this is the first page
         // Which means there is no previous page
@@ -311,9 +305,9 @@ class QueryResult {
     /**
      * It is very likely the results we get back from the data store
      * have additional fields than what the GQL type node supports.
-     * Here we remove all attributes from the result nodes that are not in
-     * the `nodeAttrs` list (keys of the attribute map).
-     * Furthermore, we also trim down the result set to be within the limit size;
+     * We trim down the result set to be within the limit size and we
+     * apply an optional transform to the result data as we iterate through it
+     * to make the Nodes.
      */
     createNodes() {
         let nodeTansformer;
@@ -323,18 +317,7 @@ class QueryResult {
         else {
             nodeTansformer = (node) => node;
         }
-        return this.result
-            .map(node => {
-            const attributes = Object.keys(node);
-            attributes.forEach(attr => {
-                if (!Object.keys(this.attributeMap).includes(attr)) {
-                    delete node[attr];
-                }
-            });
-            const newNode = { ...node };
-            return nodeTansformer(newNode);
-        })
-            .slice(0, this.queryContext.limit);
+        return this.result.map(node => nodeTansformer({ ...node })).slice(0, this.queryContext.limit);
     }
     createEdgesFromNodes() {
         const initialSort = this.queryContext.orderDirection;
@@ -360,10 +343,9 @@ class QueryResult {
 
 // tslint:disable:max-classes-per-file
 class ConnectionManager {
-    constructor(inputArgs, inAttributeMap, outAttributeMap, options) {
+    constructor(inputArgs, inAttributeMap, options) {
         this.options = options || {};
         this.inAttributeMap = inAttributeMap;
-        this.outAttributeMap = outAttributeMap;
         // 1. Create QueryContext
         this.queryContext = new QueryContext(inputArgs, this.options.contextOptions);
         // 2. Create QueryBuilder
@@ -374,7 +356,7 @@ class ConnectionManager {
     }
     addResult(result) {
         // 3. Create QueryResult
-        this.queryResult = new QueryResult(result, this.queryContext, this.outAttributeMap, this.options.resultOptions);
+        this.queryResult = new QueryResult(result, this.queryContext, this.options.resultOptions);
     }
     get pageInfo() {
         if (!this.queryResult) {

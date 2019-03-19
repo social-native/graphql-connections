@@ -1,5 +1,5 @@
 import { QueryBuilder as Knex } from 'knex';
-import { ICursorObj, IInAttributeMap, IOutAttributeMap, IInputArgs, IQueryBuilderOptions, IQueryResultOptions, IQueryContextOptions } from './types';
+import { ICursorObj, IInAttributeMap, IInputArgs, IQueryBuilderOptions, IQueryResultOptions, IQueryContextOptions } from './types';
 /**
  * ConnectionManager
  *
@@ -21,9 +21,8 @@ export default class ConnectionManager<Node = {}> {
     private queryBuilder;
     private queryResult?;
     private inAttributeMap;
-    private outAttributeMap;
     private options;
-    constructor(inputArgs: IInputArgs, inAttributeMap: IInAttributeMap, outAttributeMap: IOutAttributeMap, options?: IConnectionManagerOptions<ICursorObj<string>, Node>);
+    constructor(inputArgs: IInputArgs, inAttributeMap: IInAttributeMap, options?: IConnectionManagerOptions<ICursorObj<string>, Node>);
     createQuery(queryBuilder: Knex): Knex;
     addResult(result: KnexQueryResult): void;
     readonly pageInfo: {

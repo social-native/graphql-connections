@@ -30,9 +30,6 @@ export interface IInputArgs {
 export interface IInAttributeMap {
     [nodeField: string]: string;
 }
-export interface IOutAttributeMap {
-    [sqlColumn: string]: string;
-}
 
 export interface IFilterMap {
     [nodeField: string]: string;

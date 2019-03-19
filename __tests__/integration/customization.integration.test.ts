@@ -7,7 +7,7 @@ import {validateNodesHaveAttributes} from '../utils';
 const knexClient = knex(testConfig);
 
 interface ITransformedNode {
-    id: string;
+    id: string | number;
     color: string;
 }
 

@@ -1,4 +1,4 @@
-import { IQueryContext, ICursorObj, IQueryResult, IQueryResultOptions } from 'types';
+import { IQueryContext, ICursorObj, IQueryResult, IQueryResultOptions } from './types';
 /**
  * QueryResult
  *

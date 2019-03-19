@@ -59,3 +59,12 @@ typings/
 
 # next.js build output
 .next
+
+# rollup
+.rpt2_cache
+
+# sqllite
+*.sqlite3
+
+# dependency check
+tmp

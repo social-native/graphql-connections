@@ -1,0 +1,69 @@
+{
+  "name": "snpkg-snapi-connections",
+  "version": "0.0.0",
+  "description": "Connection / Cursor logic for SNAPI packages",
+  "main": "dist/index.cjs.js",
+  "module": "dist/index.es.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "dev": "nodemon -e ts -w ./dev -x npm run ts-node-start",
+    "ts-node-start": "node ./node_modules/.bin/ts-node --project tsconfig.dev.json -r tsconfig-paths/register dev/index.ts",
+    "clean": "rm -rf dist",
+    "test": "jest",
+    "type-check": "tsc --noEmit",
+    "type-check:watch": "npm run type-check -- --watch",
+    "build": "npm run clean && rollup -c",
+    "watch": "rollup -cw",
+    "lint": "./node_modules/tslint/bin/tslint --project ./tsconfig.json",
+    "prettier": "./node_modules/.bin/prettier \"src/**/*\"",
+    "dep-check": "node ./scripts/dependency-check.js",
+    "knex": "node ./node_modules/.bin/ts-node --project tsconfig.dev.json ./node_modules/.bin/knex --knexfile knexfile.ts",
+    "seed:make": "npm run knex -- -x ts seed:make",
+    "seed:run": "npm run knex seed:run",
+    "migrate:latest": "npm run knex migrate:latest",
+    "migrate:rollback": "npm run knex migrate:rollback"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/social-native/snpkg-snapi-connections.git"
+  },
+  "keywords": [
+    "SNAPI",
+    "SNPKG",
+    "Connections",
+    "Cursor"
+  ],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/social-native/snpkg-snapi-connections/issues"
+  },
+  "homepage": "https://github.com/social-native/snpkg-snapi-connections#readme",
+  "devDependencies": {
+    "@types/faker": "^4.1.5",
+    "@types/graphql": "^14.0.7",
+    "@types/jest": "^24.0.9",
+    "apollo-server-koa": "^2.4.8",
+    "depcheck": "^0.7.2",
+    "faker": "^4.1.0",
+    "graphql": "^14.1.1",
+    "graphql-tools": "^4.0.4",
+    "jest": "^24.3.1",
+    "knex": "^0.16.3",
+    "koa": "^2.7.0",
+    "nodemon": "^1.18.10",
+    "prettier": "^1.16.4",
+    "rollup": "^1.2.2",
+    "rollup-plugin-typescript2": "^0.19.2",
+    "sqlite3": "^4.0.6",
+    "ts-jest": "^24.0.0",
+    "ts-node": "^8.0.3",
+    "tsconfig-paths": "^3.8.0",
+    "tslint": "^5.13.1",
+    "tslint-eslint-rules": "^5.4.0",
+    "typescript": "^3.3.3333"
+  }
+}

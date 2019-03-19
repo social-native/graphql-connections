@@ -12,7 +12,7 @@ import {
     IQueryResultOptions,
     IQueryContextOptions
 } from './types';
-import QueryResult from 'QueryResult';
+import QueryResult from './QueryResult';
 
 /**
  * ConnectionManager

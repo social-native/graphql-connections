@@ -5,7 +5,7 @@ import {
     IQueryResult,
     NodeTransformer,
     IQueryResultOptions
-} from 'types';
+} from './types';
 import {CursorEncoder} from 'index';
 
 /**

@@ -1,15 +1,16 @@
 import {ConnectionManager} from '../../src';
 import knex from 'knex';
 import {test as testConfig} from '../../knexfile';
-import {IUserNode, KnexQueryResult} from '../types';
+import {KnexQueryResult} from '../types';
 import {validateNodesHaveAttributes} from '../utils';
 
 const knexClient = knex(testConfig);
 
 interface ITransformedNode {
-    id: number;
+    id: string | number;
     color: string;
 }
+
 const attributeMap = {
     id: 'id',
     username: 'username',
@@ -20,10 +21,6 @@ const attributeMap = {
     bio: 'bio'
 };
 
-interface ITransformedNode extends IUserNode {
-    color: string;
-}
-
 describe('Customizing the ConnectionManager', () => {
     describe('Node transformer', () => {
         it('Can transform a node', async () => {
@@ -31,12 +28,12 @@ describe('Customizing the ConnectionManager', () => {
             const page = {first: 300};
             const transformer = (node: typeof attributeMap) => {
                 return {
-                    ...node,
+                    id: node.id,
                     color: 'blue'
                 };
             };
             const nodeConnection = new ConnectionManager<ITransformedNode>({page}, attributeMap, {
-                nodeTransformer: transformer
+                resultOptions: {nodeTransformer: transformer}
             });
 
             const queryBuilder = knexClient.queryBuilder().from('mock');

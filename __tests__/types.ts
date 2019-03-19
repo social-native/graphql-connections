@@ -1,6 +1,6 @@
-import {INode, IInputArgs} from '../src';
+import {IInputArgs} from '../src';
 
-export interface IUserNode extends INode {
+export interface IUserNode {
     id: number;
     username: string;
     firstname: string;

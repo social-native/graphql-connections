@@ -1,4 +1,4 @@
-import { ICursorEncoder, ICursorObj, IQueryContext, IInputArgs, IFilter } from './types';
+import { ICursorObj, IQueryContext, IInputArgs, IFilter, IQueryContextOptions } from './types';
 /**
  * QueryContext
  *
@@ -19,10 +19,6 @@ interface IQueryContextInputArgs extends IInputArgs {
     };
     filter: Array<IFilter<string>>;
 }
-interface IQueryContextConfig<CursorObj> {
-    defaultLimit?: number;
-    cursorEncoder?: ICursorEncoder<CursorObj>;
-}
 export default class QueryContext implements IQueryContext {
     limit: number;
     orderDirection: 'asc' | 'desc';
@@ -34,7 +30,7 @@ export default class QueryContext implements IQueryContext {
     indexPosition: number;
     private defaultLimit;
     private cursorEncoder;
-    constructor(inputArgs?: IInputArgs, config?: IQueryContextConfig<ICursorObj<string>>);
+    constructor(inputArgs?: IInputArgs, options?: IQueryContextOptions<ICursorObj<string>>);
     /**
      * Compares the current paging direction (as indicated `first` and `last` args)
      * and compares to what the original sort direction was (as found in the cursor)

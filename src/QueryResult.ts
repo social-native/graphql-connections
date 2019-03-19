@@ -1,11 +1,10 @@
 import {
     IQueryContext,
-    IAttributeMap,
     ICursorEncoder,
     ICursorObj,
     IQueryResult,
-    INode,
-    NodeTransformer
+    NodeTransformer,
+    IQueryResultOptions
 } from 'types';
 import {CursorEncoder} from 'index';
 
@@ -21,35 +20,27 @@ interface IEdge<Node> {
     node: Node;
 }
 
-interface IQueryResultConfig<CursorObj, Node> {
-    cursorEncoder?: ICursorEncoder<CursorObj>;
-    nodeTransformer?: NodeTransformer<Node>;
-}
-
 export default class QueryResult<
     Result extends Array<{[field: string]: any}>,
     QueryContext extends IQueryContext,
-    Node extends INode
+    Node = {}
 > implements IQueryResult<Node> {
     public nodes: Node[];
     public edges: Array<IEdge<Node>>;
     private result: Result;
     private queryContext: QueryContext;
-    private attributeMap: IAttributeMap;
     private cursorEncoder: ICursorEncoder<ICursorObj<string>>;
     private nodeTansformer?: NodeTransformer<Node>;
 
     constructor(
         result: Result,
         queryContext: QueryContext,
-        attributeMap: IAttributeMap,
-        config: IQueryResultConfig<ICursorObj<string>, Node> = {}
+        options: IQueryResultOptions<ICursorObj<string>, Node> = {}
     ) {
         this.result = result;
         this.queryContext = queryContext;
-        this.attributeMap = attributeMap;
-        this.cursorEncoder = config.cursorEncoder || CursorEncoder;
-        this.nodeTansformer = config.nodeTransformer;
+        this.cursorEncoder = options.cursorEncoder || CursorEncoder;
+        this.nodeTansformer = options.nodeTransformer;
 
         if (this.result.length < 1) {
             this.nodes = [];
@@ -88,11 +79,6 @@ export default class QueryResult<
         return this.result.length > this.queryContext.limit;
     }
 
-    /**
-     * We record the id of the last result on the last page, if we ever get to it.
-     * If this id is in the result set and we are paging away from it, then we don't have a previous page.
-     * Otherwise, we will always have a previous page unless we are on the first page.
-     */
     public get hasPrevPage() {
         // If there is no cursor, then this is the first page
         // Which means there is no previous page
@@ -130,9 +116,9 @@ export default class QueryResult<
     /**
      * It is very likely the results we get back from the data store
      * have additional fields than what the GQL type node supports.
-     * Here we remove all attributes from the result nodes that are not in
-     * the `nodeAttrs` list (keys of the attribute map).
-     * Furthermore, we also trim down the result set to be within the limit size;
+     * We trim down the result set to be within the limit size and we
+     * apply an optional transform to the result data as we iterate through it
+     * to make the Nodes.
      */
     private createNodes() {
         let nodeTansformer: NodeTransformer<Node>;
@@ -142,18 +128,7 @@ export default class QueryResult<
             nodeTansformer = (node: any) => node;
         }
 
-        return this.result
-            .map(node => {
-                const attributes = Object.keys(node);
-                attributes.forEach(attr => {
-                    if (!Object.keys(this.attributeMap).includes(attr)) {
-                        delete node[attr];
-                    }
-                });
-                const newNode = {...node};
-                return nodeTansformer(newNode);
-            })
-            .slice(0, this.queryContext.limit);
+        return this.result.map(node => nodeTansformer({...node})).slice(0, this.queryContext.limit);
     }
 
     private createEdgesFromNodes() {

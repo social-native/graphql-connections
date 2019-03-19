@@ -9,9 +9,6 @@ export interface ICursorObj<PublicAttributes> {
     position: number;
     filters: string[][];
 }
-export declare type NodeTransformer<Node> = (node: {
-    [fields: string]: any;
-}) => Node;
 export interface IInputArgs {
     cursor?: {
         before?: string;
@@ -26,11 +23,7 @@ export interface IInputArgs {
     };
     filter?: Array<IFilter<string>>;
 }
-export interface INode extends Array<{
-    [field: string]: any;
-}> {
-}
-export interface IAttributeMap {
+export interface IInAttributeMap {
     [nodeField: string]: string;
 }
 export interface IFilterMap {
@@ -47,12 +40,21 @@ export interface IQueryContext {
     indexPosition: number;
     isPagingBackwards: boolean;
 }
+export interface IQueryContextOptions<CursorObj> {
+    defaultLimit?: number;
+    cursorEncoder?: ICursorEncoder<CursorObj>;
+}
 export interface ICursorEncoder<CursorObj> {
     encodeToCursor: (cursorObj: CursorObj) => string;
     decodeFromCursor: (cursor: string) => CursorObj;
 }
 export interface IQueryBuilder<Builder> {
     createQuery: (queryBuilder: Builder) => Builder;
+}
+export interface IQueryBuilderOptions {
+    filterMap?: {
+        [operator: string]: string;
+    };
 }
 export interface IQueryResult<Node> {
     nodes: Node[];
@@ -70,4 +72,9 @@ export interface IQueryResult<Node> {
     hasPrevPage: boolean;
     startCursor: string;
     endCursor: string;
+}
+export declare type NodeTransformer<Node> = (node: any) => Node;
+export interface IQueryResultOptions<CursorObj, Node> {
+    cursorEncoder?: ICursorEncoder<CursorObj>;
+    nodeTransformer?: NodeTransformer<Node>;
 }

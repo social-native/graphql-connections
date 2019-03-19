@@ -1,5 +1,5 @@
 import { QueryBuilder as Knex } from 'knex';
-import { ICursorEncoder, ICursorObj, IAttributeMap, IFilterMap, INode, IInputArgs, NodeTransformer } from './types';
+import { ICursorObj, IInAttributeMap, IInputArgs, IQueryBuilderOptions, IQueryResultOptions, IQueryContextOptions } from './types';
 /**
  * ConnectionManager
  *
@@ -11,20 +11,18 @@ import { ICursorEncoder, ICursorObj, IAttributeMap, IFilterMap, INode, IInputArg
 declare type KnexQueryResult = Array<{
     [attributeName: string]: any;
 }>;
-interface IConnectionManagerConfig<CursorObj, Node> {
-    cursorEncoder?: ICursorEncoder<CursorObj>;
-    filterMap?: IFilterMap;
-    nodeTransformer?: NodeTransformer<Node>;
+interface IConnectionManagerOptions<CursorObj, Node> {
+    contextOptions?: IQueryContextOptions<CursorObj>;
+    resultOptions?: IQueryResultOptions<CursorObj, Node>;
+    builderOptions?: IQueryBuilderOptions;
 }
-export default class ConnectionManager<Node extends INode> {
+export default class ConnectionManager<Node = {}> {
     private queryContext;
     private queryBuilder;
-    private cursorEncoder;
     private queryResult?;
-    private attributeMap;
-    private filterMap;
-    private nodeTransformer?;
-    constructor(inputArgs: IInputArgs, attributeMap: IAttributeMap, config?: IConnectionManagerConfig<ICursorObj<string>, Node>);
+    private inAttributeMap;
+    private options;
+    constructor(inputArgs: IInputArgs, inAttributeMap: IInAttributeMap, options?: IConnectionManagerOptions<ICursorObj<string>, Node>);
     createQuery(queryBuilder: Knex): Knex;
     addResult(result: KnexQueryResult): void;
     readonly pageInfo: {

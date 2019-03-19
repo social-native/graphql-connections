@@ -19,12 +19,12 @@ const ORDER_DIRECTION = {
     desc: 'desc'
 };
 class QueryContext {
-    constructor(inputArgs = {}, config = {}) {
+    constructor(inputArgs = {}, options = {}) {
         this.inputArgs = { page: {}, cursor: {}, filter: [], order: {}, ...inputArgs };
         this.validateArgs();
         // private
-        this.cursorEncoder = config.cursorEncoder || CursorEncoder;
-        this.defaultLimit = config.defaultLimit || 1000;
+        this.cursorEncoder = options.cursorEncoder || CursorEncoder;
+        this.defaultLimit = options.defaultLimit || 1000;
         // public
         this.previousCursor = this.calcPreviousCursor();
         // the index position of the cursor in the total result set
@@ -179,11 +179,19 @@ class QueryContext {
  * A QueryBuilder that creates a query from the QueryContext using Knex
  *
  */
+const defaultFilterMap = {
+    '>': '>',
+    '>=': '>=',
+    '=': '=',
+    '<': '<',
+    '<=': '<=',
+    '<>': '<>'
+};
 class KnexQueryBuilder {
-    constructor(queryContext, attributeMap, filterMap) {
+    constructor(queryContext, attributeMap, options = {}) {
         this.queryContext = queryContext;
         this.attributeMap = attributeMap;
-        this.filterMap = filterMap;
+        this.filterMap = options.filterMap || defaultFilterMap;
     }
     createQuery(queryBuilder) {
         this.applyLimit(queryBuilder);
@@ -205,7 +213,7 @@ class KnexQueryBuilder {
      */
     applyOrder(queryBuilder) {
         // map from node attribute names to sql column names
-        const orderBy = this.attributeMap[this.queryContext.orderBy] || 'id';
+        const orderBy = this.attributeMap[this.queryContext.orderBy] || this.attributeMap.id;
         const direction = this.queryContext.orderDirection;
         queryBuilder.orderBy(orderBy, direction);
     }
@@ -226,12 +234,11 @@ class KnexQueryBuilder {
 }
 
 class QueryResult {
-    constructor(result, queryContext, attributeMap, config = {}) {
+    constructor(result, queryContext, options = {}) {
         this.result = result;
         this.queryContext = queryContext;
-        this.attributeMap = attributeMap;
-        this.cursorEncoder = config.cursorEncoder || CursorEncoder;
-        this.nodeTansformer = config.nodeTransformer;
+        this.cursorEncoder = options.cursorEncoder || CursorEncoder;
+        this.nodeTansformer = options.nodeTransformer;
         if (this.result.length < 1) {
             this.nodes = [];
             this.edges = [];
@@ -266,11 +273,6 @@ class QueryResult {
         // in the QueryBuilder
         return this.result.length > this.queryContext.limit;
     }
-    /**
-     * We record the id of the last result on the last page, if we ever get to it.
-     * If this id is in the result set and we are paging away from it, then we don't have a previous page.
-     * Otherwise, we will always have a previous page unless we are on the first page.
-     */
     get hasPrevPage() {
         // If there is no cursor, then this is the first page
         // Which means there is no previous page
@@ -303,9 +305,9 @@ class QueryResult {
     /**
      * It is very likely the results we get back from the data store
      * have additional fields than what the GQL type node supports.
-     * Here we remove all attributes from the result nodes that are not in
-     * the `nodeAttrs` list (keys of the attribute map).
-     * Furthermore, we also trim down the result set to be within the limit size;
+     * We trim down the result set to be within the limit size and we
+     * apply an optional transform to the result data as we iterate through it
+     * to make the Nodes.
      */
     createNodes() {
         let nodeTansformer;
@@ -315,18 +317,7 @@ class QueryResult {
         else {
             nodeTansformer = (node) => node;
         }
-        return this.result
-            .map(node => {
-            const attributes = Object.keys(node);
-            attributes.forEach(attr => {
-                if (!Object.keys(this.attributeMap).includes(attr)) {
-                    delete node[attr];
-                }
-            });
-            const newNode = { ...node };
-            return nodeTansformer(newNode);
-        })
-            .slice(0, this.queryContext.limit);
+        return this.result.map(node => nodeTansformer({ ...node })).slice(0, this.queryContext.limit);
     }
     createEdgesFromNodes() {
         const initialSort = this.queryContext.orderDirection;
@@ -350,34 +341,22 @@ class QueryResult {
     }
 }
 
-const defaultFilterMap = {
-    '>': '>',
-    '>=': '>=',
-    '=': '=',
-    '<': '<',
-    '<=': '<=',
-    '<>': '<>'
-};
 // tslint:disable:max-classes-per-file
 class ConnectionManager {
-    constructor(inputArgs, attributeMap, config = {}) {
-        this.cursorEncoder = config.cursorEncoder || CursorEncoder;
-        this.nodeTransformer = config.nodeTransformer;
+    constructor(inputArgs, inAttributeMap, options) {
+        this.options = options || {};
+        this.inAttributeMap = inAttributeMap;
         // 1. Create QueryContext
-        this.queryContext = new QueryContext(inputArgs, {
-            cursorEncoder: this.cursorEncoder
-        });
-        this.attributeMap = attributeMap;
-        this.filterMap = config.filterMap || defaultFilterMap;
+        this.queryContext = new QueryContext(inputArgs, this.options.contextOptions);
         // 2. Create QueryBuilder
-        this.queryBuilder = new KnexQueryBuilder(this.queryContext, this.attributeMap, this.filterMap);
+        this.queryBuilder = new KnexQueryBuilder(this.queryContext, this.inAttributeMap, this.options.builderOptions);
     }
     createQuery(queryBuilder) {
         return this.queryBuilder.createQuery(queryBuilder);
     }
     addResult(result) {
         // 3. Create QueryResult
-        this.queryResult = new QueryResult(result, this.queryContext, this.attributeMap, { cursorEncoder: this.cursorEncoder, nodeTransformer: this.nodeTransformer });
+        this.queryResult = new QueryResult(result, this.queryContext, this.options.resultOptions);
     }
     get pageInfo() {
         if (!this.queryResult) {

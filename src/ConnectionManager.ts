@@ -1,18 +1,16 @@
 import {QueryBuilder as Knex} from 'knex';
-import CursorEncoder from './CursorEncoder';
 import QueryContext from './QueryContext';
 import KnexQueryBuilder from './KnexQueryBuilder';
 import {
     IQueryBuilder,
     IQueryContext,
-    ICursorEncoder,
     IQueryResult,
     ICursorObj,
-    IAttributeMap,
-    IFilterMap,
-    INode,
+    IInAttributeMap,
     IInputArgs,
-    NodeTransformer
+    IQueryBuilderOptions,
+    IQueryResultOptions,
+    IQueryContextOptions
 } from './types';
 import QueryResult from 'QueryResult';
 
@@ -27,51 +25,37 @@ import QueryResult from 'QueryResult';
 
 type KnexQueryResult = Array<{[attributeName: string]: any}>;
 
-interface IConnectionManagerConfig<CursorObj> {
-    cursorEncoder?: ICursorEncoder<CursorObj>;
-    filterMap?: IFilterMap; // maps an input operator to a sql where operator
-    nodeTransformer?: (node: any) => any;
+interface IConnectionManagerOptions<CursorObj, Node> {
+    contextOptions?: IQueryContextOptions<CursorObj>;
+    resultOptions?: IQueryResultOptions<CursorObj, Node>;
+    builderOptions?: IQueryBuilderOptions;
 }
 
-const defaultFilterMap = {
-    '>': '>',
-    '>=': '>=',
-    '=': '=',
-    '<': '<',
-    '<=': '<=',
-    '<>': '<>'
-};
-
 // tslint:disable:max-classes-per-file
-export default class ConnectionManager<Node extends INode> {
+export default class ConnectionManager<Node = {}> {
     private queryContext: QueryContext;
     private queryBuilder: IQueryBuilder<Knex>;
-    private cursorEncoder: ICursorEncoder<ICursorObj<string>>;
     private queryResult?: IQueryResult<Node>;
 
-    private attributeMap: IAttributeMap;
-    private filterMap: IFilterMap;
-    private nodeTransformer?: NodeTransformer<Node>;
+    private inAttributeMap: IInAttributeMap;
+    private options: IConnectionManagerOptions<ICursorObj<string>, Node>;
 
     constructor(
         inputArgs: IInputArgs,
-        attributeMap: IAttributeMap,
-        config: IConnectionManagerConfig<ICursorObj<string>> = {}
+        inAttributeMap: IInAttributeMap,
+        options?: IConnectionManagerOptions<ICursorObj<string>, Node>
     ) {
-        this.cursorEncoder = config.cursorEncoder || CursorEncoder;
-        this.nodeTransformer = config.nodeTransformer;
+        this.options = options || {};
+        this.inAttributeMap = inAttributeMap;
 
         // 1. Create QueryContext
-        this.queryContext = new QueryContext(inputArgs, {
-            cursorEncoder: this.cursorEncoder
-        });
-        this.attributeMap = attributeMap;
-        this.filterMap = config.filterMap || defaultFilterMap;
+        this.queryContext = new QueryContext(inputArgs, this.options.contextOptions);
+
         // 2. Create QueryBuilder
         this.queryBuilder = new KnexQueryBuilder(
             this.queryContext,
-            this.attributeMap,
-            this.filterMap
+            this.inAttributeMap,
+            this.options.builderOptions
         );
     }
 
@@ -84,8 +68,7 @@ export default class ConnectionManager<Node extends INode> {
         this.queryResult = new QueryResult<KnexQueryResult, IQueryContext, Node>(
             result,
             this.queryContext,
-            this.attributeMap,
-            {cursorEncoder: this.cursorEncoder, nodeTransformer: this.nodeTransformer}
+            this.options.resultOptions
         );
     }
 

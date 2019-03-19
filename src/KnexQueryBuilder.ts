@@ -1,6 +1,6 @@
 import QueryContext from './QueryContext';
 import {QueryBuilder as Knex} from 'knex';
-import {IFilterMap, IAttributeMap, IQueryBuilder} from './types';
+import {IFilterMap, IInAttributeMap, IQueryBuilder, IQueryBuilderOptions} from './types';
 
 /**
  * KnexQueryBuilder
@@ -9,15 +9,28 @@ import {IFilterMap, IAttributeMap, IQueryBuilder} from './types';
  *
  */
 
+const defaultFilterMap = {
+    '>': '>',
+    '>=': '>=',
+    '=': '=',
+    '<': '<',
+    '<=': '<=',
+    '<>': '<>'
+};
+
 export default class KnexQueryBuilder implements IQueryBuilder<Knex> {
     private queryContext: QueryContext;
-    private attributeMap: IAttributeMap;
+    private attributeMap: IInAttributeMap;
     private filterMap: IFilterMap;
 
-    constructor(queryContext: QueryContext, attributeMap: IAttributeMap, filterMap: IFilterMap) {
+    constructor(
+        queryContext: QueryContext,
+        attributeMap: IInAttributeMap,
+        options: IQueryBuilderOptions = {}
+    ) {
         this.queryContext = queryContext;
         this.attributeMap = attributeMap;
-        this.filterMap = filterMap;
+        this.filterMap = options.filterMap || defaultFilterMap;
     }
 
     public createQuery(queryBuilder: Knex) {
@@ -42,7 +55,7 @@ export default class KnexQueryBuilder implements IQueryBuilder<Knex> {
      */
     private applyOrder(queryBuilder: Knex) {
         // map from node attribute names to sql column names
-        const orderBy = this.attributeMap[this.queryContext.orderBy] || 'id';
+        const orderBy = this.attributeMap[this.queryContext.orderBy] || this.attributeMap.id;
         const direction = this.queryContext.orderDirection;
 
         queryBuilder.orderBy(orderBy, direction);

@@ -162,6 +162,84 @@ const attributeMap = {
 };
 ```
 
+### Options
+
+If you are using the `Manager` you can supply options via the third parameter. Options are used to customize the `QueryContext`, the `QueryBuilder`, and the `QueryResult` classes.
+
+```typescript
+    const options = { 
+      contextOptions: { ... }
+      resultOptions: { ... }
+      builderOptions: { ... }
+    }
+    const nodeConnection = new ConnectionManager(inputArgs, attributeMap, options);
+```
+
+Currently, the options are:
+
+#### contextOptions
+
+##### defaultLimit
+
+```typescript
+number
+```
+
+The default limit (page size) if none is specified in the `page` input params
+
+##### cursorEncoder
+
+```typescript
+interface ICursorEncoder<CursorObj> {
+    encodeToCursor: (cursorObj: CursorObj) => string;
+    decodeFromCursor: (cursor: string) => CursorObj;
+}
+```
+
+#### builderOptions
+
+##### filterMap
+
+```typescript
+interface IFilterMap {
+  [operator: string]: string
+}
+```
+
+The filter operators that can be specified in the `filter` input params.
+
+If no map is specified, the default one is used:
+
+```typescript
+const defaultFilterMap = {
+    '>': '>',
+    '>=': '>=',
+    '=': '=',
+    '<': '<',
+    '<=': '<=',
+    '<>': '<>'
+};
+```
+
+#### resultOptions
+
+##### nodeTransformer
+
+```typescript
+type NodeTransformer<Node> = (node: any) => Node;
+```
+
+A function that is will be called during the creation of each node. This can be used to map the query result to a `Node` type that matches the graphql Node for the resolver.
+
+##### cursorEncoder
+
+```typescript
+interface ICursorEncoder<CursorObj> {
+    encodeToCursor: (cursorObj: CursorObj) => string;
+    decodeFromCursor: (cursor: string) => CursorObj;
+}
+```
+
 ### Extensions
 
 To extend the connection to a new datastore or to use an adapter besides `Knex`, you will need to create a new `QueryBuilder`. See `src/KnexQueryBuilder` for an example of what a query builder looks like. It should have the type signature:

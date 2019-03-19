@@ -17,7 +17,7 @@ const attributeMap = {
 
 const createConnection = async (inputArgs: IInputArgs) => {
     const queryBuilder = knexClient.queryBuilder().from('mock');
-    const connection = new ConnectionManager<IUserNode>(inputArgs, attributeMap, attributeMap);
+    const connection = new ConnectionManager<IUserNode>(inputArgs, attributeMap);
     connection.createQuery(queryBuilder);
     const result = ((await queryBuilder.select()) || []) as KnexQueryResult;
     connection.addResult(result);

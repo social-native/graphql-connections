@@ -1,7 +1,13 @@
-export interface IFilter<Fields> {
+export interface IFilter {
     value: string;
     operator: string;
-    field: Fields;
+    field: string;
+}
+
+export interface IOperationFilter {
+    and?: Array<IOperationFilter & IFilter>;
+    or?: Array<IOperationFilter & IFilter>;
+    not?: Array<IOperationFilter & IFilter>;
 }
 
 export interface ICursorObj<PublicAttributes> {
@@ -9,7 +15,7 @@ export interface ICursorObj<PublicAttributes> {
     orderBy: PublicAttributes;
     // The position of the cursor item from the beginning of the query
     position: number;
-    filters: string[][];
+    filters: IOperationFilter;
 }
 
 export interface IInputArgs {
@@ -24,7 +30,7 @@ export interface IInputArgs {
     order?: {
         orderBy?: string;
     };
-    filter?: Array<IFilter<string>>;
+    filter?: IOperationFilter;
 }
 
 export interface IInAttributeMap {
@@ -40,7 +46,7 @@ export interface IQueryContext {
     limit: number;
     orderDirection: 'asc' | 'desc';
     orderBy: string;
-    filters: string[][]; // [['username', '=', 'haxor1'], ['created_at', '>=', '90002012']]
+    filters: IOperationFilter; // [['username', '=', 'haxor1'], ['created_at', '>=', '90002012']]
     offset: number;
     inputArgs: IInputArgs;
     previousCursor?: string;

@@ -4,8 +4,8 @@ import {
     ICursorObj,
     IQueryContext,
     IInputArgs,
-    IFilter,
-    IQueryContextOptions
+    IQueryContextOptions,
+    IOperationFilter
 } from './types';
 
 /**
@@ -27,7 +27,7 @@ interface IQueryContextInputArgs extends IInputArgs {
     order: {
         orderBy?: string;
     };
-    filter: Array<IFilter<string>>;
+    filter: IOperationFilter;
 }
 
 const ORDER_DIRECTION = {
@@ -39,7 +39,8 @@ export default class QueryContext implements IQueryContext {
     public limit: number;
     public orderDirection: 'asc' | 'desc';
     public orderBy: string;
-    public filters: string[][]; // [['username', '=', 'haxor1'], ['created_at', '>=', '90002012']]
+    // [['username', '=', 'haxor1'], ['created_at', '>=', '90002012']]
+    public filters: IOperationFilter | {};
     public offset: number;
     public inputArgs: IQueryContextInputArgs;
     public previousCursor?: string;
@@ -52,7 +53,7 @@ export default class QueryContext implements IQueryContext {
         inputArgs: IInputArgs = {},
         options: IQueryContextOptions<ICursorObj<string>> = {}
     ) {
-        this.inputArgs = {page: {}, cursor: {}, filter: [], order: {}, ...inputArgs};
+        this.inputArgs = {page: {}, cursor: {}, filter: {}, order: {}, ...inputArgs};
         this.validateArgs();
 
         // private
@@ -152,16 +153,10 @@ export default class QueryContext implements IQueryContext {
         }
 
         if (!this.inputArgs.filter) {
-            return [];
+            return {};
         }
 
-        return this.inputArgs.filter.reduce(
-            (builtFilters, {field, value, operator}) => {
-                builtFilters.push([field, operator, value]);
-                return builtFilters;
-            },
-            [] as string[][]
-        );
+        return this.inputArgs.filter;
     }
 
     /**
@@ -212,7 +207,7 @@ export default class QueryContext implements IQueryContext {
             throw Error('Can not mix `after` and `last`');
         } else if ((after || before) && orderBy) {
             throw Error('Can not use orderBy with a cursor');
-        } else if ((after || before) && this.inputArgs.filter.length > 0) {
+        } else if ((after || before) && (this.inputArgs.filter.and || this.inputArgs.filter.or)) {
             throw Error('Can not use filters with a cursor');
         } else if ((first != null && first <= 0) || (last != null && last <= 0)) {
             throw Error('Page size must be greater than 0');

@@ -1,7 +1,7 @@
 import Koa from 'koa';
 import {ApolloServer, gql} from 'apollo-server-koa';
 import knex from 'knex';
-import {ConnectionManager, INode, IInputArgs} from '../src';
+import {ConnectionManager, IInputArgs} from '../src';
 import {development as developmentConfig} from '../knexfile';
 const knexClient = knex(developmentConfig);
 
@@ -80,11 +80,24 @@ const typeDefs = gql`
         node: User
     }
 
+
+    """
+    {
+        AND [{Filter}, {AND: [{Filter}], OR: [{Filter}]}]
+        OR [{Filter}]
+    }
+    """
+
+    type OperationFilter {
+        AND: [OperationFilter | Filter]
+        OR: [OperationFilter | Filter]
+    }
+
     input UserInputParams {
         page: InputPageParams
         order: InputOrderParams
         cursor: InputCursorParams
-        filter: [Filter]
+        filter: OperationFilter
     }
 
     type Query {
@@ -92,7 +105,7 @@ const typeDefs = gql`
     }
 `;
 
-interface IUserNode extends INode {
+interface IUserNode {
     id: number;
     username: string;
     firstname: string;

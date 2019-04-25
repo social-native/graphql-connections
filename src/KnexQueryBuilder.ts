@@ -1,6 +1,13 @@
 import QueryContext from './QueryContext';
 import {QueryBuilder as Knex} from 'knex';
-import {IFilterMap, IInAttributeMap, IQueryBuilder, IQueryBuilderOptions, IOperationFilter, IFilter} from './types';
+import {
+    IFilterMap,
+    IInAttributeMap,
+    IQueryBuilder,
+    IQueryBuilderOptions,
+    IOperationFilter,
+    IFilter
+} from './types';
 
 /**
  * KnexQueryBuilder
@@ -66,7 +73,6 @@ export default class KnexQueryBuilder implements IQueryBuilder<Knex> {
         queryBuilder.offset(offset);
     }
 
-
     /**
      * Adds filters to the sql query builder
      */
@@ -80,7 +86,9 @@ export default class KnexQueryBuilder implements IQueryBuilder<Knex> {
             return mapedField;
         }
 
-        throw new Error(`Filter field ${field} either does not exist or is not accessible. Check the filter map`)
+        throw new Error(
+            `Filter field ${field} either does not exist or is not accessible. Check the filter map`
+        );
     }
 
     private computeFilterOperator(operator: string) {
@@ -89,7 +97,9 @@ export default class KnexQueryBuilder implements IQueryBuilder<Knex> {
             return mapedField;
         }
 
-        throw new Error(`Filter operator ${operator} either does not exist or is not accessible. Check the filter map`)
+        throw new Error(
+            `Filter operator ${operator} either does not exist or is not accessible. Check the filter map`
+        );
     }
 
     private addFilterRecursively(filter: IOperationFilter, queryBuilder: Knex) {
@@ -97,50 +107,49 @@ export default class KnexQueryBuilder implements IQueryBuilder<Knex> {
         if (filter.and && filter.and.length > 0) {
             filter.and.forEach(f => {
                 if (isFilter(f)) {
-                    queryBuilder.andWhere({
+                    queryBuilder.andWhere(
                         this.computeFilterField(f.field),
                         this.computeFilterOperator(f.operator),
                         f.value
-                    })
+                    );
                 } else {
                     queryBuilder.andWhere(this.addFilterRecursively(f, queryBuilder.clone()));
                 }
             });
         }
-    
+
         if (filter.or && filter.or.length > 0) {
             filter.or.forEach(f => {
                 if (isFilter(f)) {
-                    queryBuilder.orWhere({
+                    queryBuilder.orWhere(
                         this.computeFilterField(f.field),
                         this.computeFilterOperator(f.operator),
                         f.value
-                    })
+                    );
                 } else {
                     queryBuilder.orWhere(this.addFilterRecursively(f, queryBuilder.clone()));
                 }
             });
         }
-    
+
         if (filter.not && filter.not.length > 0) {
             filter.not.forEach(f => {
                 if (isFilter(f)) {
-                    queryBuilder.orWhere({
+                    queryBuilder.orWhere(
                         this.computeFilterField(f.field),
                         this.computeFilterOperator(f.operator),
                         f.value
-                    })
+                    );
                 } else {
                     queryBuilder.whereNot(this.addFilterRecursively(f, queryBuilder.clone()));
                 }
             });
         }
-    
+
         return queryBuilder;
     }
 }
 
 const isFilter = (filter: IOperationFilter & IFilter) => {
     return !!filter && !!filter.field && !!filter.operator && !!filter.value;
-}
-
+};

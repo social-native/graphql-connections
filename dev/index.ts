@@ -49,7 +49,7 @@ const typeDefs = gql`
         orderBy: String
     }
 
-    input Filter {
+    type Filter {
         field: String!
         operator: String!
         value: String!
@@ -80,17 +80,17 @@ const typeDefs = gql`
         node: User
     }
 
-
     """
     {
         AND [{Filter}, {AND: [{Filter}], OR: [{Filter}]}]
         OR [{Filter}]
     }
     """
+    union NestedOperationFilter = OperationFilter | Filter
 
-    type OperationFilter {
-        AND: [OperationFilter | Filter]
-        OR: [OperationFilter | Filter]
+    input OperationFilter {
+        AND: [NestedOperationFilter]
+        OR: [NestedOperationFilter]
     }
 
     input UserInputParams {

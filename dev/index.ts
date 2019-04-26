@@ -1,12 +1,99 @@
 import Koa from 'koa';
-import {ApolloServer, gql} from 'apollo-server-koa';
+import {ApolloServer, gql, IResolvers} from 'apollo-server-koa';
 import knex from 'knex';
 import {ConnectionManager, IInputArgs} from '../src';
+
 import {development as developmentConfig} from '../knexfile';
+import {
+    GraphQLInputObjectType,
+    GraphQLString,
+    GraphQLScalarType,
+    valueFromAST,
+    GraphQLError,
+    isValidLiteralValue
+} from 'graphql';
 const knexClient = knex(developmentConfig);
 
+const operationFilterScalarType = new GraphQLInputObjectType({
+    name: 'OperationFilter',
+    fields() {
+        return {
+            and: {
+                type: nestedOperationFilter
+            },
+            or: {
+                type: nestedOperationFilter
+            }
+        };
+    }
+});
+
+const filterScalarType = new GraphQLInputObjectType({
+    name: 'Filter',
+    fields() {
+        return {
+            field: {
+                type: GraphQLString
+            },
+            operator: {
+                type: GraphQLString
+            },
+            value: {
+                type: GraphQLString
+            }
+        };
+    }
+});
+
+const printInputType = (type: GraphQLInputObjectType) => {
+    const fields = type.getFields();
+    const fieldNames = Object.keys(fields);
+    const typeSig = fieldNames.reduce(
+        (acc, name) => {
+            acc[name] = fields[name].type.toString();
+            return acc;
+        },
+        {} as {
+            [field: string]: string;
+        }
+    );
+    return JSON.stringify(typeSig)
+        .replace(/[\\"]/gi, '')
+        .replace(/[:]/gi, ': ')
+        .replace(/[,]/gi, ', ');
+};
+
+const nestedOperationFilter = new GraphQLScalarType({
+    name: 'NestedOperationFilter',
+    serialize: (value: any) => value,
+    parseValue: () => {
+        return 2;
+    },
+    parseLiteral: ast => {
+        const potentialTypes = [operationFilterScalarType, filterScalarType];
+        const inputType = potentialTypes.reduce((acc: any, type) => {
+            const astClone = JSON.parse(JSON.stringify(ast));
+            try {
+                return isValidLiteralValue(type, astClone).length === 0 ? type : acc;
+            } catch (e) {
+                return acc;
+            }
+        }, undefined);
+        if (inputType) {
+            return valueFromAST(ast, inputType);
+        } else {
+            const validTypes = potentialTypes.map(t => `${t.name}: ${printInputType(t)}`);
+            throw new GraphQLError(`expected one of ${validTypes}`);
+        }
+    }
+}) as GraphQLScalarType;
+
 // Construct a schema, using GraphQL schema language
+// scalar OperationFilter
 const typeDefs = gql`
+    scalar Filter
+    scalar NestedOperationFilter
+
     type User {
         id: ID
         username: String
@@ -49,12 +136,6 @@ const typeDefs = gql`
         orderBy: String
     }
 
-    type Filter {
-        field: String!
-        operator: String!
-        value: String!
-    }
-
     interface IConnection {
         pageInfo: PageInfo!
     }
@@ -80,24 +161,11 @@ const typeDefs = gql`
         node: User
     }
 
-    """
-    {
-        AND [{Filter}, {AND: [{Filter}], OR: [{Filter}]}]
-        OR [{Filter}]
-    }
-    """
-    union NestedOperationFilter = OperationFilter | Filter
-
-    input OperationFilter {
-        AND: [NestedOperationFilter]
-        OR: [NestedOperationFilter]
-    }
-
     input UserInputParams {
         page: InputPageParams
         order: InputOrderParams
         cursor: InputCursorParams
-        filter: OperationFilter
+        filter: NestedOperationFilter
     }
 
     type Query {
@@ -146,15 +214,19 @@ const resolvers = {
                 edges: nodeConnection.edges
             };
         }
-    }
-};
+    },
+    // OperationFilter: operationFilterScalarType,
+    NestedOperationFilter: nestedOperationFilter,
+    Filter: filterScalarType
+} as IResolvers;
 
 const server = new ApolloServer({typeDefs, resolvers});
-
 const app = new Koa();
 server.applyMiddleware({app});
 
 app.listen({port: 4000}, () =>
     // tslint:disable-next-line
-    console.log(`🚀 Server ready at http://localhost:4000${server.graphqlPath}`)
+    console.log(
+        `🚀 Server ready at http://localhost:4000${server.graphqlPath} (PID: ${process.pid})`
+    )
 );

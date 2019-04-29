@@ -31,10 +31,10 @@ query {
     input: {
       page: {first: 100},
       order: {orderBy: "haircolor"},
-      filter: [
+      filter: { and: [
         {field: "id", operator: ">", value: "19990"},
         {field: "age", operator: "<", value: "90"},
-      ]
+      ]}
     }
   ) {
     pageInfo {
@@ -144,7 +144,7 @@ interface IInputArgs {
     order?: {
         orderBy?: string; // node field
     };
-    filter?: IFilter[];
+    filter?: IOperationFilter[];
 }
 
 interface IFilter {
@@ -152,9 +152,52 @@ interface IFilter {
     operator: string;
     field: string; // node field
 }
+
+interface IOperationFilter {
+    and?: Array<IOperationFilter & IFilter>;
+    or?: Array<IOperationFilter & IFilter>;
+    not?: Array<IOperationFilter & IFilter>;
+}
 ```
 
 Note: The default filter operators are the normal SQL comparison operators: `>`, `<`, `=`, `>=`, `<=`, and `<>`
+
+An example query with a filter could look like:
+
+```graphql
+query {
+  users(input: {
+    filter:  { 
+      or: [
+        { field: "age", operator: "=", value: "40"},
+        { field: "age", operator: "<", value: "30"},
+        { and: [
+          { field: "haircolor", operator: "=", value: "blue"},
+        	{ field: "age", operator: "=", value: "70"},
+          { or: [
+            { field: "username", operator: "=", value: "Ellie86"},
+        		{ field: "username", operator: "=", value: "Euna_Oberbrunner"},
+          ]}
+        ]},
+      ],
+    }}) {
+    pageInfo {
+      hasNextPage
+      hasPreviousPage
+    }
+    edges {
+      cursor
+      node {
+        id
+        age
+        haircolor
+        lastname
+        username
+      }
+    }
+  }
+}
+```
 
 ##### attributeMap
 

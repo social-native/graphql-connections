@@ -39,7 +39,12 @@ export default class QueryContext implements IQueryContext {
     public limit: number;
     public orderDirection: 'asc' | 'desc';
     public orderBy: string;
-    // [['username', '=', 'haxor1'], ['created_at', '>=', '90002012']]
+    /**
+     * { or: [
+     *     { field: 'username', operator: '=', value: 'haxor1'},
+     *     { field: 'created_at', operator: '>=', value: '90002012'}
+     * ]}
+     */
     public filters: IOperationFilter | {};
     public offset: number;
     public inputArgs: IQueryContextInputArgs;

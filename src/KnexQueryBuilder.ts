@@ -38,6 +38,8 @@ export default class KnexQueryBuilder implements IQueryBuilder<Knex> {
         this.queryContext = queryContext;
         this.attributeMap = attributeMap;
         this.filterMap = options.filterMap || defaultFilterMap;
+
+        this.addFilterRecursively = this.addFilterRecursively.bind(this);
     }
 
     public createQuery(queryBuilder: Knex) {
@@ -81,9 +83,9 @@ export default class KnexQueryBuilder implements IQueryBuilder<Knex> {
     }
 
     private computeFilterField(field: string) {
-        const mapedField = this.attributeMap[field];
-        if (mapedField) {
-            return mapedField;
+        const mappedField = this.attributeMap[field];
+        if (mappedField) {
+            return mappedField;
         }
 
         throw new Error(
@@ -92,9 +94,9 @@ export default class KnexQueryBuilder implements IQueryBuilder<Knex> {
     }
 
     private computeFilterOperator(operator: string) {
-        const mapedField = this.filterMap[operator];
-        if (mapedField) {
-            return mapedField;
+        const mappedField = this.filterMap[operator];
+        if (mappedField) {
+            return mappedField;
         }
 
         throw new Error(
@@ -102,18 +104,25 @@ export default class KnexQueryBuilder implements IQueryBuilder<Knex> {
         );
     }
 
+    private filterArgs(f: IFilter): [string, string, string] {
+        return [this.computeFilterField(f.field), this.computeFilterOperator(f.operator), f.value];
+    }
+
     private addFilterRecursively(filter: IOperationFilter, queryBuilder: Knex) {
+        let isFirst = true;
+
         // tslint:disable-next-line
         if (filter.and && filter.and.length > 0) {
             filter.and.forEach(f => {
                 if (isFilter(f)) {
-                    queryBuilder.andWhere(
-                        this.computeFilterField(f.field),
-                        this.computeFilterOperator(f.operator),
-                        f.value
-                    );
+                    if (isFirst) {
+                        queryBuilder.where(...this.filterArgs(f));
+                        isFirst = false;
+                    } else {
+                        queryBuilder.andWhere(...this.filterArgs(f));
+                    }
                 } else {
-                    queryBuilder.andWhere(this.addFilterRecursively(f, queryBuilder.clone()));
+                    queryBuilder.andWhere(k => this.addFilterRecursively(f, k));
                 }
             });
         }
@@ -121,13 +130,14 @@ export default class KnexQueryBuilder implements IQueryBuilder<Knex> {
         if (filter.or && filter.or.length > 0) {
             filter.or.forEach(f => {
                 if (isFilter(f)) {
-                    queryBuilder.orWhere(
-                        this.computeFilterField(f.field),
-                        this.computeFilterOperator(f.operator),
-                        f.value
-                    );
+                    if (isFirst) {
+                        queryBuilder.where(...this.filterArgs(f));
+                        isFirst = false;
+                    } else {
+                        queryBuilder.orWhere(...this.filterArgs(f));
+                    }
                 } else {
-                    queryBuilder.orWhere(this.addFilterRecursively(f, queryBuilder.clone()));
+                    queryBuilder.orWhere(k => this.addFilterRecursively(f, k));
                 }
             });
         }
@@ -135,13 +145,14 @@ export default class KnexQueryBuilder implements IQueryBuilder<Knex> {
         if (filter.not && filter.not.length > 0) {
             filter.not.forEach(f => {
                 if (isFilter(f)) {
-                    queryBuilder.orWhere(
-                        this.computeFilterField(f.field),
-                        this.computeFilterOperator(f.operator),
-                        f.value
-                    );
+                    if (isFirst) {
+                        queryBuilder.whereNot(...this.filterArgs(f));
+                        isFirst = false;
+                    } else {
+                        queryBuilder.andWhereNot(...this.filterArgs(f));
+                    }
                 } else {
-                    queryBuilder.whereNot(this.addFilterRecursively(f, queryBuilder.clone()));
+                    queryBuilder.andWhereNot(k => this.addFilterRecursively(f, k));
                 }
             });
         }

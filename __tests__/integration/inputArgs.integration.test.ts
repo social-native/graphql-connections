@@ -158,7 +158,7 @@ describe('Input args with', () => {
         });
     });
 
-    describe('Multiple filters', () => {
+    describe('Multiple `and` filters', () => {
         it('Can filter for age, hair and first name', async () => {
             // 8 people `age` N have brown `hair` and the `first name` Nerissa (80 people total across all `ages`)
             // Thus, there will be 24 people that match this query.
@@ -198,6 +198,43 @@ describe('Input args with', () => {
             expect(pageInfo.hasPreviousPage).toBe(false);
             expect(edges.length).toBe(7);
             expect(edges[0].node.id).toBe(9591);
+        });
+    });
+
+    describe('Multiple `or` filters', () => {
+        it('Can filter for hair and first name', async () => {
+            const filter = {
+                or: [
+                    {field: 'haircolor', operator: '=', value: 'gray'},
+                    {field: 'firstname', operator: '=', value: 'Nerissa'}
+                ]
+            };
+            const {pageInfo, edges} = await createConnection({filter});
+
+            expect(pageInfo.hasNextPage).toBe(false);
+            expect(pageInfo.hasPreviousPage).toBe(false);
+            expect(edges.length).toBe(180);
+            expect(edges[0].node.id).toBe(9261);
+        });
+    });
+
+    describe('Multiple `not` filters', () => {
+        it('Can filter for hair and first name', async () => {
+            // The only haircolors left after filtering these out are 400 `null` and 100 `gray`
+            const filter = {
+                not: [
+                    {field: 'haircolor', operator: '=', value: 'brown'},
+                    {field: 'haircolor', operator: '=', value: 'black'},
+                    {field: 'haircolor', operator: '=', value: 'blonde'},
+                    {field: 'haircolor', operator: '=', value: 'red'}
+                ]
+            };
+            const {pageInfo, edges} = await createConnection({filter});
+
+            expect(pageInfo.hasNextPage).toBe(false);
+            expect(pageInfo.hasPreviousPage).toBe(false);
+            expect(edges.length).toBe(500);
+            expect(edges[0].node.id).toBe(9261);
         });
     });
 

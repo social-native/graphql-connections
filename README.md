@@ -144,7 +144,7 @@ interface IInputArgs {
     order?: {
         orderBy?: string; // node field
     };
-    filter?: IOperationFilter[];
+    filter?: IOperationFilter;
 }
 
 interface IFilter {
@@ -199,9 +199,22 @@ query {
 }
 ```
 
+This would yield a sql query equivalent to:
+
+```sql
+  SELECT * 
+    FROM `mock` 
+   WHERE `age` = '40' OR `age` < '30' OR (`haircolor` = 'blue' AND `age` = '70' AND (`username` = 'Ellie86' OR `username` = 'Euna_Oberbrunner')) 
+ORDER BY `id` 
+     ASC 
+   LIMIT 1001
+```
+
 ##### attributeMap
 
 `attributeMap` is a map of GraphQL field names to SQL column names
+
+Only fields defined in the attribute map can be filtered on. An error will be thrown if you try to filter on fields that don't exist in the map.
 
  ex:
 

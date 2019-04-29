@@ -5,7 +5,7 @@ import {
     IInAttributeMap,
     IQueryBuilder,
     IQueryBuilderOptions,
-    IOperationFilter,
+    IInputFilter,
     IFilter
 } from './types';
 
@@ -108,8 +108,13 @@ export default class KnexQueryBuilder implements IQueryBuilder<Knex> {
         return [this.computeFilterField(f.field), this.computeFilterOperator(f.operator), f.value];
     }
 
-    private addFilterRecursively(filter: IOperationFilter, queryBuilder: Knex) {
+    private addFilterRecursively(filter: IInputFilter, queryBuilder: Knex) {
         let isFirst = true;
+
+        if (isFilter(filter)) {
+            queryBuilder.where(...this.filterArgs(filter as IFilter));
+            return queryBuilder;
+        }
 
         // tslint:disable-next-line
         if (filter.and && filter.and.length > 0) {
@@ -161,6 +166,11 @@ export default class KnexQueryBuilder implements IQueryBuilder<Knex> {
     }
 }
 
-const isFilter = (filter: IOperationFilter & IFilter) => {
-    return !!filter && !!filter.field && !!filter.operator && !!filter.value;
+const isFilter = (filter: IInputFilter): filter is IFilter => {
+    return (
+        !!filter &&
+        !!(filter as IFilter).field &&
+        !!(filter as IFilter).operator &&
+        !!(filter as IFilter).value
+    );
 };

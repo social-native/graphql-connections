@@ -143,7 +143,7 @@ type KnexQueryResult = Array<{[attributeName: string]: any}>;
 const resolvers = {
     Query: {
         async users(_: any, {input: inputArgs}: {input: IInputArgs}) {
-            console.log('INPUT ARGS', JSON.stringify(inputArgs));
+            // console.log('INPUT ARGS', JSON.stringify(inputArgs));
             const queryBuilder = knexClient.from('mock');
             // maps node types to sql column names
             const attributeMap = {
@@ -158,9 +158,9 @@ const resolvers = {
 
             const nodeConnection = new ConnectionManager<IUserNode>(inputArgs, attributeMap);
 
-            const result = (await nodeConnection
-                .createQuery(queryBuilder.clone())
-                .select()) as KnexQueryResult;
+            const query = nodeConnection.createQuery(queryBuilder.clone()).select();
+            console.log(query.toQuery());
+            const result = (await query) as KnexQueryResult;
 
             nodeConnection.addResult(result);
 

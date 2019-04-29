@@ -31,7 +31,7 @@ describe('Input args with', () => {
         it('Can order results by a given field', async () => {
             const page = {first: 200};
             const order = {orderBy: 'firstname'};
-            const filter = [{field: 'haircolor', operator: '=', value: 'gray'}];
+            const filter = {field: 'haircolor', operator: '=', value: 'gray'};
             const {pageInfo, edges} = await createConnection({page, order, filter});
 
             expect(pageInfo.hasNextPage).toBe(false); // there are 100 people with gray hair
@@ -84,7 +84,7 @@ describe('Input args with', () => {
 
     describe('Single Filters', () => {
         it('Can filter for equality', async () => {
-            const filter = [{field: 'haircolor', operator: '=', value: 'red'}];
+            const filter = {field: 'haircolor', operator: '=', value: 'red'};
             const {pageInfo, edges} = await createConnection({filter});
 
             expect(pageInfo.hasNextPage).toBe(false);
@@ -95,18 +95,20 @@ describe('Input args with', () => {
 
         it('Can filter for "not equal"', async () => {
             // filter out everyone by those who are age 110
-            const filter = [
-                {field: 'age', operator: '<>', value: '10'},
-                {field: 'age', operator: '<>', value: '20'},
-                {field: 'age', operator: '<>', value: '30'},
-                {field: 'age', operator: '<>', value: '40'},
-                {field: 'age', operator: '<>', value: '50'},
-                {field: 'age', operator: '<>', value: '60'},
-                {field: 'age', operator: '<>', value: '70'},
-                {field: 'age', operator: '<>', value: '80'},
-                {field: 'age', operator: '<>', value: '90'},
-                {field: 'age', operator: '<>', value: '100'}
-            ];
+            const filter = {
+                and: [
+                    {field: 'age', operator: '<>', value: '10'},
+                    {field: 'age', operator: '<>', value: '20'},
+                    {field: 'age', operator: '<>', value: '30'},
+                    {field: 'age', operator: '<>', value: '40'},
+                    {field: 'age', operator: '<>', value: '50'},
+                    {field: 'age', operator: '<>', value: '60'},
+                    {field: 'age', operator: '<>', value: '70'},
+                    {field: 'age', operator: '<>', value: '80'},
+                    {field: 'age', operator: '<>', value: '90'},
+                    {field: 'age', operator: '<>', value: '100'}
+                ]
+            };
             const {pageInfo, edges} = await createConnection({filter});
 
             expect(pageInfo.hasNextPage).toBe(false);
@@ -116,7 +118,7 @@ describe('Input args with', () => {
         });
 
         it('Can filter for "greater than" range', async () => {
-            const filter = [{field: 'age', operator: '>', value: '100'}];
+            const filter = {field: 'age', operator: '>', value: '100'};
             const {pageInfo, edges} = await createConnection({filter});
 
             expect(pageInfo.hasNextPage).toBe(false);
@@ -126,7 +128,7 @@ describe('Input args with', () => {
         });
 
         it('Can filter for "less than" range', async () => {
-            const filter = [{field: 'age', operator: '<', value: '30'}];
+            const filter = {field: 'age', operator: '<', value: '30'};
             const {pageInfo, edges} = await createConnection({filter});
 
             expect(pageInfo.hasNextPage).toBe(false);
@@ -136,7 +138,7 @@ describe('Input args with', () => {
         });
 
         it('Can filter for "greater than inclusive" range', async () => {
-            const filter = [{field: 'age', operator: '>=', value: '100'}];
+            const filter = {field: 'age', operator: '>=', value: '100'};
             const {pageInfo, edges} = await createConnection({filter});
 
             expect(pageInfo.hasNextPage).toBe(true);
@@ -146,7 +148,7 @@ describe('Input args with', () => {
         });
 
         it('Can filter for "less than inclusive" range', async () => {
-            const filter = [{field: 'age', operator: '<=', value: '30'}];
+            const filter = {field: 'age', operator: '<=', value: '30'};
             const {pageInfo, edges} = await createConnection({filter});
 
             expect(pageInfo.hasNextPage).toBe(true);
@@ -161,11 +163,13 @@ describe('Input args with', () => {
             // 8 people `age` N have brown `hair` and the `first name` Nerissa (80 people total across all `ages`)
             // Thus, there will be 24 people that match this query.
             // See db/seeds/README.md case B for more info.
-            const filter = [
-                {field: 'haircolor', operator: '=', value: 'brown'},
-                {field: 'age', operator: '>', value: '80'},
-                {field: 'firstname', operator: '=', value: 'Nerissa'}
-            ];
+            const filter = {
+                and: [
+                    {field: 'haircolor', operator: '=', value: 'brown'},
+                    {field: 'age', operator: '>', value: '80'},
+                    {field: 'firstname', operator: '=', value: 'Nerissa'}
+                ]
+            };
             const {pageInfo, edges} = await createConnection({filter});
 
             expect(pageInfo.hasNextPage).toBe(false);
@@ -179,12 +183,14 @@ describe('Input args with', () => {
             // (10 people total across all `ages`)
             // Thus, there will be 7 people that match this query.
             // See db/seeds/README.md case B for more info.
-            const filter = [
-                {field: 'haircolor', operator: '=', value: 'brown'},
-                {field: 'age', operator: '<=', value: '80'},
-                {field: 'firstname', operator: '=', value: 'Kenyon'},
-                {field: 'lastname', operator: '=', value: 'Summa'}
-            ];
+            const filter = {
+                and: [
+                    {field: 'haircolor', operator: '=', value: 'brown'},
+                    {field: 'age', operator: '<=', value: '80'},
+                    {field: 'firstname', operator: '=', value: 'Kenyon'},
+                    {field: 'lastname', operator: '=', value: 'Summa'}
+                ]
+            };
 
             const {pageInfo, edges} = await createConnection({filter});
 
@@ -199,7 +205,7 @@ describe('Input args with', () => {
         it('Can get the last 100 people with gray hair', async () => {
             const page = {last: 98};
             const order = {orderBy: 'lastname'};
-            const filter = [{field: 'haircolor', operator: '=', value: 'gray'}];
+            const filter = {field: 'haircolor', operator: '=', value: 'gray'};
             const {pageInfo, edges} = await createConnection({filter, page, order});
 
             expect(pageInfo.hasNextPage).toBe(true); // there are 100 people with gray hair
@@ -218,10 +224,12 @@ describe('Input args with', () => {
     describe('Filters that return no results', () => {
         it('Can be handled properly', async () => {
             const page = {last: 98};
-            const filter = [
-                {field: 'haircolor', operator: '=', value: 'gray'},
-                {field: 'age', operator: '>', value: '120'}
-            ];
+            const filter = {
+                and: [
+                    {field: 'haircolor', operator: '=', value: 'gray'},
+                    {field: 'age', operator: '>', value: '120'}
+                ]
+            };
 
             const {pageInfo, edges} = await createConnection({filter, page});
             expect(pageInfo.hasNextPage).toBe(false);

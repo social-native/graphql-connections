@@ -5,7 +5,8 @@ import {
     IQueryContext,
     IInputArgs,
     IQueryContextOptions,
-    IOperationFilter
+    IInputFilter,
+    ICompoundFilter
 } from './types';
 
 /**
@@ -27,7 +28,7 @@ interface IQueryContextInputArgs extends IInputArgs {
     order: {
         orderBy?: string;
     };
-    filter: IOperationFilter;
+    filter: IInputFilter;
 }
 
 const ORDER_DIRECTION = {
@@ -45,7 +46,7 @@ export default class QueryContext implements IQueryContext {
      *     { field: 'created_at', operator: '>=', value: '90002012'}
      * ]}
      */
-    public filters: IOperationFilter | {};
+    public filters: IInputFilter;
     public offset: number;
     public inputArgs: IQueryContextInputArgs;
     public previousCursor?: string;
@@ -58,7 +59,13 @@ export default class QueryContext implements IQueryContext {
         inputArgs: IInputArgs = {},
         options: IQueryContextOptions<ICursorObj<string>> = {}
     ) {
-        this.inputArgs = {page: {}, cursor: {}, filter: {}, order: {}, ...inputArgs};
+        this.inputArgs = {
+            page: {},
+            cursor: {},
+            filter: {},
+            order: {},
+            ...inputArgs
+        } as IQueryContextInputArgs;
         this.validateArgs();
 
         // private
@@ -157,9 +164,9 @@ export default class QueryContext implements IQueryContext {
             return this.cursorEncoder.decodeFromCursor(this.previousCursor).filters;
         }
 
-        if (!this.inputArgs.filter) {
-            return {};
-        }
+        // if (!this.inputArgs.filter) {
+        //     return {} ;
+        // }
 
         return this.inputArgs.filter;
     }
@@ -212,7 +219,11 @@ export default class QueryContext implements IQueryContext {
             throw Error('Can not mix `after` and `last`');
         } else if ((after || before) && orderBy) {
             throw Error('Can not use orderBy with a cursor');
-        } else if ((after || before) && (this.inputArgs.filter.and || this.inputArgs.filter.or)) {
+        } else if (
+            (after || before) &&
+            ((this.inputArgs.filter as ICompoundFilter).and ||
+                (this.inputArgs.filter as ICompoundFilter).or)
+        ) {
             throw Error('Can not use filters with a cursor');
         } else if ((first != null && first <= 0) || (last != null && last <= 0)) {
             throw Error('Page size must be greater than 0');

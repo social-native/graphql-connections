@@ -38,10 +38,12 @@ describe('Cursor from', () => {
                 const pageOnePageArgs = {first: 600};
                 const pageOneOrderArgs = {orderBy: 'lastname'};
 
-                const pageOneFilterArgs = [
-                    {field: 'haircolor', operator: '=', value: 'brown'},
-                    {field: 'age', operator: '<=', value: '30'}
-                ];
+                const pageOneFilterArgs = {
+                    and: [
+                        {field: 'haircolor', operator: '=', value: 'brown'},
+                        {field: 'age', operator: '<=', value: '30'}
+                    ]
+                };
                 const {pageInfo: pageOnePageInfo, edges: pageOneEdges} = await createConnection({
                     page: pageOnePageArgs,
                     order: pageOneOrderArgs,
@@ -189,10 +191,12 @@ describe('Cursor from', () => {
                 const pageOnePageArgs = {last: 500};
                 const pageOneOrderArgs = {orderBy: 'lastname'};
 
-                const pageOneFilterArgs = [
-                    {field: 'haircolor', operator: '=', value: 'brown'},
-                    {field: 'age', operator: '<=', value: '30'}
-                ];
+                const pageOneFilterArgs = {
+                    and: [
+                        {field: 'haircolor', operator: '=', value: 'brown'},
+                        {field: 'age', operator: '<=', value: '30'}
+                    ]
+                };
                 const {pageInfo: pageOnePageInfo, edges: pageOneEdges} = await createConnection({
                     page: pageOnePageArgs,
                     order: pageOneOrderArgs,

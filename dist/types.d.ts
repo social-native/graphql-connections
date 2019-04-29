@@ -3,16 +3,17 @@ export interface IFilter {
     operator: string;
     field: string;
 }
-export interface IOperationFilter {
-    and?: Array<IOperationFilter & IFilter>;
-    or?: Array<IOperationFilter & IFilter>;
-    not?: Array<IOperationFilter & IFilter>;
+export interface ICompoundFilter {
+    and?: IInputFilter[];
+    or?: IInputFilter[];
+    not?: IInputFilter[];
 }
+export declare type IInputFilter = IFilter | ICompoundFilter;
 export interface ICursorObj<PublicAttributes> {
     initialSort: 'asc' | 'desc';
     orderBy: PublicAttributes;
     position: number;
-    filters: IOperationFilter;
+    filters: IInputFilter;
 }
 export interface IInputArgs {
     cursor?: {
@@ -26,7 +27,7 @@ export interface IInputArgs {
     order?: {
         orderBy?: string;
     };
-    filter?: IOperationFilter;
+    filter?: IInputFilter;
 }
 export interface IInAttributeMap {
     [nodeField: string]: string;
@@ -38,7 +39,7 @@ export interface IQueryContext {
     limit: number;
     orderDirection: 'asc' | 'desc';
     orderBy: string;
-    filters: IOperationFilter;
+    filters: IInputFilter;
     offset: number;
     inputArgs: IInputArgs;
     previousCursor?: string;

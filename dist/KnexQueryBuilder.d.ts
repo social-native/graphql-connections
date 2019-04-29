@@ -24,5 +24,6 @@ export default class KnexQueryBuilder implements IQueryBuilder<Knex> {
     private applyFilter;
     private computeFilterField;
     private computeFilterOperator;
+    private filterArgs;
     private addFilterRecursively;
 }

@@ -2,34 +2,31 @@ import Koa from 'koa';
 import {ApolloServer, gql, IResolvers} from 'apollo-server-koa';
 import knex from 'knex';
 import {ConnectionManager, IInputArgs} from '../src';
+import inputUnionType from '../src/InputUnionType';
 
 import {development as developmentConfig} from '../knexfile';
-import {
-    GraphQLInputObjectType,
-    GraphQLString,
-    GraphQLScalarType,
-    valueFromAST,
-    GraphQLError,
-    isValidLiteralValue
-} from 'graphql';
+import {GraphQLInputObjectType, GraphQLString, GraphQLList} from 'graphql';
 const knexClient = knex(developmentConfig);
 
-const operationFilterScalarType = new GraphQLInputObjectType({
-    name: 'OperationFilter',
+const compoundFilterScalar = new GraphQLInputObjectType({
+    name: 'CompoundFilterScalar',
     fields() {
         return {
             and: {
-                type: nestedOperationFilter
+                type: new GraphQLList(filterInputScalar)
             },
             or: {
-                type: nestedOperationFilter
+                type: new GraphQLList(filterInputScalar)
+            },
+            not: {
+                type: new GraphQLList(filterInputScalar)
             }
         };
     }
 });
 
-const filterScalarType = new GraphQLInputObjectType({
-    name: 'Filter',
+const filterScalar = new GraphQLInputObjectType({
+    name: 'FilterScalar',
     fields() {
         return {
             field: {
@@ -45,54 +42,11 @@ const filterScalarType = new GraphQLInputObjectType({
     }
 });
 
-const printInputType = (type: GraphQLInputObjectType) => {
-    const fields = type.getFields();
-    const fieldNames = Object.keys(fields);
-    const typeSig = fieldNames.reduce(
-        (acc, name) => {
-            acc[name] = fields[name].type.toString();
-            return acc;
-        },
-        {} as {
-            [field: string]: string;
-        }
-    );
-    return JSON.stringify(typeSig)
-        .replace(/[\\"]/gi, '')
-        .replace(/[:]/gi, ': ')
-        .replace(/[,]/gi, ', ');
-};
-
-const nestedOperationFilter = new GraphQLScalarType({
-    name: 'NestedOperationFilter',
-    serialize: (value: any) => value,
-    parseValue: () => {
-        return 2;
-    },
-    parseLiteral: ast => {
-        const potentialTypes = [operationFilterScalarType, filterScalarType];
-        const inputType = potentialTypes.reduce((acc: any, type) => {
-            const astClone = JSON.parse(JSON.stringify(ast));
-            try {
-                return isValidLiteralValue(type, astClone).length === 0 ? type : acc;
-            } catch (e) {
-                return acc;
-            }
-        }, undefined);
-        if (inputType) {
-            return valueFromAST(ast, inputType);
-        } else {
-            const validTypes = potentialTypes.map(t => `${t.name}: ${printInputType(t)}`);
-            throw new GraphQLError(`expected one of ${validTypes}`);
-        }
-    }
-}) as GraphQLScalarType;
+const filterInputScalar = inputUnionType('FilterInputScalar', [compoundFilterScalar, filterScalar]);
 
 // Construct a schema, using GraphQL schema language
-// scalar OperationFilter
 const typeDefs = gql`
-    scalar Filter
-    scalar NestedOperationFilter
+    scalar FilterInputScalar
 
     type User {
         id: ID
@@ -165,7 +119,7 @@ const typeDefs = gql`
         page: InputPageParams
         order: InputOrderParams
         cursor: InputCursorParams
-        filter: NestedOperationFilter
+        filter: FilterInputScalar
     }
 
     type Query {
@@ -189,6 +143,7 @@ type KnexQueryResult = Array<{[attributeName: string]: any}>;
 const resolvers = {
     Query: {
         async users(_: any, {input: inputArgs}: {input: IInputArgs}) {
+            console.log('INPUT ARGS', JSON.stringify(inputArgs));
             const queryBuilder = knexClient.from('mock');
             // maps node types to sql column names
             const attributeMap = {
@@ -215,9 +170,7 @@ const resolvers = {
             };
         }
     },
-    // OperationFilter: operationFilterScalarType,
-    NestedOperationFilter: nestedOperationFilter,
-    Filter: filterScalarType
+    FilterInputScalar: filterInputScalar
 } as IResolvers;
 
 const server = new ApolloServer({typeDefs, resolvers});

@@ -32,7 +32,7 @@ describe('Input args with', () => {
             const page = {first: 200};
             const order = {orderBy: 'firstname'};
             const filter = {field: 'haircolor', operator: '=', value: 'gray'};
-            const {pageInfo, edges} = await createConnection({page, order, filter});
+            const {pageInfo, edges} = await createConnection({...page, ...order, filter});
 
             expect(pageInfo.hasNextPage).toBe(false); // there are 100 people with gray hair
             expect(pageInfo.hasPreviousPage).toBe(false);
@@ -49,7 +49,7 @@ describe('Input args with', () => {
     describe('Page size', () => {
         it('Can be set to get the first 10 edges', async () => {
             const page = {first: 10};
-            const {pageInfo, edges} = await createConnection({page});
+            const {pageInfo, edges} = await createConnection({...page});
 
             expect(pageInfo.hasNextPage).toBe(true);
             expect(pageInfo.hasPreviousPage).toBe(false);
@@ -59,7 +59,7 @@ describe('Input args with', () => {
 
         it('Can be set to get the last 100 edges', async () => {
             const page = {last: 100};
-            const {pageInfo, edges} = await createConnection({page});
+            const {pageInfo, edges} = await createConnection({...page});
 
             expect(pageInfo.hasNextPage).toBe(true);
             expect(pageInfo.hasPreviousPage).toBe(false);
@@ -70,14 +70,14 @@ describe('Input args with', () => {
         it('Cant work with both first and last size args', async () => {
             const page = {first: 10, last: 87};
 
-            const e = await rejectionOf(createConnection({page}));
+            const e = await rejectionOf(createConnection({...page}));
             expect(e.message).toEqual('Can not mix `first` and `last`');
         });
 
         it("Can handle cases where page size doesn't make sense", async () => {
             const page = {first: 0};
 
-            const e = await rejectionOf(createConnection({page}));
+            const e = await rejectionOf(createConnection({...page}));
             expect(e.message).toEqual('Page size must be greater than 0');
         });
     });
@@ -269,7 +269,7 @@ describe('Input args with', () => {
             const page = {last: 98};
             const order = {orderBy: 'lastname'};
             const filter = {field: 'haircolor', operator: '=', value: 'gray'};
-            const {pageInfo, edges} = await createConnection({filter, page, order});
+            const {pageInfo, edges} = await createConnection({filter, ...page, ...order});
 
             expect(pageInfo.hasNextPage).toBe(true); // there are 100 people with gray hair
             expect(pageInfo.hasPreviousPage).toBe(false);
@@ -294,7 +294,7 @@ describe('Input args with', () => {
                 ]
             };
 
-            const {pageInfo, edges} = await createConnection({filter, page});
+            const {pageInfo, edges} = await createConnection({filter, ...page});
             expect(pageInfo.hasNextPage).toBe(false);
             expect(pageInfo.hasPreviousPage).toBe(false);
             expect(edges.length).toBe(0);

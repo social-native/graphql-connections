@@ -21,17 +21,11 @@ export interface ICursorObj<PublicAttributes> {
 }
 
 export interface IInputArgs {
-    cursor?: {
-        before?: string;
-        after?: string;
-    };
-    page?: {
-        first?: number;
-        last?: number;
-    };
-    order?: {
-        orderBy?: string;
-    };
+    before?: string;
+    after?: string;
+    first?: number;
+    last?: number;
+    orderBy?: string;
     filter?: IInputFilter;
 }
 

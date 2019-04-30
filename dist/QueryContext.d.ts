@@ -6,17 +6,11 @@ import { ICursorObj, IQueryContext, IInputArgs, IQueryContextOptions, IInputFilt
  *
  */
 interface IQueryContextInputArgs extends IInputArgs {
-    cursor: {
-        before?: string;
-        after?: string;
-    };
-    page: {
-        first?: number;
-        last?: number;
-    };
-    order: {
-        orderBy?: string;
-    };
+    before?: string;
+    after?: string;
+    first?: number;
+    last?: number;
+    orderBy?: string;
     filter: IInputFilter;
 }
 export default class QueryContext implements IQueryContext {

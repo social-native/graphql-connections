@@ -8,6 +8,7 @@ import {
     IInputFilter,
     ICompoundFilter
 } from './types';
+import {ORDER_DIRECTION} from './enums';
 
 /**
  * QueryContext
@@ -22,17 +23,13 @@ interface IQueryContextInputArgs extends IInputArgs {
     first?: number;
     last?: number;
     orderBy?: string;
+    orderDir?: keyof typeof ORDER_DIRECTION;
     filter: IInputFilter;
 }
 
-const ORDER_DIRECTION = {
-    asc: 'asc',
-    desc: 'desc'
-};
-
 export default class QueryContext implements IQueryContext {
     public limit: number;
-    public orderDirection: 'asc' | 'desc';
+    public orderDir: keyof typeof ORDER_DIRECTION;
     public orderBy: string;
     /**
      * { or: [
@@ -54,10 +51,7 @@ export default class QueryContext implements IQueryContext {
         options: IQueryContextOptions<ICursorObj<string>> = {}
     ) {
         this.inputArgs = {
-            page: {},
-            cursor: {},
             filter: {},
-            order: {},
             ...inputArgs
         } as IQueryContextInputArgs;
         this.validateArgs();
@@ -72,7 +66,7 @@ export default class QueryContext implements IQueryContext {
         this.indexPosition = this.calcIndexPosition();
         this.limit = this.calcLimit();
         this.orderBy = this.calcOrderBy();
-        this.orderDirection = this.calcOrderDirection();
+        this.orderDir = this.calcOrderDirection();
         this.filters = this.calcFilters();
         this.offset = this.calcOffset();
     }
@@ -91,8 +85,8 @@ export default class QueryContext implements IQueryContext {
 
         // tslint:disable-line
         return !!(
-            (prevCursorObj.initialSort === ORDER_DIRECTION.asc && (last || before)) ||
-            (prevCursorObj.initialSort === ORDER_DIRECTION.desc && (first || after))
+            (prevCursorObj.orderDir === ORDER_DIRECTION.asc && (last || before)) ||
+            (prevCursorObj.orderDir === ORDER_DIRECTION.desc && (first || after))
         );
     }
 
@@ -129,15 +123,21 @@ export default class QueryContext implements IQueryContext {
      * Sets the orderDirection for the desired query result
      */
     private calcOrderDirection() {
+        // tslint:disable-next-line
         if (this.previousCursor) {
             const prevCursorObj = this.cursorEncoder.decodeFromCursor(this.previousCursor);
-            return prevCursorObj.initialSort;
+            return prevCursorObj.orderDir;
+        } else if (
+            this.inputArgs.orderDir &&
+            Object.keys(ORDER_DIRECTION).includes(this.inputArgs.orderDir)
+        ) {
+            return this.inputArgs.orderDir;
         } else {
             const dir =
                 this.inputArgs.last || this.inputArgs.before
                     ? ORDER_DIRECTION.desc
                     : ORDER_DIRECTION.asc;
-            return (dir as any) as 'asc' | 'desc';
+            return (dir as any) as keyof typeof ORDER_DIRECTION;
         }
     }
 
@@ -197,7 +197,7 @@ export default class QueryContext implements IQueryContext {
         if (!this.inputArgs) {
             throw Error('Input args are required');
         }
-        const {first, last, before, after, orderBy} = this.inputArgs;
+        const {first, last, before, after, orderBy, orderDir} = this.inputArgs;
 
         // tslint:disable
         if (first && last) {
@@ -210,6 +210,8 @@ export default class QueryContext implements IQueryContext {
             throw Error('Can not mix `after` and `last`');
         } else if ((after || before) && orderBy) {
             throw Error('Can not use orderBy with a cursor');
+        } else if ((after || before) && orderDir) {
+            throw Error('Can not use orderDir with a cursor');
         } else if (
             (after || before) &&
             ((this.inputArgs.filter as ICompoundFilter).and ||

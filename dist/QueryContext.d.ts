@@ -1,4 +1,5 @@
 import { ICursorObj, IQueryContext, IInputArgs, IQueryContextOptions, IInputFilter } from './types';
+import { ORDER_DIRECTION } from './enums';
 /**
  * QueryContext
  *
@@ -11,11 +12,12 @@ interface IQueryContextInputArgs extends IInputArgs {
     first?: number;
     last?: number;
     orderBy?: string;
+    orderDir?: keyof typeof ORDER_DIRECTION;
     filter: IInputFilter;
 }
 export default class QueryContext implements IQueryContext {
     limit: number;
-    orderDirection: 'asc' | 'desc';
+    orderDir: keyof typeof ORDER_DIRECTION;
     orderBy: string;
     /**
      * { or: [

@@ -1,3 +1,5 @@
+import {ORDER_DIRECTION} from 'enums';
+
 export interface IFilter {
     value: string;
     operator: string;
@@ -13,7 +15,7 @@ export interface ICompoundFilter {
 export type IInputFilter = IFilter | ICompoundFilter;
 
 export interface ICursorObj<PublicAttributes> {
-    initialSort: 'asc' | 'desc';
+    orderDir: keyof typeof ORDER_DIRECTION;
     orderBy: PublicAttributes;
     // The position of the cursor item from the beginning of the query
     position: number;
@@ -26,6 +28,7 @@ export interface IInputArgs {
     first?: number;
     last?: number;
     orderBy?: string;
+    orderDir?: keyof typeof ORDER_DIRECTION;
     filter?: IInputFilter;
 }
 
@@ -40,7 +43,7 @@ export interface IFilterMap {
 // QueryContext
 export interface IQueryContext {
     limit: number;
-    orderDirection: 'asc' | 'desc';
+    orderDir: keyof typeof ORDER_DIRECTION;
     orderBy: string;
     filters: IInputFilter;
     offset: number;

@@ -65,7 +65,7 @@ export default class KnexQueryBuilder implements IQueryBuilder<Knex> {
     private applyOrder(queryBuilder: Knex) {
         // map from node attribute names to sql column names
         const orderBy = this.attributeMap[this.queryContext.orderBy] || this.attributeMap.id;
-        const direction = this.queryContext.orderDirection;
+        const direction = this.queryContext.orderDir;
 
         queryBuilder.orderBy(orderBy, direction);
     }

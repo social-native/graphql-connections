@@ -3,7 +3,8 @@ import {
     GraphQLScalarType,
     isValidLiteralValue,
     valueFromAST,
-    GraphQLError
+    GraphQLError,
+    coerceValue
 } from 'graphql';
 
 const printInputType = (type: GraphQLInputObjectType) => {
@@ -24,12 +25,27 @@ const printInputType = (type: GraphQLInputObjectType) => {
         .replace(/[,]/gi, ', ');
 };
 
+const generateInputTypeError = (typeName: string, inputTypes: GraphQLInputObjectType[]) => {
+    const validTypes = inputTypes
+        .map(t => `${t.name} \`${printInputType(t)}\``)
+        .map((t, i) => `${i > 0 ? ' or ' : ''}${t}`);
+    return new GraphQLError(`${typeName} should be composed of either: ${validTypes}`);
+};
+
 export default (typeName: string, inputTypes: GraphQLInputObjectType[]) => {
     return new GraphQLScalarType({
         name: typeName,
         serialize: (value: any) => value,
-        parseValue: () => {
-            return 2;
+        parseValue: (value: any) => {
+            const hasType = inputTypes.reduce((acc, t) => {
+                const result = coerceValue(value, t);
+                return result.errors && result.errors.length > 0 ? acc : true;
+            }, false);
+
+            if (hasType) {
+                return value;
+            }
+            throw generateInputTypeError(typeName, inputTypes);
         },
         parseLiteral: ast => {
             const inputType = inputTypes.reduce((acc: any, type) => {
@@ -42,12 +58,8 @@ export default (typeName: string, inputTypes: GraphQLInputObjectType[]) => {
             }, undefined);
             if (inputType) {
                 return valueFromAST(ast, inputType);
-            } else {
-                const validTypes = inputTypes
-                    .map(t => `${t.name} ${printInputType(t)}`)
-                    .map((t, i) => `${i > 0 ? ' or ' : ''}${t}`);
-                throw new GraphQLError(`${typeName} should be composed of either: ${validTypes}`);
             }
+            throw generateInputTypeError(typeName, inputTypes);
         }
     }) as GraphQLScalarType;
 };

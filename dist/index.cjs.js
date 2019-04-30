@@ -49,8 +49,7 @@ class QueryContext {
         if (!this.previousCursor) {
             return false;
         }
-        const { first, last } = this.inputArgs.page;
-        const { before, after } = this.inputArgs.cursor;
+        const { before, after, first, last } = this.inputArgs;
         const prevCursorObj = this.cursorEncoder.decodeFromCursor(this.previousCursor);
         // tslint:disable-line
         return !!((prevCursorObj.initialSort === ORDER_DIRECTION.asc && (last || before)) ||
@@ -60,7 +59,7 @@ class QueryContext {
      * Sets the limit for the desired query result
      */
     calcLimit() {
-        const { first, last } = this.inputArgs.page;
+        const { first, last } = this.inputArgs;
         const limit = first || last || this.defaultLimit;
         // If you are paging backwards, you need to make sure that the limit
         // isn't greater or equal to the index position.
@@ -80,7 +79,7 @@ class QueryContext {
             return prevCursorObj.orderBy;
         }
         else {
-            return this.inputArgs.order.orderBy || 'id';
+            return this.inputArgs.orderBy || 'id';
         }
     }
     /**
@@ -92,7 +91,7 @@ class QueryContext {
             return prevCursorObj.initialSort;
         }
         else {
-            const dir = this.inputArgs.page.last || this.inputArgs.cursor.before
+            const dir = this.inputArgs.last || this.inputArgs.before
                 ? ORDER_DIRECTION.desc
                 : ORDER_DIRECTION.asc;
             return dir;
@@ -102,7 +101,7 @@ class QueryContext {
      * Extracts the previous cursor from the resolver cursorArgs
      */
     calcPreviousCursor() {
-        const { before, after } = this.inputArgs.cursor;
+        const { before, after } = this.inputArgs;
         return before || after;
     }
     /**
@@ -147,9 +146,7 @@ class QueryContext {
         if (!this.inputArgs) {
             throw Error('Input args are required');
         }
-        const { first, last } = this.inputArgs.page;
-        const { before, after } = this.inputArgs.cursor;
-        const { orderBy } = this.inputArgs.order;
+        const { first, last, before, after, orderBy } = this.inputArgs;
         // tslint:disable
         if (first && last) {
             throw Error('Can not mix `first` and `last`');

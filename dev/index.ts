@@ -58,38 +58,6 @@ const typeDefs = gql`
         haircolor: String
     }
 
-    input InputPageParams {
-        """
-        Number of edges to return at most
-        """
-        first: Int
-        """
-        Number of edges to return at most
-        """
-        last: Int
-    }
-
-    input InputCursorParams {
-        """
-        Previous cursor.
-        Returns edges after this cursor
-        """
-        after: String
-        """
-        Following cursor.
-        Returns edges before this cursor
-        """
-        before: String
-    }
-
-    input InputOrderParams {
-        """
-        Ordering of the results.
-        Should be an attribute on the Nodes in the connection
-        """
-        orderBy: String
-    }
-
     interface IConnection {
         pageInfo: PageInfo!
     }
@@ -116,14 +84,34 @@ const typeDefs = gql`
     }
 
     input UserInputParams {
-        page: InputPageParams
-        order: InputOrderParams
-        cursor: InputCursorParams
+        """
+        Number of edges to return at most
+        """
+        first: Int
+        """
+        Number of edges to return at most
+        """
+        last: Int
+        """
+        Ordering of the results.
+        Should be an attribute on the Nodes in the connection
+        """
+        orderBy: String
+        """
+        Previous cursor.
+        Returns edges after this cursor
+        """
+        after: String
+        """
+        Following cursor.
+        Returns edges before this cursor
+        """
+        before: String
         filter: FilterInputScalar
     }
 
     type Query {
-        users(input: UserInputParams): QueryUserConnection
+        users(input: ...UserInputParams): QueryUserConnection
     }
 `;
 

@@ -17,17 +17,11 @@ import {
  */
 
 interface IQueryContextInputArgs extends IInputArgs {
-    cursor: {
-        before?: string;
-        after?: string;
-    };
-    page: {
-        first?: number;
-        last?: number;
-    };
-    order: {
-        orderBy?: string;
-    };
+    before?: string;
+    after?: string;
+    first?: number;
+    last?: number;
+    orderBy?: string;
     filter: IInputFilter;
 }
 
@@ -92,8 +86,7 @@ export default class QueryContext implements IQueryContext {
             return false;
         }
 
-        const {first, last} = this.inputArgs.page;
-        const {before, after} = this.inputArgs.cursor;
+        const {before, after, first, last} = this.inputArgs;
         const prevCursorObj = this.cursorEncoder.decodeFromCursor(this.previousCursor);
 
         // tslint:disable-line
@@ -107,7 +100,7 @@ export default class QueryContext implements IQueryContext {
      * Sets the limit for the desired query result
      */
     private calcLimit() {
-        const {first, last} = this.inputArgs.page;
+        const {first, last} = this.inputArgs;
 
         const limit = first || last || this.defaultLimit;
         // If you are paging backwards, you need to make sure that the limit
@@ -128,7 +121,7 @@ export default class QueryContext implements IQueryContext {
             const prevCursorObj = this.cursorEncoder.decodeFromCursor(this.previousCursor);
             return prevCursorObj.orderBy;
         } else {
-            return this.inputArgs.order.orderBy || 'id';
+            return this.inputArgs.orderBy || 'id';
         }
     }
 
@@ -141,7 +134,7 @@ export default class QueryContext implements IQueryContext {
             return prevCursorObj.initialSort;
         } else {
             const dir =
-                this.inputArgs.page.last || this.inputArgs.cursor.before
+                this.inputArgs.last || this.inputArgs.before
                     ? ORDER_DIRECTION.desc
                     : ORDER_DIRECTION.asc;
             return (dir as any) as 'asc' | 'desc';
@@ -152,7 +145,7 @@ export default class QueryContext implements IQueryContext {
      * Extracts the previous cursor from the resolver cursorArgs
      */
     private calcPreviousCursor() {
-        const {before, after} = this.inputArgs.cursor;
+        const {before, after} = this.inputArgs;
         return before || after;
     }
 
@@ -204,9 +197,7 @@ export default class QueryContext implements IQueryContext {
         if (!this.inputArgs) {
             throw Error('Input args are required');
         }
-        const {first, last} = this.inputArgs.page;
-        const {before, after} = this.inputArgs.cursor;
-        const {orderBy} = this.inputArgs.order;
+        const {first, last, before, after, orderBy} = this.inputArgs;
 
         // tslint:disable
         if (first && last) {

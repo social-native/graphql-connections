@@ -112,9 +112,9 @@ class QueryContext {
         if (this.previousCursor) {
             return this.cursorEncoder.decodeFromCursor(this.previousCursor).filters;
         }
-        // if (!this.inputArgs.filter) {
-        //     return {} ;
-        // }
+        if (!this.inputArgs.filter) {
+            return {};
+        }
         return this.inputArgs.filter;
     }
     /**
@@ -238,7 +238,7 @@ class KnexQueryBuilder {
         if (mappedField) {
             return mappedField;
         }
-        throw new Error(`Filter field ${field} either does not exist or is not accessible. Check the filter map`);
+        throw new Error(`Filter field ${field} either does not exist or is not accessible. Check the attribute map`);
     }
     computeFilterOperator(operator) {
         const mappedField = this.filterMap[operator];
@@ -251,7 +251,6 @@ class KnexQueryBuilder {
         return [this.computeFilterField(f.field), this.computeFilterOperator(f.operator), f.value];
     }
     addFilterRecursively(filter, queryBuilder) {
-        let isFirst = true;
         if (isFilter(filter)) {
             queryBuilder.where(...this.filterArgs(filter));
             return queryBuilder;
@@ -260,13 +259,7 @@ class KnexQueryBuilder {
         if (filter.and && filter.and.length > 0) {
             filter.and.forEach(f => {
                 if (isFilter(f)) {
-                    if (isFirst) {
-                        queryBuilder.where(...this.filterArgs(f));
-                        isFirst = false;
-                    }
-                    else {
-                        queryBuilder.andWhere(...this.filterArgs(f));
-                    }
+                    queryBuilder.andWhere(...this.filterArgs(f));
                 }
                 else {
                     queryBuilder.andWhere(k => this.addFilterRecursively(f, k));
@@ -276,13 +269,7 @@ class KnexQueryBuilder {
         if (filter.or && filter.or.length > 0) {
             filter.or.forEach(f => {
                 if (isFilter(f)) {
-                    if (isFirst) {
-                        queryBuilder.where(...this.filterArgs(f));
-                        isFirst = false;
-                    }
-                    else {
-                        queryBuilder.orWhere(...this.filterArgs(f));
-                    }
+                    queryBuilder.orWhere(...this.filterArgs(f));
                 }
                 else {
                     queryBuilder.orWhere(k => this.addFilterRecursively(f, k));
@@ -292,13 +279,7 @@ class KnexQueryBuilder {
         if (filter.not && filter.not.length > 0) {
             filter.not.forEach(f => {
                 if (isFilter(f)) {
-                    if (isFirst) {
-                        queryBuilder.whereNot(...this.filterArgs(f));
-                        isFirst = false;
-                    }
-                    else {
-                        queryBuilder.andWhereNot(...this.filterArgs(f));
-                    }
+                    queryBuilder.andWhereNot(...this.filterArgs(f));
                 }
                 else {
                     queryBuilder.andWhereNot(k => this.addFilterRecursively(f, k));

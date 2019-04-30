@@ -164,9 +164,9 @@ export default class QueryContext implements IQueryContext {
             return this.cursorEncoder.decodeFromCursor(this.previousCursor).filters;
         }
 
-        // if (!this.inputArgs.filter) {
-        //     return {} ;
-        // }
+        if (!this.inputArgs.filter) {
+            return {};
+        }
 
         return this.inputArgs.filter;
     }

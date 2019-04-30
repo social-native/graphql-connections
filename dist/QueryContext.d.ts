@@ -1,4 +1,4 @@
-import { ICursorObj, IQueryContext, IInputArgs, IFilter, IQueryContextOptions } from './types';
+import { ICursorObj, IQueryContext, IInputArgs, IQueryContextOptions, IInputFilter } from './types';
 /**
  * QueryContext
  *
@@ -17,13 +17,19 @@ interface IQueryContextInputArgs extends IInputArgs {
     order: {
         orderBy?: string;
     };
-    filter: Array<IFilter<string>>;
+    filter: IInputFilter;
 }
 export default class QueryContext implements IQueryContext {
     limit: number;
     orderDirection: 'asc' | 'desc';
     orderBy: string;
-    filters: string[][];
+    /**
+     * { or: [
+     *     { field: 'username', operator: '=', value: 'haxor1'},
+     *     { field: 'created_at', operator: '>=', value: '90002012'}
+     * ]}
+     */
+    filters: IInputFilter;
     offset: number;
     inputArgs: IQueryContextInputArgs;
     previousCursor?: string;

@@ -1,15 +1,23 @@
-export interface IFilter<Fields> {
+export interface IFilter {
     value: string;
     operator: string;
-    field: Fields;
+    field: string;
 }
+
+export interface ICompoundFilter {
+    and?: IInputFilter[];
+    or?: IInputFilter[];
+    not?: IInputFilter[];
+}
+
+export type IInputFilter = IFilter | ICompoundFilter;
 
 export interface ICursorObj<PublicAttributes> {
     initialSort: 'asc' | 'desc';
     orderBy: PublicAttributes;
     // The position of the cursor item from the beginning of the query
     position: number;
-    filters: string[][];
+    filters: IInputFilter;
 }
 
 export interface IInputArgs {
@@ -24,7 +32,7 @@ export interface IInputArgs {
     order?: {
         orderBy?: string;
     };
-    filter?: Array<IFilter<string>>;
+    filter?: IInputFilter;
 }
 
 export interface IInAttributeMap {
@@ -40,7 +48,7 @@ export interface IQueryContext {
     limit: number;
     orderDirection: 'asc' | 'desc';
     orderBy: string;
-    filters: string[][]; // [['username', '=', 'haxor1'], ['created_at', '>=', '90002012']]
+    filters: IInputFilter;
     offset: number;
     inputArgs: IInputArgs;
     previousCursor?: string;

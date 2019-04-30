@@ -4,9 +4,9 @@ import knex from 'knex';
 import {ConnectionManager, IInputArgs} from '../src';
 import inputUnionType from '../src/InputUnionType';
 
-import {development as developmentConfig} from '../knexfile';
+import {test as testConfig} from '../knexfile';
 import {GraphQLInputObjectType, GraphQLString, GraphQLList} from 'graphql';
-const knexClient = knex(developmentConfig);
+const knexClient = knex(testConfig);
 
 const compoundFilterScalar = new GraphQLInputObjectType({
     name: 'CompoundFilterScalar',
@@ -168,16 +168,30 @@ const resolvers = {
             };
         }
     },
+    IConnection: {
+        __resolveType() {
+            return null;
+        }
+    },
+    IEdge: {
+        __resolveType() {
+            return null;
+        }
+    },
     FilterInputScalar: filterInputScalar
 } as IResolvers;
 
-const server = new ApolloServer({typeDefs, resolvers});
-const app = new Koa();
-server.applyMiddleware({app});
+const appProvider = () => {
+    const server = new ApolloServer({typeDefs, resolvers});
+    const app = new Koa();
+    server.applyMiddleware({app});
+    return app;
+};
 
-app.listen({port: 4000}, () =>
-    // tslint:disable-next-line
-    console.log(
-        `🚀 Server ready at http://localhost:4000${server.graphqlPath} (PID: ${process.pid})`
-    )
-);
+export default appProvider;
+// app.listen({port: 4000}, () =>
+//     // tslint:disable-next-line
+//     console.log(
+//         `🚀 Server ready at http://localhost:4000${server.graphqlPath} (PID: ${process.pid})`
+//     )
+// );

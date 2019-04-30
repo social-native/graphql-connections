@@ -20,7 +20,13 @@ const ORDER_DIRECTION = {
 };
 class QueryContext {
     constructor(inputArgs = {}, options = {}) {
-        this.inputArgs = { page: {}, cursor: {}, filter: [], order: {}, ...inputArgs };
+        this.inputArgs = {
+            page: {},
+            cursor: {},
+            filter: {},
+            order: {},
+            ...inputArgs
+        };
         this.validateArgs();
         // private
         this.cursorEncoder = options.cursorEncoder || CursorEncoder;
@@ -107,12 +113,9 @@ class QueryContext {
             return this.cursorEncoder.decodeFromCursor(this.previousCursor).filters;
         }
         if (!this.inputArgs.filter) {
-            return [];
+            return {};
         }
-        return this.inputArgs.filter.reduce((builtFilters, { field, value, operator }) => {
-            builtFilters.push([field, operator, value]);
-            return builtFilters;
-        }, []);
+        return this.inputArgs.filter;
     }
     /**
      * Gets the index position of the cursor in the total possible result set
@@ -163,7 +166,9 @@ class QueryContext {
         else if ((after || before) && orderBy) {
             throw Error('Can not use orderBy with a cursor');
         }
-        else if ((after || before) && this.inputArgs.filter.length > 0) {
+        else if ((after || before) &&
+            (this.inputArgs.filter.and ||
+                this.inputArgs.filter.or)) {
             throw Error('Can not use filters with a cursor');
         }
         else if ((first != null && first <= 0) || (last != null && last <= 0)) {
@@ -192,6 +197,7 @@ class KnexQueryBuilder {
         this.queryContext = queryContext;
         this.attributeMap = attributeMap;
         this.filterMap = options.filterMap || defaultFilterMap;
+        this.addFilterRecursively = this.addFilterRecursively.bind(this);
     }
     createQuery(queryBuilder) {
         this.applyLimit(queryBuilder);
@@ -225,13 +231,70 @@ class KnexQueryBuilder {
      * Adds filters to the sql query builder
      */
     applyFilter(queryBuilder) {
-        this.queryContext.filters.forEach(filter => {
-            queryBuilder.andWhere(this.attributeMap[filter[0]], // map node field name to sql attribute name
-            this.filterMap[filter[1]], // map operator to sql comparison operator
-            filter[2]);
-        });
+        this.addFilterRecursively(this.queryContext.filters, queryBuilder);
+    }
+    computeFilterField(field) {
+        const mappedField = this.attributeMap[field];
+        if (mappedField) {
+            return mappedField;
+        }
+        throw new Error(`Filter field ${field} either does not exist or is not accessible. Check the attribute map`);
+    }
+    computeFilterOperator(operator) {
+        const mappedField = this.filterMap[operator];
+        if (mappedField) {
+            return mappedField;
+        }
+        throw new Error(`Filter operator ${operator} either does not exist or is not accessible. Check the filter map`);
+    }
+    filterArgs(f) {
+        return [this.computeFilterField(f.field), this.computeFilterOperator(f.operator), f.value];
+    }
+    addFilterRecursively(filter, queryBuilder) {
+        if (isFilter(filter)) {
+            queryBuilder.where(...this.filterArgs(filter));
+            return queryBuilder;
+        }
+        // tslint:disable-next-line
+        if (filter.and && filter.and.length > 0) {
+            filter.and.forEach(f => {
+                if (isFilter(f)) {
+                    queryBuilder.andWhere(...this.filterArgs(f));
+                }
+                else {
+                    queryBuilder.andWhere(k => this.addFilterRecursively(f, k));
+                }
+            });
+        }
+        if (filter.or && filter.or.length > 0) {
+            filter.or.forEach(f => {
+                if (isFilter(f)) {
+                    queryBuilder.orWhere(...this.filterArgs(f));
+                }
+                else {
+                    queryBuilder.orWhere(k => this.addFilterRecursively(f, k));
+                }
+            });
+        }
+        if (filter.not && filter.not.length > 0) {
+            filter.not.forEach(f => {
+                if (isFilter(f)) {
+                    queryBuilder.andWhereNot(...this.filterArgs(f));
+                }
+                else {
+                    queryBuilder.andWhereNot(k => this.addFilterRecursively(f, k));
+                }
+            });
+        }
+        return queryBuilder;
     }
 }
+const isFilter = (filter) => {
+    return (!!filter &&
+        !!filter.field &&
+        !!filter.operator &&
+        !!filter.value);
+};
 
 class QueryResult {
     constructor(result, queryContext, options = {}) {

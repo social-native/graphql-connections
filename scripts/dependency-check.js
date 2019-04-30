@@ -51,7 +51,8 @@ const options = {
         'tsconfig-paths',
         'tslint',
         'tslint-eslint-rules',
-        '@types/jest'
+        '@types/jest',
+        '@types/superagent'
     ],
     specials: [
         // the target special parsers

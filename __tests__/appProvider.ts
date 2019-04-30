@@ -4,9 +4,9 @@ import knex from 'knex';
 import {ConnectionManager, IInputArgs} from '../src';
 import inputUnionType from '../src/InputUnionType';
 
-import {development as developmentConfig} from '../knexfile';
+import {test as testConfig} from '../knexfile';
 import {GraphQLInputObjectType, GraphQLString, GraphQLList} from 'graphql';
-const knexClient = knex(developmentConfig);
+const knexClient = knex(testConfig);
 
 const compoundFilterScalar = new GraphQLInputObjectType({
     name: 'CompoundFilterScalar',

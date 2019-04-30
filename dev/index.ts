@@ -111,7 +111,7 @@ const typeDefs = gql`
     }
 
     type Query {
-        users(input: ...UserInputParams): QueryUserConnection
+        users(input: UserInputParams): QueryUserConnection
     }
 `;
 

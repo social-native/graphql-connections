@@ -3,6 +3,8 @@ import request from 'supertest';
 import {createGQLRequest} from '../utils';
 
 describe('Input Union Type', () => {
+    const app = appProvider();
+
     describe('works with all unions', () => {
         it('not using variables', async () => {
             const gqlQuery = `
@@ -39,7 +41,7 @@ describe('Input Union Type', () => {
                     }
                 }
             `;
-            const app = appProvider();
+
             const response = await request(app.callback())
                 .post('/graphql')
                 .use(createGQLRequest(gqlQuery));
@@ -78,7 +80,7 @@ describe('Input Union Type', () => {
                 "filter": { "or": { "field": "age", "value": "31", "operator": "=" }}
             }
             `;
-            const app = appProvider();
+
             const response = await request(app.callback())
                 .post('/graphql')
                 .use(createGQLRequest(gqlQuery, variables));
@@ -127,7 +129,7 @@ describe('Input Union Type', () => {
                     }
                 }
             `;
-            const app = appProvider();
+
             const response = await request(app.callback())
                 .post('/graphql')
                 .use(createGQLRequest(gqlQuery));
@@ -159,7 +161,7 @@ describe('Input Union Type', () => {
                     }
                 }
             `;
-            const app = appProvider();
+
             const response = await request(app.callback())
                 .post('/graphql')
                 .use(createGQLRequest(gqlQuery));
@@ -195,7 +197,7 @@ describe('Input Union Type', () => {
                 "filter": { "or": { "fields": "age", "value": "31", "operator": "=" }}
             }
             `;
-            const app = appProvider();
+
             const response = await request(app.callback())
                 .post('/graphql')
                 .use(createGQLRequest(gqlQuery, variables));
@@ -231,7 +233,7 @@ describe('Input Union Type', () => {
                 "filter": { "field": "age", "values": "30", "operator": "=" }
             }
             `;
-            const app = appProvider();
+
             const response = await request(app.callback())
                 .post('/graphql')
                 .use(createGQLRequest(gqlQuery, variables));

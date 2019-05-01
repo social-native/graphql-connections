@@ -29,8 +29,8 @@ It can be used to:
 query {
   users(
     input: {
-      page: {first: 100},
-      order: {orderBy: "haircolor"},
+      first: 100,
+      orderBy: "haircolor",
       filter: { and: [
         {field: "id", operator: ">", value: "19990"},
         {field: "age", operator: "<", value: "90"},
@@ -61,8 +61,8 @@ query {
 query {
   users(
     input:{
-      page: {first: 10},
-      cursor: {after: "eyJmaXJzdFJlc3VsdElkIjoxOTk5MiwibGFzdFJlc3VsdE"}
+      first: 10,
+      after: "eyJmaXJzdFJlc3VsdElkIjoxOTk5MiwibGFzdFJlc3VsdE"
    }) {
     pageInfo {
       hasNextPage
@@ -90,7 +90,7 @@ query {
 // import the manager and relevant types
 import {ConnectionManager, INode} from 'snpkg-snapi-connections';
 
-resolver = async (obj, inputArgs) => {
+const resolver = async (obj, inputArgs) => {
     // create a new node connection instance
     const nodeConnection = new ConnectionManager<
         IUserNode,
@@ -116,9 +116,11 @@ resolver = async (obj, inputArgs) => {
 
 To correctly initialize, you will need to supply a `Node` type, the `inputArgs` args, and an `attributeMap` map:
 
-##### `Node`
+##### 1. set the `Node` type
 
-The nodes that are part of a connection need a type. For example, in this case we create an `IUserNode`
+The nodes that are part of a connection need a type. The returned edges will contain nodes of this type.
+
+ For example, in this case we create an `IUserNode`
 
 ```typescript
 interface IUserNode extends INode {
@@ -127,23 +129,18 @@ interface IUserNode extends INode {
 }
 ```
 
-##### inputArgs
+##### 2. add inputArgs
 
-InputArgs supports `page`, `cursor`, `filter`, and `order`:
+InputArgs supports `before`, `after`, `first`, `last`, `orderBy`, `orderDir`, and `filter`:
 
 ```typescript
 interface IInputArgs {
-    cursor?: {
-        before?: string; // cursor
-        after?: string; // cursor
-    };
-    page?: {
-        first?: number;
-        last?: number;
-    };
-    order?: {
-        orderBy?: string; // node field
-    };
+    before?: string; // cursor
+    after?: string; // cursor
+    first?: number; // page size
+    last?: number; // page size
+    orderBy?: string; // order by a node field
+    orderDir: 'asc' | 'desc'
     filter?: IOperationFilter;
 }
 
@@ -173,10 +170,10 @@ query {
         { field: "age", operator: "<", value: "30"},
         { and: [
           { field: "haircolor", operator: "=", value: "blue"},
-        	{ field: "age", operator: "=", value: "70"},
+          { field: "age", operator: "=", value: "70"},
           { or: [
             { field: "username", operator: "=", value: "Ellie86"},
-        		{ field: "username", operator: "=", value: "Euna_Oberbrunner"},
+            { field: "username", operator: "=", value: "Euna_Oberbrunner"},
           ]}
         ]},
       ],
@@ -210,11 +207,11 @@ ORDER BY `id`
    LIMIT 1001
 ```
 
-##### attributeMap
+##### 3. specify an attributeMap
 
 `attributeMap` is a map of GraphQL field names to SQL column names
 
-Only fields defined in the attribute map can be filtered on. An error will be thrown if you try to filter on fields that don't exist in the map.
+Only fields defined in the attribute map can be `orderBy` or `filtered` on. An error will be thrown if you try to filter on fields that don't exist in the map.
 
  ex:
 
@@ -225,9 +222,68 @@ const attributeMap = {
 };
 ```
 
+##### 4. create the applied query
+
+```typescript
+// import the manager and relevant types
+import {ConnectionManager, INode} from 'snpkg-snapi-connections';
+
+const resolver = async (obj, inputArgs) => {
+    // create a new node connection instance
+    const nodeConnection = new ConnectionManager<
+        IUserNode,
+    >(inputArgs, attributeMap);
+
+    // apply the connection to the queryBuilder
+    const appliedQuery = nodeConnection.createQuery(queryBuilder.clone());
+
+    ....
+}
+```
+
+##### 5. execute the query
+
+```typescript
+// import the manager and relevant types
+import {ConnectionManager, INode} from 'snpkg-snapi-connections';
+
+const resolver = async (obj, inputArgs) => {
+    ...
+
+    // apply the connection to the queryBuilder
+    const appliedQuery = nodeConnection.createQuery(queryBuilder.clone());
+
+    // run the query
+    const result = await appliedQuery.select()
+    ....
+}
+```
+
+##### 6. create the pageInfo and edges
+
+```typescript
+// import the manager and relevant types
+import {ConnectionManager, INode} from 'snpkg-snapi-connections';
+
+const resolver = async (obj, inputArgs) => {
+    ...
+
+    // run the query
+    const result = await appliedQuery.select()
+
+    // add the result to the nodeConnection
+    nodeConnection.addResult(result);
+
+    // return the relevant connection information from the resolver
+    return {
+        pageInfo: nodeConnection.pageInfo,
+        edges: nodeConnection.edges
+    };
+```
+
 ### Options
 
-If you are using the `Manager` you can supply options via the third parameter. Options are used to customize the `QueryContext`, the `QueryBuilder`, and the `QueryResult` classes.
+You can supply options to the `Manager` via the third parameter. Options are used to customize the `QueryContext`, the `QueryBuilder`, and the `QueryResult` classes.
 
 ```typescript
     const options = { 

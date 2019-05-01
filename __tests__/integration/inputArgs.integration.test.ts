@@ -46,6 +46,79 @@ describe('Input args with', () => {
             ).toBe(true);
         });
     });
+    describe('OrderDir', () => {
+        it('Can set the order direction for the results', async () => {
+            const filter = {field: 'haircolor', operator: '=', value: 'gray'};
+            const {pageInfo, edges} = await createConnection({
+                first: 200,
+                orderDir: 'desc',
+                orderBy: 'firstname',
+                filter
+            });
+
+            expect(pageInfo.hasNextPage).toBe(false); // there are 100 people with gray hair
+            expect(pageInfo.hasPreviousPage).toBe(false);
+            expect(edges.length).toBe(100); // 100 people have gray hair. See db/seeds/README.md
+            expect(
+                validateFieldIsOrderedAlphabetically(
+                    (edges as any) as Array<{node: {[field: string]: string}}>,
+                    'firstname',
+                    (first, second) => first >= second
+                )
+            ).toBe(true);
+        });
+        it('Can set the order direction and paginate the results', async () => {
+            const filter = {field: 'haircolor', operator: '=', value: 'gray'};
+            const {
+                pageInfo: {endCursor}
+            } = await createConnection({
+                first: 10,
+                orderDir: 'desc',
+                orderBy: 'firstname',
+                filter
+            });
+
+            const {pageInfo, edges} = await createConnection({after: endCursor});
+
+            expect(pageInfo.hasNextPage).toBe(false); // there are 100 people with gray hair
+            expect(pageInfo.hasPreviousPage).toBe(true);
+            expect(edges.length).toBe(90); // 100 people have gray hair. See db/seeds/README.md
+            expect(
+                validateFieldIsOrderedAlphabetically(
+                    (edges as any) as Array<{node: {[field: string]: string}}>,
+                    'firstname',
+                    (first, second) => first >= second
+                )
+            ).toBe(true);
+        });
+        it('Can set the order direction and paginate the results and then paginate backwards', async () => {
+            const filter = {field: 'haircolor', operator: '=', value: 'gray'};
+            const {
+                pageInfo: {endCursor}
+            } = await createConnection({
+                first: 10,
+                orderDir: 'desc',
+                orderBy: 'firstname',
+                filter
+            });
+
+            const {
+                pageInfo: {endCursor: nextCursor}
+            } = await createConnection({first: 20, after: endCursor});
+            const {pageInfo, edges} = await createConnection({before: nextCursor});
+
+            expect(pageInfo.hasNextPage).toBe(false); // there are 100 people with gray hair
+            expect(pageInfo.hasPreviousPage).toBe(true);
+            expect(edges.length).toBe(29); // 100 people have gray hair. See db/seeds/README.md
+            expect(
+                validateFieldIsOrderedAlphabetically(
+                    (edges as any) as Array<{node: {[field: string]: string}}>,
+                    'firstname',
+                    (first, second) => first >= second
+                )
+            ).toBe(true);
+        });
+    });
     describe('Page size', () => {
         it('Can be set to get the first 10 edges', async () => {
             const page = {first: 10};
@@ -58,8 +131,7 @@ describe('Input args with', () => {
         });
 
         it('Can be set to get the last 100 edges', async () => {
-            const page = {last: 100};
-            const {pageInfo, edges} = await createConnection({...page});
+            const {pageInfo, edges} = await createConnection({first: 100, orderDir: 'desc'});
 
             expect(pageInfo.hasNextPage).toBe(true);
             expect(pageInfo.hasPreviousPage).toBe(false);
@@ -266,10 +338,13 @@ describe('Input args with', () => {
 
     describe('Filters, page size, orderBy', () => {
         it('Can get the last 100 people with gray hair', async () => {
-            const page = {last: 98};
-            const order = {orderBy: 'lastname'};
             const filter = {field: 'haircolor', operator: '=', value: 'gray'};
-            const {pageInfo, edges} = await createConnection({filter, ...page, ...order});
+            const {pageInfo, edges} = await createConnection({
+                filter,
+                first: 98,
+                orderBy: 'lastname',
+                orderDir: 'desc'
+            });
 
             expect(pageInfo.hasNextPage).toBe(true); // there are 100 people with gray hair
             expect(pageInfo.hasPreviousPage).toBe(false);
@@ -286,7 +361,6 @@ describe('Input args with', () => {
 
     describe('Filters that return no results', () => {
         it('Can be handled properly', async () => {
-            const page = {last: 98};
             const filter = {
                 and: [
                     {field: 'haircolor', operator: '=', value: 'gray'},
@@ -294,7 +368,7 @@ describe('Input args with', () => {
                 ]
             };
 
-            const {pageInfo, edges} = await createConnection({filter, ...page});
+            const {pageInfo, edges} = await createConnection({filter, first: 98, orderDir: 'desc'});
             expect(pageInfo.hasNextPage).toBe(false);
             expect(pageInfo.hasPreviousPage).toBe(false);
             expect(edges.length).toBe(0);

@@ -132,7 +132,7 @@ export default class QueryResult<
     }
 
     private createEdgesFromNodes() {
-        const initialSort = this.queryContext.orderDirection;
+        const orderDir = this.queryContext.orderDir;
         const filters = this.queryContext.filters;
         const orderBy = this.queryContext.orderBy;
 
@@ -144,7 +144,7 @@ export default class QueryResult<
 
             return {
                 cursor: this.cursorEncoder.encodeToCursor({
-                    initialSort,
+                    orderDir,
                     filters,
                     orderBy,
                     position

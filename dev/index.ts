@@ -94,9 +94,14 @@ const typeDefs = gql`
         last: Int
         """
         Ordering of the results.
-        Should be an attribute on the Nodes in the connection
+        Should be a field on the Nodes in the connection
         """
         orderBy: String
+        """
+        Direction order the results by.
+        Should be 'asc' or 'desc'
+        """
+        orderDir: String
         """
         Previous cursor.
         Returns edges after this cursor

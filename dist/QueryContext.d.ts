@@ -1,4 +1,5 @@
 import { ICursorObj, IQueryContext, IInputArgs, IQueryContextOptions, IInputFilter } from './types';
+import { ORDER_DIRECTION } from './enums';
 /**
  * QueryContext
  *
@@ -11,11 +12,12 @@ interface IQueryContextInputArgs extends IInputArgs {
     first?: number;
     last?: number;
     orderBy?: string;
+    orderDir?: keyof typeof ORDER_DIRECTION;
     filter: IInputFilter;
 }
 export default class QueryContext implements IQueryContext {
     limit: number;
-    orderDirection: 'asc' | 'desc';
+    orderDir: keyof typeof ORDER_DIRECTION;
     orderBy: string;
     /**
      * { or: [
@@ -32,8 +34,7 @@ export default class QueryContext implements IQueryContext {
     private cursorEncoder;
     constructor(inputArgs?: IInputArgs, options?: IQueryContextOptions<ICursorObj<string>>);
     /**
-     * Compares the current paging direction (as indicated `first` and `last` args)
-     * and compares to what the original sort direction was (as found in the cursor)
+     * Checks if there is a 'before or 'last' arg which is used to reverse paginate
      */
     readonly isPagingBackwards: boolean;
     /**

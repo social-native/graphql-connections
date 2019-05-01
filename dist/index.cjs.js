@@ -18,13 +18,11 @@ const ORDER_DIRECTION = {
     asc: 'asc',
     desc: 'desc'
 };
+
 class QueryContext {
     constructor(inputArgs = {}, options = {}) {
         this.inputArgs = {
-            page: {},
-            cursor: {},
             filter: {},
-            order: {},
             ...inputArgs
         };
         this.validateArgs();
@@ -37,23 +35,19 @@ class QueryContext {
         this.indexPosition = this.calcIndexPosition();
         this.limit = this.calcLimit();
         this.orderBy = this.calcOrderBy();
-        this.orderDirection = this.calcOrderDirection();
+        this.orderDir = this.calcOrderDirection();
         this.filters = this.calcFilters();
         this.offset = this.calcOffset();
     }
     /**
-     * Compares the current paging direction (as indicated `first` and `last` args)
-     * and compares to what the original sort direction was (as found in the cursor)
+     * Checks if there is a 'before or 'last' arg which is used to reverse paginate
      */
     get isPagingBackwards() {
         if (!this.previousCursor) {
             return false;
         }
-        const { before, after, first, last } = this.inputArgs;
-        const prevCursorObj = this.cursorEncoder.decodeFromCursor(this.previousCursor);
-        // tslint:disable-line
-        return !!((prevCursorObj.initialSort === ORDER_DIRECTION.asc && (last || before)) ||
-            (prevCursorObj.initialSort === ORDER_DIRECTION.desc && (first || after)));
+        const { before, last } = this.inputArgs;
+        return !!(last || before);
     }
     /**
      * Sets the limit for the desired query result
@@ -86,9 +80,14 @@ class QueryContext {
      * Sets the orderDirection for the desired query result
      */
     calcOrderDirection() {
+        // tslint:disable-next-line
         if (this.previousCursor) {
             const prevCursorObj = this.cursorEncoder.decodeFromCursor(this.previousCursor);
-            return prevCursorObj.initialSort;
+            return prevCursorObj.orderDir;
+        }
+        else if (this.inputArgs.orderDir &&
+            Object.keys(ORDER_DIRECTION).includes(this.inputArgs.orderDir)) {
+            return this.inputArgs.orderDir;
         }
         else {
             const dir = this.inputArgs.last || this.inputArgs.before
@@ -146,7 +145,7 @@ class QueryContext {
         if (!this.inputArgs) {
             throw Error('Input args are required');
         }
-        const { first, last, before, after, orderBy } = this.inputArgs;
+        const { first, last, before, after, orderBy, orderDir } = this.inputArgs;
         // tslint:disable
         if (first && last) {
             throw Error('Can not mix `first` and `last`');
@@ -163,10 +162,16 @@ class QueryContext {
         else if ((after || before) && orderBy) {
             throw Error('Can not use orderBy with a cursor');
         }
+        else if ((after || before) && orderDir) {
+            throw Error('Can not use orderDir with a cursor');
+        }
         else if ((after || before) &&
             (this.inputArgs.filter.and ||
                 this.inputArgs.filter.or)) {
             throw Error('Can not use filters with a cursor');
+        }
+        else if (last && !before) {
+            throw Error('Can not use `last` without a cursor. Use `first` to set page size on the initial query');
         }
         else if ((first != null && first <= 0) || (last != null && last <= 0)) {
             throw Error('Page size must be greater than 0');
@@ -217,7 +222,7 @@ class KnexQueryBuilder {
     applyOrder(queryBuilder) {
         // map from node attribute names to sql column names
         const orderBy = this.attributeMap[this.queryContext.orderBy] || this.attributeMap.id;
-        const direction = this.queryContext.orderDirection;
+        const direction = this.queryContext.orderDir;
         queryBuilder.orderBy(orderBy, direction);
     }
     applyOffset(queryBuilder) {
@@ -380,7 +385,7 @@ class QueryResult {
         return this.result.map(node => nodeTansformer({ ...node })).slice(0, this.queryContext.limit);
     }
     createEdgesFromNodes() {
-        const initialSort = this.queryContext.orderDirection;
+        const orderDir = this.queryContext.orderDir;
         const filters = this.queryContext.filters;
         const orderBy = this.queryContext.orderBy;
         const nodesLength = this.nodes.length;
@@ -390,7 +395,7 @@ class QueryResult {
                 : this.queryContext.indexPosition + index + 1;
             return {
                 cursor: this.cursorEncoder.encodeToCursor({
-                    initialSort,
+                    orderDir,
                     filters,
                     orderBy,
                     position

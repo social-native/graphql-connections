@@ -1,4 +1,4 @@
-import { ORDER_DIRECTION } from 'enums';
+import { ORDER_DIRECTION } from './enums';
 export interface IFilter {
     value: string;
     operator: string;

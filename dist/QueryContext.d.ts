@@ -34,8 +34,7 @@ export default class QueryContext implements IQueryContext {
     private cursorEncoder;
     constructor(inputArgs?: IInputArgs, options?: IQueryContextOptions<ICursorObj<string>>);
     /**
-     * Compares the current paging direction (as indicated `first` and `last` args)
-     * and compares to what the original sort direction was (as found in the cursor)
+     * Checks if there is a 'before or 'last' arg which is used to reverse paginate
      */
     readonly isPagingBackwards: boolean;
     /**

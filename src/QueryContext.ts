@@ -72,22 +72,15 @@ export default class QueryContext implements IQueryContext {
     }
 
     /**
-     * Compares the current paging direction (as indicated `first` and `last` args)
-     * and compares to what the original sort direction was (as found in the cursor)
+     * Checks if there is a 'before or 'last' arg which is used to reverse paginate
      */
     public get isPagingBackwards() {
         if (!this.previousCursor) {
             return false;
         }
 
-        const {before, after, first, last} = this.inputArgs;
-        const prevCursorObj = this.cursorEncoder.decodeFromCursor(this.previousCursor);
-
-        // tslint:disable-line
-        return !!(
-            (prevCursorObj.orderDir === ORDER_DIRECTION.asc && (last || before)) ||
-            (prevCursorObj.orderDir === ORDER_DIRECTION.desc && (first || after))
-        );
+        const {before, last} = this.inputArgs;
+        return !!(last || before);
     }
 
     /**
@@ -218,6 +211,10 @@ export default class QueryContext implements IQueryContext {
                 (this.inputArgs.filter as ICompoundFilter).or)
         ) {
             throw Error('Can not use filters with a cursor');
+        } else if (last && !before) {
+            throw Error(
+                'Can not use `last` without a cursor. Use `first` to set page size on the initial query'
+            );
         } else if ((first != null && first <= 0) || (last != null && last <= 0)) {
             throw Error('Page size must be greater than 0');
         }

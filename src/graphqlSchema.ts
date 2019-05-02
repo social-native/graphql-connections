@@ -43,10 +43,10 @@ const filterScalar = new GraphQLInputObjectType({
 });
 
 const filterDescription = `
-    The filter input scalar is a 
-    union of the 
+    The filter input scalar is a
+    union of the
     IFilter and ICompundFIlter.
-    It allows for recursive 
+    It allows for recursive
     nesting of filters using
     'and', 'or', and 'not' as
     composition operators

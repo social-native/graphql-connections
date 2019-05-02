@@ -1,27 +1,29 @@
-export interface IFilter<Fields> {
+import { ORDER_DIRECTION } from './enums';
+export interface IFilter {
     value: string;
     operator: string;
-    field: Fields;
+    field: string;
 }
+export interface ICompoundFilter {
+    and?: IInputFilter[];
+    or?: IInputFilter[];
+    not?: IInputFilter[];
+}
+export declare type IInputFilter = IFilter | ICompoundFilter;
 export interface ICursorObj<PublicAttributes> {
-    initialSort: 'asc' | 'desc';
+    orderDir: keyof typeof ORDER_DIRECTION;
     orderBy: PublicAttributes;
     position: number;
-    filters: string[][];
+    filters: IInputFilter;
 }
 export interface IInputArgs {
-    cursor?: {
-        before?: string;
-        after?: string;
-    };
-    page?: {
-        first?: number;
-        last?: number;
-    };
-    order?: {
-        orderBy?: string;
-    };
-    filter?: Array<IFilter<string>>;
+    before?: string;
+    after?: string;
+    first?: number;
+    last?: number;
+    orderBy?: string;
+    orderDir?: keyof typeof ORDER_DIRECTION;
+    filter?: IInputFilter;
 }
 export interface IInAttributeMap {
     [nodeField: string]: string;
@@ -31,9 +33,9 @@ export interface IFilterMap {
 }
 export interface IQueryContext {
     limit: number;
-    orderDirection: 'asc' | 'desc';
+    orderDir: keyof typeof ORDER_DIRECTION;
     orderBy: string;
-    filters: string[][];
+    filters: IInputFilter;
     offset: number;
     inputArgs: IInputArgs;
     previousCursor?: string;

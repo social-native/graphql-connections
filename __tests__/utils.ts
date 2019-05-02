@@ -1,3 +1,5 @@
+import {SuperAgentRequest} from 'superagent';
+
 export const validateNodesHaveAttributes = (
     edges: Array<{node: {[attr: string]: any}}>,
     attributes: {[attr: string]: any}
@@ -35,4 +37,10 @@ export const validateFieldIsOrderedAlphabetically = (
             return acc;
         }
     }, true);
+};
+
+export const createGQLRequest = (query: string, variables?: any) => {
+    return (request: SuperAgentRequest) => {
+        return request.set('Content-Type', 'application/json').send({query, variables});
+    };
 };

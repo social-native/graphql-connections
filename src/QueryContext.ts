@@ -4,9 +4,11 @@ import {
     ICursorObj,
     IQueryContext,
     IInputArgs,
-    IFilter,
-    IQueryContextOptions
+    IQueryContextOptions,
+    IInputFilter,
+    ICompoundFilter
 } from './types';
+import {ORDER_DIRECTION} from './enums';
 
 /**
  * QueryContext
@@ -16,30 +18,26 @@ import {
  */
 
 interface IQueryContextInputArgs extends IInputArgs {
-    cursor: {
-        before?: string;
-        after?: string;
-    };
-    page: {
-        first?: number;
-        last?: number;
-    };
-    order: {
-        orderBy?: string;
-    };
-    filter: Array<IFilter<string>>;
+    before?: string;
+    after?: string;
+    first?: number;
+    last?: number;
+    orderBy?: string;
+    orderDir?: keyof typeof ORDER_DIRECTION;
+    filter: IInputFilter;
 }
-
-const ORDER_DIRECTION = {
-    asc: 'asc',
-    desc: 'desc'
-};
 
 export default class QueryContext implements IQueryContext {
     public limit: number;
-    public orderDirection: 'asc' | 'desc';
+    public orderDir: keyof typeof ORDER_DIRECTION;
     public orderBy: string;
-    public filters: string[][]; // [['username', '=', 'haxor1'], ['created_at', '>=', '90002012']]
+    /**
+     * { or: [
+     *     { field: 'username', operator: '=', value: 'haxor1'},
+     *     { field: 'created_at', operator: '>=', value: '90002012'}
+     * ]}
+     */
+    public filters: IInputFilter;
     public offset: number;
     public inputArgs: IQueryContextInputArgs;
     public previousCursor?: string;
@@ -52,7 +50,10 @@ export default class QueryContext implements IQueryContext {
         inputArgs: IInputArgs = {},
         options: IQueryContextOptions<ICursorObj<string>> = {}
     ) {
-        this.inputArgs = {page: {}, cursor: {}, filter: [], order: {}, ...inputArgs};
+        this.inputArgs = {
+            filter: {},
+            ...inputArgs
+        } as IQueryContextInputArgs;
         this.validateArgs();
 
         // private
@@ -65,36 +66,28 @@ export default class QueryContext implements IQueryContext {
         this.indexPosition = this.calcIndexPosition();
         this.limit = this.calcLimit();
         this.orderBy = this.calcOrderBy();
-        this.orderDirection = this.calcOrderDirection();
+        this.orderDir = this.calcOrderDirection();
         this.filters = this.calcFilters();
         this.offset = this.calcOffset();
     }
 
     /**
-     * Compares the current paging direction (as indicated `first` and `last` args)
-     * and compares to what the original sort direction was (as found in the cursor)
+     * Checks if there is a 'before or 'last' arg which is used to reverse paginate
      */
     public get isPagingBackwards() {
         if (!this.previousCursor) {
             return false;
         }
 
-        const {first, last} = this.inputArgs.page;
-        const {before, after} = this.inputArgs.cursor;
-        const prevCursorObj = this.cursorEncoder.decodeFromCursor(this.previousCursor);
-
-        // tslint:disable-line
-        return !!(
-            (prevCursorObj.initialSort === ORDER_DIRECTION.asc && (last || before)) ||
-            (prevCursorObj.initialSort === ORDER_DIRECTION.desc && (first || after))
-        );
+        const {before, last} = this.inputArgs;
+        return !!(last || before);
     }
 
     /**
      * Sets the limit for the desired query result
      */
     private calcLimit() {
-        const {first, last} = this.inputArgs.page;
+        const {first, last} = this.inputArgs;
 
         const limit = first || last || this.defaultLimit;
         // If you are paging backwards, you need to make sure that the limit
@@ -115,7 +108,7 @@ export default class QueryContext implements IQueryContext {
             const prevCursorObj = this.cursorEncoder.decodeFromCursor(this.previousCursor);
             return prevCursorObj.orderBy;
         } else {
-            return this.inputArgs.order.orderBy || 'id';
+            return this.inputArgs.orderBy || 'id';
         }
     }
 
@@ -123,15 +116,21 @@ export default class QueryContext implements IQueryContext {
      * Sets the orderDirection for the desired query result
      */
     private calcOrderDirection() {
+        // tslint:disable-next-line
         if (this.previousCursor) {
             const prevCursorObj = this.cursorEncoder.decodeFromCursor(this.previousCursor);
-            return prevCursorObj.initialSort;
+            return prevCursorObj.orderDir;
+        } else if (
+            this.inputArgs.orderDir &&
+            Object.keys(ORDER_DIRECTION).includes(this.inputArgs.orderDir)
+        ) {
+            return this.inputArgs.orderDir;
         } else {
             const dir =
-                this.inputArgs.page.last || this.inputArgs.cursor.before
+                this.inputArgs.last || this.inputArgs.before
                     ? ORDER_DIRECTION.desc
                     : ORDER_DIRECTION.asc;
-            return (dir as any) as 'asc' | 'desc';
+            return (dir as any) as keyof typeof ORDER_DIRECTION;
         }
     }
 
@@ -139,7 +138,7 @@ export default class QueryContext implements IQueryContext {
      * Extracts the previous cursor from the resolver cursorArgs
      */
     private calcPreviousCursor() {
-        const {before, after} = this.inputArgs.cursor;
+        const {before, after} = this.inputArgs;
         return before || after;
     }
 
@@ -152,16 +151,10 @@ export default class QueryContext implements IQueryContext {
         }
 
         if (!this.inputArgs.filter) {
-            return [];
+            return {};
         }
 
-        return this.inputArgs.filter.reduce(
-            (builtFilters, {field, value, operator}) => {
-                builtFilters.push([field, operator, value]);
-                return builtFilters;
-            },
-            [] as string[][]
-        );
+        return this.inputArgs.filter;
     }
 
     /**
@@ -197,9 +190,7 @@ export default class QueryContext implements IQueryContext {
         if (!this.inputArgs) {
             throw Error('Input args are required');
         }
-        const {first, last} = this.inputArgs.page;
-        const {before, after} = this.inputArgs.cursor;
-        const {orderBy} = this.inputArgs.order;
+        const {first, last, before, after, orderBy, orderDir} = this.inputArgs;
 
         // tslint:disable
         if (first && last) {
@@ -212,8 +203,18 @@ export default class QueryContext implements IQueryContext {
             throw Error('Can not mix `after` and `last`');
         } else if ((after || before) && orderBy) {
             throw Error('Can not use orderBy with a cursor');
-        } else if ((after || before) && this.inputArgs.filter.length > 0) {
+        } else if ((after || before) && orderDir) {
+            throw Error('Can not use orderDir with a cursor');
+        } else if (
+            (after || before) &&
+            ((this.inputArgs.filter as ICompoundFilter).and ||
+                (this.inputArgs.filter as ICompoundFilter).or)
+        ) {
             throw Error('Can not use filters with a cursor');
+        } else if (last && !before) {
+            throw Error(
+                'Can not use `last` without a cursor. Use `first` to set page size on the initial query'
+            );
         } else if ((first != null && first <= 0) || (last != null && last <= 0)) {
             throw Error('Page size must be greater than 0');
         }

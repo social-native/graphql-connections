@@ -2,6 +2,9 @@
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
+var graphql = require('graphql');
+var apolloServerKoa = require('apollo-server-koa');
+
 class CursorEncoder {
     static encodeToCursor(cursorObj) {
         const buff = Buffer.from(JSON.stringify(cursorObj));
@@ -18,9 +21,13 @@ const ORDER_DIRECTION = {
     asc: 'asc',
     desc: 'desc'
 };
+
 class QueryContext {
     constructor(inputArgs = {}, options = {}) {
-        this.inputArgs = { page: {}, cursor: {}, filter: [], order: {}, ...inputArgs };
+        this.inputArgs = {
+            filter: {},
+            ...inputArgs
+        };
         this.validateArgs();
         // private
         this.cursorEncoder = options.cursorEncoder || CursorEncoder;
@@ -31,30 +38,25 @@ class QueryContext {
         this.indexPosition = this.calcIndexPosition();
         this.limit = this.calcLimit();
         this.orderBy = this.calcOrderBy();
-        this.orderDirection = this.calcOrderDirection();
+        this.orderDir = this.calcOrderDirection();
         this.filters = this.calcFilters();
         this.offset = this.calcOffset();
     }
     /**
-     * Compares the current paging direction (as indicated `first` and `last` args)
-     * and compares to what the original sort direction was (as found in the cursor)
+     * Checks if there is a 'before or 'last' arg which is used to reverse paginate
      */
     get isPagingBackwards() {
         if (!this.previousCursor) {
             return false;
         }
-        const { first, last } = this.inputArgs.page;
-        const { before, after } = this.inputArgs.cursor;
-        const prevCursorObj = this.cursorEncoder.decodeFromCursor(this.previousCursor);
-        // tslint:disable-line
-        return !!((prevCursorObj.initialSort === ORDER_DIRECTION.asc && (last || before)) ||
-            (prevCursorObj.initialSort === ORDER_DIRECTION.desc && (first || after)));
+        const { before, last } = this.inputArgs;
+        return !!(last || before);
     }
     /**
      * Sets the limit for the desired query result
      */
     calcLimit() {
-        const { first, last } = this.inputArgs.page;
+        const { first, last } = this.inputArgs;
         const limit = first || last || this.defaultLimit;
         // If you are paging backwards, you need to make sure that the limit
         // isn't greater or equal to the index position.
@@ -74,19 +76,24 @@ class QueryContext {
             return prevCursorObj.orderBy;
         }
         else {
-            return this.inputArgs.order.orderBy || 'id';
+            return this.inputArgs.orderBy || 'id';
         }
     }
     /**
      * Sets the orderDirection for the desired query result
      */
     calcOrderDirection() {
+        // tslint:disable-next-line
         if (this.previousCursor) {
             const prevCursorObj = this.cursorEncoder.decodeFromCursor(this.previousCursor);
-            return prevCursorObj.initialSort;
+            return prevCursorObj.orderDir;
+        }
+        else if (this.inputArgs.orderDir &&
+            Object.keys(ORDER_DIRECTION).includes(this.inputArgs.orderDir)) {
+            return this.inputArgs.orderDir;
         }
         else {
-            const dir = this.inputArgs.page.last || this.inputArgs.cursor.before
+            const dir = this.inputArgs.last || this.inputArgs.before
                 ? ORDER_DIRECTION.desc
                 : ORDER_DIRECTION.asc;
             return dir;
@@ -96,7 +103,7 @@ class QueryContext {
      * Extracts the previous cursor from the resolver cursorArgs
      */
     calcPreviousCursor() {
-        const { before, after } = this.inputArgs.cursor;
+        const { before, after } = this.inputArgs;
         return before || after;
     }
     /**
@@ -107,12 +114,9 @@ class QueryContext {
             return this.cursorEncoder.decodeFromCursor(this.previousCursor).filters;
         }
         if (!this.inputArgs.filter) {
-            return [];
+            return {};
         }
-        return this.inputArgs.filter.reduce((builtFilters, { field, value, operator }) => {
-            builtFilters.push([field, operator, value]);
-            return builtFilters;
-        }, []);
+        return this.inputArgs.filter;
     }
     /**
      * Gets the index position of the cursor in the total possible result set
@@ -144,9 +148,7 @@ class QueryContext {
         if (!this.inputArgs) {
             throw Error('Input args are required');
         }
-        const { first, last } = this.inputArgs.page;
-        const { before, after } = this.inputArgs.cursor;
-        const { orderBy } = this.inputArgs.order;
+        const { first, last, before, after, orderBy, orderDir } = this.inputArgs;
         // tslint:disable
         if (first && last) {
             throw Error('Can not mix `first` and `last`');
@@ -163,8 +165,16 @@ class QueryContext {
         else if ((after || before) && orderBy) {
             throw Error('Can not use orderBy with a cursor');
         }
-        else if ((after || before) && this.inputArgs.filter.length > 0) {
+        else if ((after || before) && orderDir) {
+            throw Error('Can not use orderDir with a cursor');
+        }
+        else if ((after || before) &&
+            (this.inputArgs.filter.and ||
+                this.inputArgs.filter.or)) {
             throw Error('Can not use filters with a cursor');
+        }
+        else if (last && !before) {
+            throw Error('Can not use `last` without a cursor. Use `first` to set page size on the initial query');
         }
         else if ((first != null && first <= 0) || (last != null && last <= 0)) {
             throw Error('Page size must be greater than 0');
@@ -192,6 +202,7 @@ class KnexQueryBuilder {
         this.queryContext = queryContext;
         this.attributeMap = attributeMap;
         this.filterMap = options.filterMap || defaultFilterMap;
+        this.addFilterRecursively = this.addFilterRecursively.bind(this);
     }
     createQuery(queryBuilder) {
         this.applyLimit(queryBuilder);
@@ -214,7 +225,7 @@ class KnexQueryBuilder {
     applyOrder(queryBuilder) {
         // map from node attribute names to sql column names
         const orderBy = this.attributeMap[this.queryContext.orderBy] || this.attributeMap.id;
-        const direction = this.queryContext.orderDirection;
+        const direction = this.queryContext.orderDir;
         queryBuilder.orderBy(orderBy, direction);
     }
     applyOffset(queryBuilder) {
@@ -225,13 +236,70 @@ class KnexQueryBuilder {
      * Adds filters to the sql query builder
      */
     applyFilter(queryBuilder) {
-        this.queryContext.filters.forEach(filter => {
-            queryBuilder.andWhere(this.attributeMap[filter[0]], // map node field name to sql attribute name
-            this.filterMap[filter[1]], // map operator to sql comparison operator
-            filter[2]);
-        });
+        this.addFilterRecursively(this.queryContext.filters, queryBuilder);
+    }
+    computeFilterField(field) {
+        const mappedField = this.attributeMap[field];
+        if (mappedField) {
+            return mappedField;
+        }
+        throw new Error(`Filter field ${field} either does not exist or is not accessible. Check the attribute map`);
+    }
+    computeFilterOperator(operator) {
+        const mappedField = this.filterMap[operator];
+        if (mappedField) {
+            return mappedField;
+        }
+        throw new Error(`Filter operator ${operator} either does not exist or is not accessible. Check the filter map`);
+    }
+    filterArgs(f) {
+        return [this.computeFilterField(f.field), this.computeFilterOperator(f.operator), f.value];
+    }
+    addFilterRecursively(filter, queryBuilder) {
+        if (isFilter(filter)) {
+            queryBuilder.where(...this.filterArgs(filter));
+            return queryBuilder;
+        }
+        // tslint:disable-next-line
+        if (filter.and && filter.and.length > 0) {
+            filter.and.forEach(f => {
+                if (isFilter(f)) {
+                    queryBuilder.andWhere(...this.filterArgs(f));
+                }
+                else {
+                    queryBuilder.andWhere(k => this.addFilterRecursively(f, k));
+                }
+            });
+        }
+        if (filter.or && filter.or.length > 0) {
+            filter.or.forEach(f => {
+                if (isFilter(f)) {
+                    queryBuilder.orWhere(...this.filterArgs(f));
+                }
+                else {
+                    queryBuilder.orWhere(k => this.addFilterRecursively(f, k));
+                }
+            });
+        }
+        if (filter.not && filter.not.length > 0) {
+            filter.not.forEach(f => {
+                if (isFilter(f)) {
+                    queryBuilder.andWhereNot(...this.filterArgs(f));
+                }
+                else {
+                    queryBuilder.andWhereNot(k => this.addFilterRecursively(f, k));
+                }
+            });
+        }
+        return queryBuilder;
     }
 }
+const isFilter = (filter) => {
+    return (!!filter &&
+        !!filter.field &&
+        !!filter.operator &&
+        !!filter.value);
+};
 
 class QueryResult {
     constructor(result, queryContext, options = {}) {
@@ -320,7 +388,7 @@ class QueryResult {
         return this.result.map(node => nodeTansformer({ ...node })).slice(0, this.queryContext.limit);
     }
     createEdgesFromNodes() {
-        const initialSort = this.queryContext.orderDirection;
+        const orderDir = this.queryContext.orderDir;
         const filters = this.queryContext.filters;
         const orderBy = this.queryContext.orderBy;
         const nodesLength = this.nodes.length;
@@ -330,7 +398,7 @@ class QueryResult {
                 : this.queryContext.indexPosition + index + 1;
             return {
                 cursor: this.cursorEncoder.encodeToCursor({
-                    initialSort,
+                    orderDir,
                     filters,
                     orderBy,
                     position
@@ -372,8 +440,200 @@ class ConnectionManager {
     }
 }
 
+const printInputType = (type) => {
+    const fields = type.getFields();
+    const fieldNames = Object.keys(fields);
+    const typeSig = fieldNames.reduce((acc, name) => {
+        acc[name] = fields[name].type.toString();
+        return acc;
+    }, {});
+    return JSON.stringify(typeSig)
+        .replace(/[\\"]/gi, '')
+        .replace(/[:]/gi, ': ')
+        .replace(/[,]/gi, ', ');
+};
+const generateInputTypeError = (typeName, inputTypes) => {
+    const validTypes = inputTypes
+        .map(t => `${t.name} \`${printInputType(t)}\``)
+        .map((t, i) => `${i > 0 ? ' or ' : ''}${t}`);
+    return new graphql.GraphQLError(`${typeName} should be composed of either: ${validTypes}`);
+};
+var InputUnionType = (typeName, inputTypes, description) => {
+    return new graphql.GraphQLScalarType({
+        name: typeName,
+        description,
+        serialize: (value) => value,
+        parseValue: (value) => {
+            const hasType = inputTypes.reduce((acc, t) => {
+                const result = graphql.coerceValue(value, t);
+                return result.errors && result.errors.length > 0 ? acc : true;
+            }, false);
+            if (hasType) {
+                return value;
+            }
+            throw generateInputTypeError(typeName, inputTypes);
+        },
+        parseLiteral: ast => {
+            const inputType = inputTypes.reduce((acc, type) => {
+                const astClone = JSON.parse(JSON.stringify(ast));
+                try {
+                    return graphql.isValidLiteralValue(type, astClone).length === 0 ? type : acc;
+                }
+                catch (e) {
+                    return acc;
+                }
+            }, undefined);
+            if (inputType) {
+                return graphql.valueFromAST(ast, inputType);
+            }
+            throw generateInputTypeError(typeName, inputTypes);
+        }
+    });
+};
+
+const compoundFilterScalar = new graphql.GraphQLInputObjectType({
+    name: 'CompoundFilterScalar',
+    fields() {
+        return {
+            and: {
+                type: new graphql.GraphQLList(filter)
+            },
+            or: {
+                type: new graphql.GraphQLList(filter)
+            },
+            not: {
+                type: new graphql.GraphQLList(filter)
+            }
+        };
+    }
+});
+const filterScalar = new graphql.GraphQLInputObjectType({
+    name: 'FilterScalar',
+    fields() {
+        return {
+            field: {
+                type: graphql.GraphQLString
+            },
+            operator: {
+                type: graphql.GraphQLString
+            },
+            value: {
+                type: graphql.GraphQLString
+            }
+        };
+    }
+});
+const filterDescription = `
+    The filter input scalar is a 
+    union of the 
+    IFilter and ICompundFIlter.
+    It allows for recursive 
+    nesting of filters using
+    'and', 'or', and 'not' as
+    composition operators
+
+    It's typescript signature is:
+
+    type IInputFilter =
+        IFilter | ICompoundFilter;
+
+    interface IFilter {
+        value: string;
+        operator: string;
+        field: string;
+    }
+
+    interface ICompoundFilter {
+        and?: IInputFilter[];
+        or?: IInputFilter[];
+        not?: IInputFilter[];
+    }
+`;
+const filter = InputUnionType('Filter', [compoundFilterScalar, filterScalar], filterDescription);
+const typeDefs = apolloServerKoa.gql `
+    scalar Filter
+    scalar OrderBy
+    scalar OrderDir
+    scalar First
+    scalar Last
+    scalar Before
+    scalar After
+
+    interface IConnection {
+        pageInfo: PageInfo!
+    }
+
+    interface IEdge {
+        cursor: String!
+    }
+
+    type PageInfo {
+        hasPreviousPage: Boolean!
+        hasNextPage: Boolean!
+        startCursor: String!
+        endCursor: String!
+    }
+`;
+const createStringScalarType = (name, description) => new graphql.GraphQLScalarType({
+    name,
+    description: `String \n\n\ ${description}`,
+    serialize: graphql.GraphQLString.serialize,
+    parseLiteral: graphql.GraphQLString.parseLiteral,
+    parseValue: graphql.GraphQLString.parseValue
+});
+const createIntScalarType = (name, description) => new graphql.GraphQLScalarType({
+    name,
+    description: `Int \n\n ${description}`,
+    serialize: graphql.GraphQLInt.serialize,
+    parseLiteral: graphql.GraphQLInt.parseLiteral,
+    parseValue: graphql.GraphQLInt.parseValue
+});
+const orderBy = createStringScalarType('OrderBy', `
+    Ordering of the results.
+    Should be a field on the Nodes in the connection
+    `);
+const orderDir = createStringScalarType('OrderDir', `
+    Direction order the results by.
+    Should be 'asc' or 'desc'
+    `);
+const before = createStringScalarType('Before', `
+    Previous cursor.
+    Returns edges after this cursor
+    `);
+const after = createStringScalarType('After', `
+    Following cursor.
+    Returns edges before this cursor
+    `);
+const first = createIntScalarType('First', `
+    Number of edges to return at most. For use with 'before'
+    `);
+const last = createIntScalarType('Last', `
+    Number of edges to return at most. For use with 'after'
+    `);
+const resolvers = {
+    Filter: filter,
+    OrderBy: orderBy,
+    OrderDir: orderDir,
+    First: first,
+    Last: last,
+    Before: before,
+    After: after
+};
+const gqlTypes = {
+    filter,
+    orderBy,
+    orderDir,
+    first,
+    last,
+    before,
+    after
+};
+
 exports.ConnectionManager = ConnectionManager;
 exports.QueryContext = QueryContext;
 exports.QueryResult = QueryResult;
 exports.CursorEncoder = CursorEncoder;
 exports.KnexQueryBuilder = KnexQueryBuilder;
+exports.typeDefs = typeDefs;
+exports.resolvers = resolvers;
+exports.gqlTypes = gqlTypes;

@@ -1,4 +1,5 @@
-import { ICursorObj, IQueryContext, IInputArgs, IFilter, IQueryContextOptions } from './types';
+import { ICursorObj, IQueryContext, IInputArgs, IQueryContextOptions, IInputFilter } from './types';
+import { ORDER_DIRECTION } from './enums';
 /**
  * QueryContext
  *
@@ -6,24 +7,25 @@ import { ICursorObj, IQueryContext, IInputArgs, IFilter, IQueryContextOptions } 
  *
  */
 interface IQueryContextInputArgs extends IInputArgs {
-    cursor: {
-        before?: string;
-        after?: string;
-    };
-    page: {
-        first?: number;
-        last?: number;
-    };
-    order: {
-        orderBy?: string;
-    };
-    filter: Array<IFilter<string>>;
+    before?: string;
+    after?: string;
+    first?: number;
+    last?: number;
+    orderBy?: string;
+    orderDir?: keyof typeof ORDER_DIRECTION;
+    filter: IInputFilter;
 }
 export default class QueryContext implements IQueryContext {
     limit: number;
-    orderDirection: 'asc' | 'desc';
+    orderDir: keyof typeof ORDER_DIRECTION;
     orderBy: string;
-    filters: string[][];
+    /**
+     * { or: [
+     *     { field: 'username', operator: '=', value: 'haxor1'},
+     *     { field: 'created_at', operator: '>=', value: '90002012'}
+     * ]}
+     */
+    filters: IInputFilter;
     offset: number;
     inputArgs: IQueryContextInputArgs;
     previousCursor?: string;
@@ -32,8 +34,7 @@ export default class QueryContext implements IQueryContext {
     private cursorEncoder;
     constructor(inputArgs?: IInputArgs, options?: IQueryContextOptions<ICursorObj<string>>);
     /**
-     * Compares the current paging direction (as indicated `first` and `last` args)
-     * and compares to what the original sort direction was (as found in the cursor)
+     * Checks if there is a 'before or 'last' arg which is used to reverse paginate
      */
     readonly isPagingBackwards: boolean;
     /**

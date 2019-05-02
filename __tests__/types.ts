@@ -1,5 +1,3 @@
-import {IInputArgs} from '../src';
-
 export interface IUserNode {
     id: number;
     username: string;

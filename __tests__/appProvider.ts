@@ -2,13 +2,12 @@ import Koa from 'koa';
 import {ApolloServer, gql, IResolvers} from 'apollo-server-koa';
 import knex from 'knex';
 import {ConnectionManager, IInputArgs} from '../src';
+import {test as testConfig} from '../knexfile';
+const knexClient = knex(testConfig);
 import {
     typeDefs as connectionTypeDefs,
     resolvers as connectionResolvers
 } from '../src/graphqlSchema';
-
-import {development as developmentConfig} from '../knexfile';
-const knexClient = knex(developmentConfig);
 
 // Construct a schema, using GraphQL schema language
 const typeDefs = gql`
@@ -59,8 +58,9 @@ type KnexQueryResult = Array<{[attributeName: string]: any}>;
 
 // Provide resolver functions for your schema fields
 const resolvers = {
+    ...connectionResolvers,
     Query: {
-        async users(_: any, inputArgs: IInputArgs) {
+        async users(_: any, {input: inputArgs}: {input: IInputArgs}) {
             const queryBuilder = knexClient.from('mock');
             // maps node types to sql column names
             const attributeMap = {
@@ -86,23 +86,30 @@ const resolvers = {
             };
         }
     },
-    ...connectionResolvers
+    IConnection: {
+        __resolveType() {
+            return null;
+        }
+    },
+    IEdge: {
+        __resolveType() {
+            return null;
+        }
+    }
 } as IResolvers;
 
-const allTypeDefs = gql`
-    ${typeDefs}
-    ${connectionTypeDefs}
-`;
-const server = new ApolloServer({
-    typeDefs: allTypeDefs,
-    resolvers
-});
-const app = new Koa();
-server.applyMiddleware({app});
+const appProvider = () => {
+    const allTypeDefs = gql`
+        ${typeDefs}
+        ${connectionTypeDefs}
+    `;
+    const server = new ApolloServer({
+        typeDefs: allTypeDefs,
+        resolvers
+    });
+    const app = new Koa();
+    server.applyMiddleware({app});
+    return app;
+};
 
-app.listen({port: 4000}, () =>
-    // tslint:disable-next-line
-    console.log(
-        `🚀 Server ready at http://localhost:4000${server.graphqlPath} (PID: ${process.pid})`
-    )
-);
+export default appProvider;

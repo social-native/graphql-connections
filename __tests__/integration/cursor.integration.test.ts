@@ -38,13 +38,15 @@ describe('Cursor from', () => {
                 const pageOnePageArgs = {first: 600};
                 const pageOneOrderArgs = {orderBy: 'lastname'};
 
-                const pageOneFilterArgs = [
-                    {field: 'haircolor', operator: '=', value: 'brown'},
-                    {field: 'age', operator: '<=', value: '30'}
-                ];
+                const pageOneFilterArgs = {
+                    and: [
+                        {field: 'haircolor', operator: '=', value: 'brown'},
+                        {field: 'age', operator: '<=', value: '30'}
+                    ]
+                };
                 const {pageInfo: pageOnePageInfo, edges: pageOneEdges} = await createConnection({
-                    page: pageOnePageArgs,
-                    order: pageOneOrderArgs,
+                    ...pageOnePageArgs,
+                    ...pageOneOrderArgs,
                     filter: pageOneFilterArgs
                 });
 
@@ -65,8 +67,8 @@ describe('Cursor from', () => {
                 const pageTwoCursorArgs = {after: pageOneEdges.slice(-1)[0].cursor};
 
                 const {pageInfo: pageTwoPageInfo, edges: pageTwoEdges} = await createConnection({
-                    page: pageTwoPageArgs,
-                    cursor: pageTwoCursorArgs
+                    ...pageTwoPageArgs,
+                    ...pageTwoCursorArgs
                 });
 
                 expect(pageTwoPageInfo.hasNextPage).toBe(true);
@@ -87,8 +89,8 @@ describe('Cursor from', () => {
 
                 const {pageInfo: pageThreePageInfo, edges: pageThreeEdges} = await createConnection(
                     {
-                        page: pageThreePageArgs,
-                        cursor: pageThreeCursorArgs
+                        ...pageThreePageArgs,
+                        ...pageThreeCursorArgs
                     }
                 );
 
@@ -115,8 +117,8 @@ describe('Cursor from', () => {
                 const pageOneCursorArgs = {before: lastCursor};
 
                 const {pageInfo: pageOnePageInfo, edges: pageOneEdges} = await createConnection({
-                    page: pageOnePageArgs,
-                    cursor: pageOneCursorArgs
+                    ...pageOnePageArgs,
+                    ...pageOneCursorArgs
                 });
 
                 expect(pageOnePageInfo.hasNextPage).toBe(true);
@@ -136,8 +138,8 @@ describe('Cursor from', () => {
                 const pageTwoCursorArgs = {before: pageOneEdges[0].cursor};
 
                 const {pageInfo: pageTwoPageInfo, edges: pageTwoEdges} = await createConnection({
-                    page: pageTwoPageArgs,
-                    cursor: pageTwoCursorArgs
+                    ...pageTwoPageArgs,
+                    ...pageTwoCursorArgs
                 });
 
                 expect(pageTwoPageInfo.hasNextPage).toBe(true);
@@ -158,8 +160,8 @@ describe('Cursor from', () => {
 
                 const {pageInfo: pageThreePageInfo, edges: pageThreeEdges} = await createConnection(
                     {
-                        page: pageThreePageArgs,
-                        cursor: pageThreeCursorArgs
+                        ...pageThreePageArgs,
+                        ...pageThreeCursorArgs
                     }
                 );
 
@@ -183,19 +185,22 @@ describe('Cursor from', () => {
     describe('Descending initial query', () => {
         describe('Using page size and filter query', () => {
             let lastCursor: string;
-            it('Can be used to reverse paginate to end of results, using different page sizes', async () => {
+            it('Can be used to forward paginate to end of results, using different page sizes', async () => {
                 // 1200 people match this query
                 // PAGE 1
-                const pageOnePageArgs = {last: 500};
+                const pageOnePageArgs = {first: 500};
                 const pageOneOrderArgs = {orderBy: 'lastname'};
 
-                const pageOneFilterArgs = [
-                    {field: 'haircolor', operator: '=', value: 'brown'},
-                    {field: 'age', operator: '<=', value: '30'}
-                ];
+                const pageOneFilterArgs = {
+                    and: [
+                        {field: 'haircolor', operator: '=', value: 'brown'},
+                        {field: 'age', operator: '<=', value: '30'}
+                    ]
+                };
                 const {pageInfo: pageOnePageInfo, edges: pageOneEdges} = await createConnection({
-                    page: pageOnePageArgs,
-                    order: pageOneOrderArgs,
+                    ...pageOnePageArgs,
+                    ...pageOneOrderArgs,
+                    orderDir: 'desc',
                     filter: pageOneFilterArgs
                 });
 
@@ -212,12 +217,12 @@ describe('Cursor from', () => {
                 ).toBe(true);
 
                 // PAGE 2
-                const pageTwoPageArgs = {last: 400};
-                const pageTwoCursorArgs = {before: pageOneEdges.slice(-1)[0].cursor};
+                const pageTwoPageArgs = {first: 400};
+                const pageTwoCursorArgs = {after: pageOneEdges.slice(-1)[0].cursor};
 
                 const {pageInfo: pageTwoPageInfo, edges: pageTwoEdges} = await createConnection({
-                    page: pageTwoPageArgs,
-                    cursor: pageTwoCursorArgs
+                    ...pageTwoPageArgs,
+                    ...pageTwoCursorArgs
                 });
 
                 expect(pageTwoPageInfo.hasNextPage).toBe(true);
@@ -233,13 +238,13 @@ describe('Cursor from', () => {
                 ).toBe(true);
 
                 // PAGE 3
-                const pageThreePageArgs = {last: 300};
-                const pageThreeCursorArgs = {before: pageTwoEdges.slice(-1)[0].cursor};
+                const pageThreePageArgs = {first: 300};
+                const pageThreeCursorArgs = {after: pageTwoEdges.slice(-1)[0].cursor};
 
                 const {pageInfo: pageThreePageInfo, edges: pageThreeEdges} = await createConnection(
                     {
-                        page: pageThreePageArgs,
-                        cursor: pageThreeCursorArgs
+                        ...pageThreePageArgs,
+                        ...pageThreeCursorArgs
                     }
                 );
 
@@ -258,14 +263,14 @@ describe('Cursor from', () => {
                 ).toBe(true);
                 lastCursor = pageThreeEdges.slice(-1)[0].cursor;
             });
-            it('Can be used to forward paginate, using different page sizes', async () => {
+            it('Can be used to reverse paginate, using different page sizes', async () => {
                 // PAGE 1
-                const pageOnePageArgs = {first: 600};
-                const pageOneCursorArgs = {after: lastCursor};
+                const pageOnePageArgs = {last: 600};
+                const pageOneCursorArgs = {before: lastCursor};
 
                 const {pageInfo: pageOnePageInfo, edges: pageOneEdges} = await createConnection({
-                    page: pageOnePageArgs,
-                    cursor: pageOneCursorArgs
+                    ...pageOnePageArgs,
+                    ...pageOneCursorArgs
                 });
 
                 expect(pageOnePageInfo.hasNextPage).toBe(true);
@@ -280,12 +285,12 @@ describe('Cursor from', () => {
                     )
                 ).toBe(true);
                 // PAGE 2
-                const pageTwoPageArgs = {first: 100};
-                const pageTwoCursorArgs = {after: pageOneEdges[0].cursor};
+                const pageTwoPageArgs = {last: 100};
+                const pageTwoCursorArgs = {before: pageOneEdges[0].cursor};
 
                 const {pageInfo: pageTwoPageInfo, edges: pageTwoEdges} = await createConnection({
-                    page: pageTwoPageArgs,
-                    cursor: pageTwoCursorArgs
+                    ...pageTwoPageArgs,
+                    ...pageTwoCursorArgs
                 });
 
                 expect(pageTwoPageInfo.hasNextPage).toBe(true);
@@ -301,13 +306,13 @@ describe('Cursor from', () => {
                 ).toBe(true);
 
                 // PAGE 3
-                const pageThreePageArgs = {first: 900};
-                const pageThreeCursorArgs = {after: pageTwoEdges[0].cursor};
+                const pageThreePageArgs = {last: 900};
+                const pageThreeCursorArgs = {before: pageTwoEdges[0].cursor};
 
                 const {pageInfo: pageThreePageInfo, edges: pageThreeEdges} = await createConnection(
                     {
-                        page: pageThreePageArgs,
-                        cursor: pageThreeCursorArgs
+                        ...pageThreePageArgs,
+                        ...pageThreeCursorArgs
                     }
                 );
 

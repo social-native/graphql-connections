@@ -1,0 +1,21 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Input Union Type handles errors not using variables with compound filter 1`] = `
+"{\\"errors\\":[{\\"message\\":\\"Expected type Filter, found {or: [{fields: \\\\\\"age\\\\\\", value: \\\\\\"41\\\\\\", operator: \\\\\\"=\\\\\\"}, {field: \\\\\\"age\\\\\\", value: \\\\\\"31\\\\\\", operator: \\\\\\"=\\\\\\"}, {and: [{field: \\\\\\"haircolor\\\\\\", value: \\\\\\"gray\\\\\\", operator: \\\\\\"=\\\\\\"}, {field: \\\\\\"age\\\\\\", value: \\\\\\"70\\\\\\", operator: \\\\\\"=\\\\\\"}, {not: [{field: \\\\\\"firstname\\\\\\", value: \\\\\\"Kenyon\\\\\\", operator: \\\\\\"=\\\\\\"}, {field: \\\\\\"firstname\\\\\\", value: \\\\\\"Nerissa\\\\\\", operator: \\\\\\"=\\\\\\"}]}]}]}; Filter should be composed of either: CompoundFilterScalar \`{and: [Filter], or: [Filter], not: [Filter]}\`, or FilterScalar \`{field: String, operator: String, value: String}\`\\",\\"locations\\":[{\\"line\\":4,\\"column\\":30}],\\"extensions\\":{\\"code\\":\\"GRAPHQL_VALIDATION_FAILED\\"}}]}
+"
+`;
+
+exports[`Input Union Type handles errors not using variables with single filter 1`] = `
+"{\\"errors\\":[{\\"message\\":\\"Expected type Filter, found {fields: \\\\\\"haircolor\\\\\\", value: \\\\\\"gray\\\\\\", operator: \\\\\\"=\\\\\\"}; Filter should be composed of either: CompoundFilterScalar \`{and: [Filter], or: [Filter], not: [Filter]}\`, or FilterScalar \`{field: String, operator: String, value: String}\`\\",\\"locations\\":[{\\"line\\":4,\\"column\\":33}],\\"extensions\\":{\\"code\\":\\"GRAPHQL_VALIDATION_FAILED\\"}}]}
+"
+`;
+
+exports[`Input Union Type handles errors using variables with compound filter 1`] = `
+"{\\"errors\\":[{\\"message\\":\\"Unknown type \\\\\\"FilterInputScalar\\\\\\".\\",\\"locations\\":[{\\"line\\":2,\\"column\\":32}],\\"extensions\\":{\\"code\\":\\"GRAPHQL_VALIDATION_FAILED\\"}}]}
+"
+`;
+
+exports[`Input Union Type handles errors using variables with single filter 1`] = `
+"{\\"errors\\":[{\\"message\\":\\"Unknown type \\\\\\"FilterInputScalar\\\\\\".\\",\\"locations\\":[{\\"line\\":2,\\"column\\":32}],\\"extensions\\":{\\"code\\":\\"GRAPHQL_VALIDATION_FAILED\\"}}]}
+"
+`;

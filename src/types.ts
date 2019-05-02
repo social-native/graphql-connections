@@ -1,30 +1,35 @@
-export interface IFilter<Fields> {
+import {ORDER_DIRECTION} from './enums';
+
+export interface IFilter {
     value: string;
     operator: string;
-    field: Fields;
+    field: string;
 }
 
+export interface ICompoundFilter {
+    and?: IInputFilter[];
+    or?: IInputFilter[];
+    not?: IInputFilter[];
+}
+
+export type IInputFilter = IFilter | ICompoundFilter;
+
 export interface ICursorObj<PublicAttributes> {
-    initialSort: 'asc' | 'desc';
+    orderDir: keyof typeof ORDER_DIRECTION;
     orderBy: PublicAttributes;
     // The position of the cursor item from the beginning of the query
     position: number;
-    filters: string[][];
+    filters: IInputFilter;
 }
 
 export interface IInputArgs {
-    cursor?: {
-        before?: string;
-        after?: string;
-    };
-    page?: {
-        first?: number;
-        last?: number;
-    };
-    order?: {
-        orderBy?: string;
-    };
-    filter?: Array<IFilter<string>>;
+    before?: string;
+    after?: string;
+    first?: number;
+    last?: number;
+    orderBy?: string;
+    orderDir?: keyof typeof ORDER_DIRECTION;
+    filter?: IInputFilter;
 }
 
 export interface IInAttributeMap {
@@ -38,9 +43,9 @@ export interface IFilterMap {
 // QueryContext
 export interface IQueryContext {
     limit: number;
-    orderDirection: 'asc' | 'desc';
+    orderDir: keyof typeof ORDER_DIRECTION;
     orderBy: string;
-    filters: string[][]; // [['username', '=', 'haxor1'], ['created_at', '>=', '90002012']]
+    filters: IInputFilter;
     offset: number;
     inputArgs: IInputArgs;
     previousCursor?: string;

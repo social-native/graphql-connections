@@ -33,7 +33,8 @@ For example, a music artist has multiple songs. In order to get all the `songs` 
 query {
   artist(id: 1) {
     songs {
-      ...
+      songName
+      songLength
     }
   }
 }
@@ -55,8 +56,8 @@ query {
       edges {
         cursor
         node {
-          name
-          length
+          songName
+          songLength
         }
       }
     }
@@ -80,8 +81,8 @@ query {
       edges {
         cursor
         node {
-          name
-          length
+          songName
+          songLength
         }
       }
     }

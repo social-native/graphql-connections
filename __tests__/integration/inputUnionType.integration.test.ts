@@ -55,7 +55,7 @@ describe('Input Union Type', () => {
 
         it('using variables', async () => {
             const gqlQuery = `
-                query($filter: FilterInputScalar) {
+                query($filter: Filter) {
                     users(filter: $filter) {
                     pageInfo {
                         hasNextPage

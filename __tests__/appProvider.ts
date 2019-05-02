@@ -39,7 +39,7 @@ const typeDefs = gql`
             orderDir: OrderDir
             before: Before
             after: After
-            filter: FilterInputScalar
+            filter: Filter
         ): QueryUserConnection
     }
 `;

@@ -13,13 +13,13 @@ const compoundFilterScalar = new GraphQLInputObjectType({
     fields() {
         return {
             and: {
-                type: new GraphQLList(filterInputScalar)
+                type: new GraphQLList(filter)
             },
             or: {
-                type: new GraphQLList(filterInputScalar)
+                type: new GraphQLList(filter)
             },
             not: {
-                type: new GraphQLList(filterInputScalar)
+                type: new GraphQLList(filter)
             }
         };
     }
@@ -69,14 +69,10 @@ const filterDescription = `
     }
 `;
 
-const filterInputScalar = InputUnionType(
-    'FilterInputScalar',
-    [compoundFilterScalar, filterScalar],
-    filterDescription
-);
+const filter = InputUnionType('Filter', [compoundFilterScalar, filterScalar], filterDescription);
 
 const typeDefs = gql`
-    scalar FilterInputScalar
+    scalar Filter
     scalar OrderBy
     scalar OrderDir
     scalar First
@@ -165,7 +161,7 @@ const last = createIntScalarType(
 );
 
 const resolvers = {
-    FilterInputScalar: filterInputScalar,
+    Filter: filter,
     OrderBy: orderBy,
     OrderDir: orderDir,
     First: first,

@@ -169,4 +169,15 @@ const resolvers = {
     Before: before,
     After: after
 };
-export {typeDefs, resolvers};
+
+const gqlTypes = {
+    filter,
+    orderBy,
+    orderDir,
+    first,
+    last,
+    before,
+    after
+};
+
+export {typeDefs, resolvers, gqlTypes};

@@ -1,7 +1,7 @@
 import { GraphQLScalarType } from 'graphql';
 declare const typeDefs: import("graphql").DocumentNode;
 declare const resolvers: {
-    FilterInputScalar: GraphQLScalarType;
+    Filter: GraphQLScalarType;
     OrderBy: GraphQLScalarType;
     OrderDir: GraphQLScalarType;
     First: GraphQLScalarType;
@@ -9,4 +9,13 @@ declare const resolvers: {
     Before: GraphQLScalarType;
     After: GraphQLScalarType;
 };
-export { typeDefs, resolvers };
+declare const gqlTypes: {
+    filter: GraphQLScalarType;
+    orderBy: GraphQLScalarType;
+    orderDir: GraphQLScalarType;
+    first: GraphQLScalarType;
+    last: GraphQLScalarType;
+    before: GraphQLScalarType;
+    after: GraphQLScalarType;
+};
+export { typeDefs, resolvers, gqlTypes };

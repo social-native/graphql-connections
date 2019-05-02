@@ -2,6 +2,9 @@
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
+var graphql = require('graphql');
+var apolloServerKoa = require('apollo-server-koa');
+
 class CursorEncoder {
     static encodeToCursor(cursorObj) {
         const buff = Buffer.from(JSON.stringify(cursorObj));
@@ -437,8 +440,200 @@ class ConnectionManager {
     }
 }
 
+const printInputType = (type) => {
+    const fields = type.getFields();
+    const fieldNames = Object.keys(fields);
+    const typeSig = fieldNames.reduce((acc, name) => {
+        acc[name] = fields[name].type.toString();
+        return acc;
+    }, {});
+    return JSON.stringify(typeSig)
+        .replace(/[\\"]/gi, '')
+        .replace(/[:]/gi, ': ')
+        .replace(/[,]/gi, ', ');
+};
+const generateInputTypeError = (typeName, inputTypes) => {
+    const validTypes = inputTypes
+        .map(t => `${t.name} \`${printInputType(t)}\``)
+        .map((t, i) => `${i > 0 ? ' or ' : ''}${t}`);
+    return new graphql.GraphQLError(`${typeName} should be composed of either: ${validTypes}`);
+};
+var InputUnionType = (typeName, inputTypes, description) => {
+    return new graphql.GraphQLScalarType({
+        name: typeName,
+        description,
+        serialize: (value) => value,
+        parseValue: (value) => {
+            const hasType = inputTypes.reduce((acc, t) => {
+                const result = graphql.coerceValue(value, t);
+                return result.errors && result.errors.length > 0 ? acc : true;
+            }, false);
+            if (hasType) {
+                return value;
+            }
+            throw generateInputTypeError(typeName, inputTypes);
+        },
+        parseLiteral: ast => {
+            const inputType = inputTypes.reduce((acc, type) => {
+                const astClone = JSON.parse(JSON.stringify(ast));
+                try {
+                    return graphql.isValidLiteralValue(type, astClone).length === 0 ? type : acc;
+                }
+                catch (e) {
+                    return acc;
+                }
+            }, undefined);
+            if (inputType) {
+                return graphql.valueFromAST(ast, inputType);
+            }
+            throw generateInputTypeError(typeName, inputTypes);
+        }
+    });
+};
+
+const compoundFilterScalar = new graphql.GraphQLInputObjectType({
+    name: 'CompoundFilterScalar',
+    fields() {
+        return {
+            and: {
+                type: new graphql.GraphQLList(filter)
+            },
+            or: {
+                type: new graphql.GraphQLList(filter)
+            },
+            not: {
+                type: new graphql.GraphQLList(filter)
+            }
+        };
+    }
+});
+const filterScalar = new graphql.GraphQLInputObjectType({
+    name: 'FilterScalar',
+    fields() {
+        return {
+            field: {
+                type: graphql.GraphQLString
+            },
+            operator: {
+                type: graphql.GraphQLString
+            },
+            value: {
+                type: graphql.GraphQLString
+            }
+        };
+    }
+});
+const filterDescription = `
+    The filter input scalar is a 
+    union of the 
+    IFilter and ICompundFIlter.
+    It allows for recursive 
+    nesting of filters using
+    'and', 'or', and 'not' as
+    composition operators
+
+    It's typescript signature is:
+
+    type IInputFilter =
+        IFilter | ICompoundFilter;
+
+    interface IFilter {
+        value: string;
+        operator: string;
+        field: string;
+    }
+
+    interface ICompoundFilter {
+        and?: IInputFilter[];
+        or?: IInputFilter[];
+        not?: IInputFilter[];
+    }
+`;
+const filter = InputUnionType('Filter', [compoundFilterScalar, filterScalar], filterDescription);
+const typeDefs = apolloServerKoa.gql `
+    scalar Filter
+    scalar OrderBy
+    scalar OrderDir
+    scalar First
+    scalar Last
+    scalar Before
+    scalar After
+
+    interface IConnection {
+        pageInfo: PageInfo!
+    }
+
+    interface IEdge {
+        cursor: String!
+    }
+
+    type PageInfo {
+        hasPreviousPage: Boolean!
+        hasNextPage: Boolean!
+        startCursor: String!
+        endCursor: String!
+    }
+`;
+const createStringScalarType = (name, description) => new graphql.GraphQLScalarType({
+    name,
+    description: `String \n\n\ ${description}`,
+    serialize: graphql.GraphQLString.serialize,
+    parseLiteral: graphql.GraphQLString.parseLiteral,
+    parseValue: graphql.GraphQLString.parseValue
+});
+const createIntScalarType = (name, description) => new graphql.GraphQLScalarType({
+    name,
+    description: `Int \n\n ${description}`,
+    serialize: graphql.GraphQLInt.serialize,
+    parseLiteral: graphql.GraphQLInt.parseLiteral,
+    parseValue: graphql.GraphQLInt.parseValue
+});
+const orderBy = createStringScalarType('OrderBy', `
+    Ordering of the results.
+    Should be a field on the Nodes in the connection
+    `);
+const orderDir = createStringScalarType('OrderDir', `
+    Direction order the results by.
+    Should be 'asc' or 'desc'
+    `);
+const before = createStringScalarType('Before', `
+    Previous cursor.
+    Returns edges after this cursor
+    `);
+const after = createStringScalarType('After', `
+    Following cursor.
+    Returns edges before this cursor
+    `);
+const first = createIntScalarType('First', `
+    Number of edges to return at most. For use with 'before'
+    `);
+const last = createIntScalarType('Last', `
+    Number of edges to return at most. For use with 'after'
+    `);
+const resolvers = {
+    Filter: filter,
+    OrderBy: orderBy,
+    OrderDir: orderDir,
+    First: first,
+    Last: last,
+    Before: before,
+    After: after
+};
+const gqlTypes = {
+    filter,
+    orderBy,
+    orderDir,
+    first,
+    last,
+    before,
+    after
+};
+
 exports.ConnectionManager = ConnectionManager;
 exports.QueryContext = QueryContext;
 exports.QueryResult = QueryResult;
 exports.CursorEncoder = CursorEncoder;
 exports.KnexQueryBuilder = KnexQueryBuilder;
+exports.typeDefs = typeDefs;
+exports.resolvers = resolvers;
+exports.gqlTypes = gqlTypes;

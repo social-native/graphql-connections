@@ -5,3 +5,5 @@ export {default as CursorEncoder} from './CursorEncoder';
 export {default as KnexQueryBuilder} from './KnexQueryBuilder';
 
 export {IFilter, IInputArgs, ICursorEncoder, IQueryContext, IQueryBuilder} from './types';
+
+export {typeDefs, resolvers, gqlTypes} from './graphqlSchema';

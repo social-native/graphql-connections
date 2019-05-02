@@ -5,7 +5,7 @@
 Install by referencing the github location and the release number:
 
 ```
-npm install --save social-native/snpkg-snapi-connections#v1.0.0
+npm install --save social-native/snpkg-snapi-connections#v2.0.0
 ```
 
 ## About

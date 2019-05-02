@@ -2,52 +2,16 @@ import Koa from 'koa';
 import {ApolloServer, gql, IResolvers} from 'apollo-server-koa';
 import knex from 'knex';
 import {ConnectionManager, IInputArgs} from '../src';
-import inputUnionType from '../src/InputUnionType';
+import {
+    typeDefs as connectionTypeDefs,
+    resolvers as connectionResolvers
+} from '../src/graphqlSchema';
 
 import {development as developmentConfig} from '../knexfile';
-import {GraphQLInputObjectType, GraphQLString, GraphQLList} from 'graphql';
 const knexClient = knex(developmentConfig);
-
-const compoundFilterScalar = new GraphQLInputObjectType({
-    name: 'CompoundFilterScalar',
-    fields() {
-        return {
-            and: {
-                type: new GraphQLList(filterInputScalar)
-            },
-            or: {
-                type: new GraphQLList(filterInputScalar)
-            },
-            not: {
-                type: new GraphQLList(filterInputScalar)
-            }
-        };
-    }
-});
-
-const filterScalar = new GraphQLInputObjectType({
-    name: 'FilterScalar',
-    fields() {
-        return {
-            field: {
-                type: GraphQLString
-            },
-            operator: {
-                type: GraphQLString
-            },
-            value: {
-                type: GraphQLString
-            }
-        };
-    }
-});
-
-const filterInputScalar = inputUnionType('FilterInputScalar', [compoundFilterScalar, filterScalar]);
 
 // Construct a schema, using GraphQL schema language
 const typeDefs = gql`
-    scalar FilterInputScalar
-
     type User {
         id: ID
         username: String
@@ -56,21 +20,6 @@ const typeDefs = gql`
         bio: String
         age: Int
         haircolor: String
-    }
-
-    interface IConnection {
-        pageInfo: PageInfo!
-    }
-
-    interface IEdge {
-        cursor: String!
-    }
-
-    type PageInfo {
-        hasPreviousPage: Boolean!
-        hasNextPage: Boolean!
-        startCursor: String!
-        endCursor: String!
     }
 
     type QueryUserConnection implements IConnection {
@@ -83,40 +32,16 @@ const typeDefs = gql`
         node: User
     }
 
-    input UserInputParams {
-        """
-        Number of edges to return at most
-        """
-        first: Int
-        """
-        Number of edges to return at most
-        """
-        last: Int
-        """
-        Ordering of the results.
-        Should be a field on the Nodes in the connection
-        """
-        orderBy: String
-        """
-        Direction order the results by.
-        Should be 'asc' or 'desc'
-        """
-        orderDir: String
-        """
-        Previous cursor.
-        Returns edges after this cursor
-        """
-        after: String
-        """
-        Following cursor.
-        Returns edges before this cursor
-        """
-        before: String
-        filter: FilterInputScalar
-    }
-
     type Query {
-        users(input: UserInputParams): QueryUserConnection
+        users(
+            first: First
+            last: Last
+            orderBy: OrderBy
+            orderDir: OrderDir
+            before: Before
+            after: After
+            filter: Filter
+        ): QueryUserConnection
     }
 `;
 
@@ -135,7 +60,7 @@ type KnexQueryResult = Array<{[attributeName: string]: any}>;
 // Provide resolver functions for your schema fields
 const resolvers = {
     Query: {
-        async users(_: any, {input: inputArgs}: {input: IInputArgs}) {
+        async users(_: any, inputArgs: IInputArgs) {
             const queryBuilder = knexClient.from('mock');
             // maps node types to sql column names
             const attributeMap = {
@@ -161,10 +86,17 @@ const resolvers = {
             };
         }
     },
-    FilterInputScalar: filterInputScalar
+    ...connectionResolvers
 } as IResolvers;
 
-const server = new ApolloServer({typeDefs, resolvers});
+const allTypeDefs = gql`
+    ${typeDefs}
+    ${connectionTypeDefs}
+`;
+const server = new ApolloServer({
+    typeDefs: allTypeDefs,
+    resolvers
+});
 const app = new Koa();
 server.applyMiddleware({app});
 

@@ -2,52 +2,15 @@ import Koa from 'koa';
 import {ApolloServer, gql, IResolvers} from 'apollo-server-koa';
 import knex from 'knex';
 import {ConnectionManager, IInputArgs} from '../src';
-import inputUnionType from '../src/InputUnionType';
-
 import {test as testConfig} from '../knexfile';
-import {GraphQLInputObjectType, GraphQLString, GraphQLList} from 'graphql';
 const knexClient = knex(testConfig);
-
-const compoundFilterScalar = new GraphQLInputObjectType({
-    name: 'CompoundFilterScalar',
-    fields() {
-        return {
-            and: {
-                type: new GraphQLList(filterInputScalar)
-            },
-            or: {
-                type: new GraphQLList(filterInputScalar)
-            },
-            not: {
-                type: new GraphQLList(filterInputScalar)
-            }
-        };
-    }
-});
-
-const filterScalar = new GraphQLInputObjectType({
-    name: 'FilterScalar',
-    fields() {
-        return {
-            field: {
-                type: GraphQLString
-            },
-            operator: {
-                type: GraphQLString
-            },
-            value: {
-                type: GraphQLString
-            }
-        };
-    }
-});
-
-const filterInputScalar = inputUnionType('FilterInputScalar', [compoundFilterScalar, filterScalar]);
+import {
+    typeDefs as connectionTypeDefs,
+    resolvers as connectionResolvers
+} from '../src/graphqlSchema';
 
 // Construct a schema, using GraphQL schema language
 const typeDefs = gql`
-    scalar FilterInputScalar
-
     type User {
         id: ID
         username: String
@@ -56,53 +19,6 @@ const typeDefs = gql`
         bio: String
         age: Int
         haircolor: String
-    }
-
-    input InputPageParams {
-        """
-        Number of edges to return at most
-        """
-        first: Int
-        """
-        Number of edges to return at most
-        """
-        last: Int
-    }
-
-    input InputCursorParams {
-        """
-        Previous cursor.
-        Returns edges after this cursor
-        """
-        after: String
-        """
-        Following cursor.
-        Returns edges before this cursor
-        """
-        before: String
-    }
-
-    input InputOrderParams {
-        """
-        Ordering of the results.
-        Should be an attribute on the Nodes in the connection
-        """
-        orderBy: String
-    }
-
-    interface IConnection {
-        pageInfo: PageInfo!
-    }
-
-    interface IEdge {
-        cursor: String!
-    }
-
-    type PageInfo {
-        hasPreviousPage: Boolean!
-        hasNextPage: Boolean!
-        startCursor: String!
-        endCursor: String!
     }
 
     type QueryUserConnection implements IConnection {
@@ -115,15 +31,16 @@ const typeDefs = gql`
         node: User
     }
 
-    input UserInputParams {
-        page: InputPageParams
-        order: InputOrderParams
-        cursor: InputCursorParams
-        filter: FilterInputScalar
-    }
-
     type Query {
-        users(input: UserInputParams): QueryUserConnection
+        users(
+            first: First
+            last: Last
+            orderBy: OrderBy
+            orderDir: OrderDir
+            before: Before
+            after: After
+            filter: Filter
+        ): QueryUserConnection
     }
 `;
 
@@ -141,6 +58,7 @@ type KnexQueryResult = Array<{[attributeName: string]: any}>;
 
 // Provide resolver functions for your schema fields
 const resolvers = {
+    ...connectionResolvers,
     Query: {
         async users(_: any, {input: inputArgs}: {input: IInputArgs}) {
             const queryBuilder = knexClient.from('mock');
@@ -177,21 +95,21 @@ const resolvers = {
         __resolveType() {
             return null;
         }
-    },
-    FilterInputScalar: filterInputScalar
+    }
 } as IResolvers;
 
 const appProvider = () => {
-    const server = new ApolloServer({typeDefs, resolvers});
+    const allTypeDefs = gql`
+        ${typeDefs}
+        ${connectionTypeDefs}
+    `;
+    const server = new ApolloServer({
+        typeDefs: allTypeDefs,
+        resolvers
+    });
     const app = new Koa();
     server.applyMiddleware({app});
     return app;
 };
 
 export default appProvider;
-// app.listen({port: 4000}, () =>
-//     // tslint:disable-next-line
-//     console.log(
-//         `🚀 Server ready at http://localhost:4000${server.graphqlPath} (PID: ${process.pid})`
-//     )
-// );

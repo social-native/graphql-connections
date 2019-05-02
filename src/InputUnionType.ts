@@ -32,9 +32,10 @@ const generateInputTypeError = (typeName: string, inputTypes: GraphQLInputObject
     return new GraphQLError(`${typeName} should be composed of either: ${validTypes}`);
 };
 
-export default (typeName: string, inputTypes: GraphQLInputObjectType[]) => {
+export default (typeName: string, inputTypes: GraphQLInputObjectType[], description?: string) => {
     return new GraphQLScalarType({
         name: typeName,
+        description,
         serialize: (value: any) => value,
         parseValue: (value: any) => {
             const hasType = inputTypes.reduce((acc, t) => {

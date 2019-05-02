@@ -9,7 +9,7 @@ describe('Input Union Type', () => {
         it('not using variables', async () => {
             const gqlQuery = `
                 query {
-                    users(input: {
+                    users(
                     filter:  { 
                         or: [
                         { field: "age", value: "41", operator: "="},
@@ -23,7 +23,7 @@ describe('Input Union Type', () => {
                             ]}
                         ]},
                         ],
-                    }}) {
+                    }) {
                     pageInfo {
                         hasNextPage
                         hasPreviousPage
@@ -55,8 +55,8 @@ describe('Input Union Type', () => {
 
         it('using variables', async () => {
             const gqlQuery = `
-                query($filter: FilterInputScalar) {
-                    users(input: {filter: $filter }) {
+                query($filter: Filter) {
+                    users(filter: $filter) {
                     pageInfo {
                         hasNextPage
                         hasPreviousPage
@@ -97,7 +97,7 @@ describe('Input Union Type', () => {
         it('not using variables with compound filter', async () => {
             const gqlQuery = `
                 query {
-                    users(input: {
+                    users(
                     filter:  {
                         or: [
                         { fields: "age", value: "41", operator: "="},
@@ -111,7 +111,7 @@ describe('Input Union Type', () => {
                             ]}
                         ]},
                         ],
-                    }}) {
+                    }) {
                     pageInfo {
                         hasNextPage
                         hasPreviousPage
@@ -141,9 +141,9 @@ describe('Input Union Type', () => {
         it('not using variables with single filter', async () => {
             const gqlQuery = `
                 query {
-                    users(input: {
+                    users(
                         filter: { fields: "haircolor", value: "gray", operator: "=" }
-                    }) {
+                    ) {
                     pageInfo {
                         hasNextPage
                         hasPreviousPage
@@ -173,7 +173,7 @@ describe('Input Union Type', () => {
         it('using variables with compound filter', async () => {
             const gqlQuery = `
                 query($filter: FilterInputScalar) {
-                    users(input: {filter: $filter }) {
+                    users(filter: $filter) {
                     pageInfo {
                         hasNextPage
                         hasPreviousPage
@@ -209,7 +209,7 @@ describe('Input Union Type', () => {
         it('using variables with single filter', async () => {
             const gqlQuery = `
                 query($filter: FilterInputScalar) {
-                    users(input: {filter: $filter }) {
+                    users(filter: $filter) {
                     pageInfo {
                         hasNextPage
                         hasPreviousPage

@@ -109,14 +109,12 @@ The above logic is controlled by the `connectionManager`. It can be added to a r
 ```graphql
 query {
   users(
-    input: {
       first: 100,
       orderBy: "haircolor",
       filter: { and: [
         {field: "id", operator: ">", value: "19990"},
         {field: "age", operator: "<", value: "90"},
       ]}
-    }
   ) {
     pageInfo {
       hasNextPage
@@ -141,10 +139,9 @@ query {
 ```graphql
 query {
   users(
-    input:{
-      first: 10,
-      after: "eyJmaXJzdFJlc3VsdElkIjoxOTk5MiwibGFzdFJlc3VsdE"
-   }) {
+    first: 10,
+    after: "eyJmaXJzdFJlc3VsdElkIjoxOTk5MiwibGFzdFJlc3VsdE"
+  ) {
     pageInfo {
       hasNextPage
       hasPreviousPage
@@ -303,8 +300,7 @@ An example query with a filter could look like:
 
 ```graphql
 query {
-  users(input: {
-    filter:  { 
+  users(filter:  { 
       or: [
         { field: "age", operator: "=", value: "40"},
         { field: "age", operator: "<", value: "30"},
@@ -317,7 +313,7 @@ query {
           ]}
         ]},
       ],
-    }}) {
+    }) {
     pageInfo {
       hasNextPage
       hasPreviousPage

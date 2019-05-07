@@ -167,7 +167,17 @@ const resolvers = {
     First: first,
     Last: last,
     Before: before,
-    After: after
+    After: after,
+    IConnection: {
+        __resolveType() {
+            return null;
+        }
+    },
+    IEdge: {
+        __resolveType() {
+            return null;
+        }
+    }
 };
 
 const gqlTypes = {

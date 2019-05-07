@@ -524,10 +524,10 @@ const filterScalar = new graphql.GraphQLInputObjectType({
     }
 });
 const filterDescription = `
-    The filter input scalar is a 
-    union of the 
+    The filter input scalar is a
+    union of the
     IFilter and ICompundFIlter.
-    It allows for recursive 
+    It allows for recursive
     nesting of filters using
     'and', 'or', and 'not' as
     composition operators
@@ -617,7 +617,17 @@ const resolvers = {
     First: first,
     Last: last,
     Before: before,
-    After: after
+    After: after,
+    IConnection: {
+        __resolveType() {
+            return null;
+        }
+    },
+    IEdge: {
+        __resolveType() {
+            return null;
+        }
+    }
 };
 const gqlTypes = {
     filter,

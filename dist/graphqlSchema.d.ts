@@ -8,6 +8,12 @@ declare const resolvers: {
     Last: GraphQLScalarType;
     Before: GraphQLScalarType;
     After: GraphQLScalarType;
+    IConnection: {
+        __resolveType(): null;
+    };
+    IEdge: {
+        __resolveType(): null;
+    };
 };
 declare const gqlTypes: {
     filter: GraphQLScalarType;

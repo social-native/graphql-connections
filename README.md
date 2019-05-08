@@ -212,7 +212,7 @@ type Query {
 #### String interpolation
 
 ```typescript
-import {typeDefs} from 'snpkg-snapi-connections';}
+import {typeDefs} from 'snpkg-snapi-connections'
 
 const schema = `
   ${...typeDefs}
@@ -233,7 +233,7 @@ const schema = `
 #### During configuration
 
 ```typescript
-import {typeDefs as connectionTypeDefs} from 'snpkg-snapi-connections';}
+import {typeDefs as connectionTypeDefs} from 'snpkg-snapi-connections'
 
     const schema = makeExecutableSchema({
         ...
@@ -246,7 +246,7 @@ import {typeDefs as connectionTypeDefs} from 'snpkg-snapi-connections';}
 #### In the resolver object
 
 ```typescript
-import {resolvers as connectionResolvers} from 'snpkg-snapi-connections';}
+import {resolvers as connectionResolvers} from 'snpkg-snapi-connections'
 
 const resolvers = {
   ...connectionResolvers,
@@ -263,7 +263,7 @@ const resolvers = {
 #### During configuration
 
 ```typescript
-import {resolvers as connectionResolvers} from 'snpkg-snapi-connections';}
+import {resolvers as connectionResolvers} from 'snpkg-snapi-connections'
 
     const schema = makeExecutableSchema({
         ...

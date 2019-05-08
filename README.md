@@ -241,7 +241,7 @@ import {typeDefs as connectionTypeDefs} from 'snpkg-snapi-connections'
     });
 ```
 
-### 2. Add resolvers
+### 3. Add resolvers
 
 #### In the resolver object
 

@@ -93,7 +93,7 @@ export default class KnexQueryBuilder implements IQueryBuilder<Knex> {
         }
 
         throw new Error(
-            `Filter field ${field} either does not exist or is not accessible. Check the attribute map`
+            `Filter field '${field}' either does not exist or is not accessible. Check the attribute map`
         );
     }
 
@@ -104,7 +104,7 @@ export default class KnexQueryBuilder implements IQueryBuilder<Knex> {
         }
 
         throw new Error(
-            `Filter operator ${operator} either does not exist or is not accessible. Check the filter map`
+            `Filter operator '${operator}' either does not exist or is not accessible. Check the filter map`
         );
     }
 

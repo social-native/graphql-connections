@@ -160,7 +160,118 @@ query {
 }
 ```
 
-## How to use
+## How to use - Schema
+
+### 1. Add input scalars to schema
+
+Add the input scalars (`First`, `Last`, `OrderBy`, `OrderDir`, `Before`, `After`, `Filter`) to your GQL schema.
+
+At the very least you should add `Before`, `After` and `First`, `Last` because they allow you to move along the connection with a cursor.
+
+```graphql
+type Query {
+  users(
+      first: First
+      last: Last
+      orderBy: OrderBy
+      orderDir: OrderDir
+      before: Before
+      after: After
+      filter: Filter
+  ): QueryUserConnection
+}
+```
+
+### 2. Add typeDefs to your schema
+
+#### Manually
+
+```graphql
+
+scalar: First
+scalar: Last
+scalar: OrderBy
+scalar: OrderDir
+scalar: Before
+scalar: After
+scalar: Filter
+
+type Query {
+  users(
+      first: First
+      last: Last
+      orderBy: OrderBy
+      orderDir: OrderDir
+      before: Before
+      after: After
+      filter: Filter
+  ): QueryUserConnection
+}
+```
+
+#### String interpolation
+
+```typescript
+import {typeDefs} from 'snpkg-snapi-connections';}
+
+const schema = `
+  ${...typeDefs}
+  type Query {
+    users(
+        first: First
+        last: Last
+        orderBy: OrderBy
+        orderDir: OrderDir
+        before: Before
+        after: After
+        filter: Filter
+    ): CampaignCreatorConnection
+  }
+`
+```
+
+#### During configuration
+
+```typescript
+import {typeDefs as connectionTypeDefs} from 'snpkg-snapi-connections';}
+
+    const schema = makeExecutableSchema({
+        ...
+        typeDefs: `${typeDefs} ${connectionTypeDefs}`
+    });
+```
+
+### 2. Add resolvers
+
+#### In the resolver object
+
+```typescript
+import {resolvers as connectionResolvers} from 'snpkg-snapi-connections';}
+
+const resolvers = {
+  ...connectionResolvers,
+
+  Query: {
+    users: {
+      ....
+    }
+  }
+}
+
+```
+
+#### During configuration
+
+```typescript
+import {resolvers as connectionResolvers} from 'snpkg-snapi-connections';}
+
+    const schema = makeExecutableSchema({
+        ...
+        resolvers: {...resolvers, ...connectionResolvers}
+    });
+```
+
+## How to use - Resolvers
 
 ### Short Tutorial
 

@@ -6,7 +6,6 @@ import {
     GraphQLInt
 } from 'graphql';
 import InputUnionType from 'InputUnionType';
-import {gql} from 'apollo-server-koa';
 
 const compoundFilterScalar = new GraphQLInputObjectType({
     name: 'CompoundFilterScalar',
@@ -71,7 +70,7 @@ const filterDescription = `
 
 const filter = InputUnionType('Filter', [compoundFilterScalar, filterScalar], filterDescription);
 
-const typeDefs = gql`
+const typeDefs = `
     scalar Filter
     scalar OrderBy
     scalar OrderDir

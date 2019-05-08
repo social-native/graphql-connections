@@ -3,7 +3,6 @@
 Object.defineProperty(exports, '__esModule', { value: true });
 
 var graphql = require('graphql');
-var apolloServerKoa = require('apollo-server-koa');
 
 class CursorEncoder {
     static encodeToCursor(cursorObj) {
@@ -553,7 +552,7 @@ const filterDescription = `
     }
 `;
 const filter = InputUnionType('Filter', [compoundFilterScalar, filterScalar], filterDescription);
-const typeDefs = apolloServerKoa.gql `
+const typeDefs = `
     scalar Filter
     scalar OrderBy
     scalar OrderDir

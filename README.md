@@ -562,6 +562,16 @@ interface ICursorEncoder<CursorObj> {
 
 #### builderOptions
 
+##### filterTransformer
+
+```typescript
+type filterTransformer = (filter: IFilter) => IFilter
+```
+
+The filter transformer will will be called on every filter `{ field: string, operator: string, value: string}`
+
+It can be used to transform a filter before being applied to the query. This is useful if you want to transform say UnixTimestamps to DateTime format, etc...
+
 ##### filterMap
 
 ```typescript

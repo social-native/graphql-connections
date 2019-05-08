@@ -25,10 +25,13 @@ const defaultFilterMap = {
     '<>': '<>'
 };
 
+const defaultFilterTransformer = (filter: IFilter) => filter;
+
 export default class KnexQueryBuilder implements IQueryBuilder<Knex> {
     private queryContext: QueryContext;
     private attributeMap: IInAttributeMap;
     private filterMap: IFilterMap;
+    private filterTransformer: NonNullable<IQueryBuilderOptions['filterTransformer']>;
 
     constructor(
         queryContext: QueryContext,
@@ -38,6 +41,7 @@ export default class KnexQueryBuilder implements IQueryBuilder<Knex> {
         this.queryContext = queryContext;
         this.attributeMap = attributeMap;
         this.filterMap = options.filterMap || defaultFilterMap;
+        this.filterTransformer = options.filterTransformer || defaultFilterTransformer;
 
         this.addFilterRecursively = this.addFilterRecursively.bind(this);
     }
@@ -104,7 +108,8 @@ export default class KnexQueryBuilder implements IQueryBuilder<Knex> {
         );
     }
 
-    private filterArgs(f: IFilter): [string, string, string] {
+    private filterArgs(filter: IFilter): [string, string, string] {
+        const f = this.filterTransformer(filter);
         return [this.computeFilterField(f.field), this.computeFilterOperator(f.operator), f.value];
     }
 

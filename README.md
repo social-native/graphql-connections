@@ -178,7 +178,7 @@ type Query {
       before: Before
       after: After
       filter: Filter
-  ): QueryUserConnection
+  ): QueryUsersConnection
 }
 ```
 
@@ -205,7 +205,7 @@ type Query {
       before: Before
       after: After
       filter: Filter
-  ): QueryUserConnection
+  ): QueryUsersConnection
 }
 ```
 
@@ -225,7 +225,7 @@ const schema = `
         before: Before
         after: After
         filter: Filter
-    ): CampaignCreatorConnection
+    ): QueryUsersConnection
   }
 `
 ```

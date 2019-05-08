@@ -228,7 +228,9 @@ const finalCaseB = caseB.map(({haircolor, age, firstname}) => ({
     bio: takeRandomElement(bios)
 }));
 
+const updatedAt = new Date(1546347661000).toISOString();
 const finalCaseC = caseC.map(({haircolor, age, firstname, lastname}) => ({
+    updated_at: updatedAt,
     haircolor,
     age,
     firstname,

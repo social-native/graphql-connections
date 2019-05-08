@@ -13,6 +13,7 @@
     "ts-node-start": "node ./node_modules/.bin/ts-node --project tsconfig.dev.json -r tsconfig-paths/register dev/index.ts",
     "clean": "rm -rf dist",
     "test": "jest",
+    "test:watch": "npm run test -- --watchAll --runInBand",
     "type-check": "tsc --noEmit",
     "type-check:watch": "npm run type-check -- --watch",
     "build": "npm run clean && rollup -c",

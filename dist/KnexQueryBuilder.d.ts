@@ -5,6 +5,7 @@ export default class KnexQueryBuilder implements IQueryBuilder<Knex> {
     private queryContext;
     private attributeMap;
     private filterMap;
+    private filterTransformer;
     constructor(queryContext: QueryContext, attributeMap: IInAttributeMap, options?: IQueryBuilderOptions);
     createQuery(queryBuilder: Knex): Knex;
     /**

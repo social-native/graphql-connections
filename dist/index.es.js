@@ -1,5 +1,4 @@
 import { GraphQLScalarType, coerceValue, GraphQLError, isValidLiteralValue, valueFromAST, GraphQLInputObjectType, GraphQLList, GraphQLString, GraphQLInt } from 'graphql';
-import { gql } from 'apollo-server-koa';
 
 class CursorEncoder {
     static encodeToCursor(cursorObj) {
@@ -549,7 +548,7 @@ const filterDescription = `
     }
 `;
 const filter = InputUnionType('Filter', [compoundFilterScalar, filterScalar], filterDescription);
-const typeDefs = gql `
+const typeDefs = `
     scalar Filter
     scalar OrderBy
     scalar OrderDir

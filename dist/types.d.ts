@@ -57,9 +57,9 @@ export interface IQueryBuilderOptions {
     filterMap?: {
         [operator: string]: string;
     };
+    filterTransformer?: (filter: IFilter) => IFilter;
 }
 export interface IQueryResult<Node> {
-    nodes: Node[];
     edges: Array<{
         cursor: string;
         node: Node;
@@ -70,10 +70,6 @@ export interface IQueryResult<Node> {
         startCursor: string;
         endCursor: string;
     };
-    hasNextPage: boolean;
-    hasPrevPage: boolean;
-    startCursor: string;
-    endCursor: string;
 }
 export declare type NodeTransformer<Node> = (node: any) => Node;
 export interface IQueryResultOptions<CursorObj, Node> {

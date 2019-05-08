@@ -193,11 +193,13 @@ const defaultFilterMap = {
     '<=': '<=',
     '<>': '<>'
 };
+const defaultFilterTransformer = (filter) => filter;
 class KnexQueryBuilder {
     constructor(queryContext, attributeMap, options = {}) {
         this.queryContext = queryContext;
         this.attributeMap = attributeMap;
         this.filterMap = options.filterMap || defaultFilterMap;
+        this.filterTransformer = options.filterTransformer || defaultFilterTransformer;
         this.addFilterRecursively = this.addFilterRecursively.bind(this);
     }
     createQuery(queryBuilder) {
@@ -239,16 +241,17 @@ class KnexQueryBuilder {
         if (mappedField) {
             return mappedField;
         }
-        throw new Error(`Filter field ${field} either does not exist or is not accessible. Check the attribute map`);
+        throw new Error(`Filter field '${field}' either does not exist or is not accessible. Check the attribute map`);
     }
     computeFilterOperator(operator) {
         const mappedField = this.filterMap[operator];
         if (mappedField) {
             return mappedField;
         }
-        throw new Error(`Filter operator ${operator} either does not exist or is not accessible. Check the filter map`);
+        throw new Error(`Filter operator '${operator}' either does not exist or is not accessible. Check the filter map`);
     }
-    filterArgs(f) {
+    filterArgs(filter) {
+        const f = this.filterTransformer(filter);
         return [this.computeFilterField(f.field), this.computeFilterOperator(f.operator), f.value];
     }
     addFilterRecursively(filter, queryBuilder) {

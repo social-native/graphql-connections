@@ -60,7 +60,7 @@ describe('Customizing the ConnectionManager', () => {
                 if (filter.field === TRANSFORM_FIELD) {
                     return {
                         ...filter,
-                        value: 'blue'
+                        value: 'gray'
                     };
                 }
                 return filter;
@@ -72,7 +72,7 @@ describe('Customizing the ConnectionManager', () => {
                     filter: {
                         field: TRANSFORM_FIELD,
                         operator: '=',
-                        value: 'blu'
+                        value: 'gr'
                     }
                 },
                 attributeMap,
@@ -90,8 +90,8 @@ describe('Customizing the ConnectionManager', () => {
 
             expect(pageInfo.hasNextPage).toBe(false);
             expect(pageInfo.hasPreviousPage).toBe(false);
-            expect(edges.length).toBe(14);
-            expect(validateNodesHaveAttributes(edges, {haircolor: 'blue'})).toBe(true);
+            expect(edges.length).toBe(100);
+            expect(validateNodesHaveAttributes(edges, {haircolor: 'gray'})).toBe(true);
         });
     });
 });

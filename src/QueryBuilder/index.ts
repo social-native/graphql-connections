@@ -1,2 +1,2 @@
 export {default as Knex} from './Knex';
-export {default as KnexMySQLFullText} from './KnexMySQLFullText';
+export {default as KnexMySQL} from './KnexMySQL';

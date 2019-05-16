@@ -1,6 +1,6 @@
 import {ConnectionManager, IFilter} from '../../src';
 import knex from 'knex';
-import {test as testConfig} from '../../knexfile';
+import {test as testConfig} from '../../knexfile.sqlite';
 import {KnexQueryResult} from '../types';
 import {validateNodesHaveAttributes} from '../utils';
 

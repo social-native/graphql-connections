@@ -2,7 +2,7 @@ import Koa from 'koa';
 import {ApolloServer, gql, IResolvers} from 'apollo-server-koa';
 import knex from 'knex';
 import {ConnectionManager, IInputArgs} from '../src';
-import {test as testConfig} from '../knexfile';
+import {test as testConfig} from '../knexfile.sqlite';
 const knexClient = knex(testConfig);
 import {
     typeDefs as connectionTypeDefs,

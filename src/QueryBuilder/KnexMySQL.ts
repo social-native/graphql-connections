@@ -1,23 +1,35 @@
 import KnexBaseQueryBuilder from './Knex';
 import {QueryBuilder as Knex} from 'knex';
 import {QueryContext} from 'index';
-import {IInAttributeMap, IKnexMySQLFullTextQueryBuilderOptions} from 'types';
+import {IInAttributeMap, IKnexMySQLQueryBuilderOptions, QueryBuilderOptions} from 'types';
 
 export default class KnexMySQLFullTextQueryBuilder extends KnexBaseQueryBuilder {
-    private searchColumns: IKnexMySQLFullTextQueryBuilderOptions['searchColumns'];
-    private searchModifier?: IKnexMySQLFullTextQueryBuilderOptions['searchModifier'];
-
+    private searchColumns: IKnexMySQLQueryBuilderOptions['searchColumns'];
+    private searchModifier?: IKnexMySQLQueryBuilderOptions['searchModifier'];
+    private hasSearchOptions: boolean;
     constructor(
         queryContext: QueryContext,
         attributeMap: IInAttributeMap,
-        options: IKnexMySQLFullTextQueryBuilderOptions
+        options?: QueryBuilderOptions
     ) {
         super(queryContext, attributeMap, options);
 
-        this.searchColumns = options.searchColumns;
-        this.searchModifier = options.searchModifier;
+        this.hasSearchOptions = this.isKnexMySQLBuilderOptions(options);
+        // calling type guard twice b/c of weird typescript thing...
+        if (this.isKnexMySQLBuilderOptions(options)) {
+            this.searchColumns = options.searchColumns;
+            this.searchModifier = options.searchModifier;
+        } else if (!this.hasSearchOptions && this.queryContext.search) {
+            throw Error('Using search but search is not configured via query builder options');
+        } else {
+            this.searchColumns = [];
+        }
     }
     public createQuery(queryBuilder: Knex) {
+        if (!this.hasSearchOptions) {
+            return super.createQuery(queryBuilder);
+        }
+
         this.applyFilter(queryBuilder);
         this.applySearch(queryBuilder);
         this.applyOrder(queryBuilder);
@@ -47,5 +59,16 @@ export default class KnexMySQLFullTextQueryBuilder extends KnexBaseQueryBuilder 
             queryBuilder.andWhereRaw(`MATCH(${columns}) AGAINST (?)`, this.queryContext.search);
         }
         queryBuilder.as('score');
+    }
+
+    // type guard
+    private isKnexMySQLBuilderOptions(
+        options?: QueryBuilderOptions
+    ): options is IKnexMySQLQueryBuilderOptions {
+        // tslint:disable-next-line
+        if (options == null) {
+            return false;
+        }
+        return (options as IKnexMySQLQueryBuilderOptions).searchColumns !== undefined;
     }
 }

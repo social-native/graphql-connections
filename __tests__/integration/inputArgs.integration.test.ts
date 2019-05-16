@@ -2,7 +2,7 @@ import knex from 'knex';
 import {ConnectionManager, IInputArgs} from '../../src';
 import {IUserNode, KnexQueryResult} from '../types';
 import {rejectionOf, validateFieldIsOrderedAlphabetically} from '../utils';
-import {test as testConfig} from '../../knexfile';
+import {test as testConfig} from '../../knexfile.sqlite';
 const knexClient = knex(testConfig);
 
 const attributeMap = {

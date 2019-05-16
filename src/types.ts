@@ -20,7 +20,7 @@ export interface ICursorObj<PublicAttributes> {
     // The position of the cursor item from the beginning of the query
     position: number;
     filters: IInputFilter;
-    search: string;
+    search?: string;
 }
 
 export interface IInputArgs {
@@ -73,14 +73,14 @@ export interface IQueryBuilder<Builder> {
     createQuery: (queryBuilder: Builder) => Builder;
 }
 
-export type QueryBuilderOptions = IKnexQueryBuilderOptions | IKnexMySQLFullTextQueryBuilderOptions;
+export type QueryBuilderOptions = IKnexQueryBuilderOptions | IKnexMySQLQueryBuilderOptions;
 
 export interface IKnexQueryBuilderOptions {
     filterMap?: {[operator: string]: string};
     filterTransformer?: (filter: IFilter) => IFilter;
 }
 
-export interface IKnexMySQLFullTextQueryBuilderOptions extends IKnexQueryBuilderOptions {
+export interface IKnexMySQLQueryBuilderOptions extends IKnexQueryBuilderOptions {
     filterMap?: {[operator: string]: string};
     filterTransformer?: (filter: IFilter) => IFilter;
     searchColumns: string[];

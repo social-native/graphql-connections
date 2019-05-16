@@ -1,6 +1,6 @@
 import {QueryBuilder as Knex} from 'knex';
 import QueryContext from './QueryContext';
-import KnexQueryBuilder from './KnexQueryBuilder';
+import * as QUERY_BUILDERS from './QueryBuilder';
 import {
     IQueryBuilder,
     IQueryContext,
@@ -8,7 +8,7 @@ import {
     ICursorObj,
     IInAttributeMap,
     IInputArgs,
-    IQueryBuilderOptions,
+    QueryBuilderOptions,
     IQueryResultOptions,
     IQueryContextOptions
 } from './types';
@@ -28,7 +28,7 @@ type KnexQueryResult = Array<{[attributeName: string]: any}>;
 interface IConnectionManagerOptions<CursorObj, Node> {
     contextOptions?: IQueryContextOptions<CursorObj>;
     resultOptions?: IQueryResultOptions<CursorObj, Node>;
-    builderOptions?: IQueryBuilderOptions;
+    builderOptions?: QueryBuilderOptions;
 }
 
 // tslint:disable:max-classes-per-file
@@ -43,7 +43,9 @@ export default class ConnectionManager<Node = {}> {
     constructor(
         inputArgs: IInputArgs,
         inAttributeMap: IInAttributeMap,
-        options?: IConnectionManagerOptions<ICursorObj<string>, Node>
+        options?: IConnectionManagerOptions<ICursorObj<string>, Node> & {
+            queryBuilder?: keyof typeof QUERY_BUILDERS;
+        }
     ) {
         this.options = options || {};
         this.inAttributeMap = inAttributeMap;
@@ -52,7 +54,12 @@ export default class ConnectionManager<Node = {}> {
         this.queryContext = new QueryContext(inputArgs, this.options.contextOptions);
 
         // 2. Create QueryBuilder
-        this.queryBuilder = new KnexQueryBuilder(
+        const queryBuilder =
+            options && options.queryBuilder
+                ? QUERY_BUILDERS[options.queryBuilder]
+                : QUERY_BUILDERS.Knex;
+
+        this.queryBuilder = new queryBuilder(
             this.queryContext,
             this.inAttributeMap,
             this.options.builderOptions

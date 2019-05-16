@@ -1,4 +1,4 @@
-import {ORDER_DIRECTION} from './enums';
+import {ORDER_DIRECTION, MYSQL_FULL_TEXT_SEARCH_MODIFIER} from './enums';
 
 export interface IFilter {
     value: string;
@@ -20,6 +20,7 @@ export interface ICursorObj<PublicAttributes> {
     // The position of the cursor item from the beginning of the query
     position: number;
     filters: IInputFilter;
+    search: string;
 }
 
 export interface IInputArgs {
@@ -30,6 +31,7 @@ export interface IInputArgs {
     orderBy?: string;
     orderDir?: keyof typeof ORDER_DIRECTION;
     filter?: IInputFilter;
+    search?: string;
 }
 
 export interface IInAttributeMap {
@@ -47,6 +49,7 @@ export interface IQueryContext {
     orderBy: string;
     filters: IInputFilter;
     offset: number;
+    search?: string;
     inputArgs: IInputArgs;
     previousCursor?: string;
     indexPosition: number;
@@ -70,9 +73,18 @@ export interface IQueryBuilder<Builder> {
     createQuery: (queryBuilder: Builder) => Builder;
 }
 
-export interface IQueryBuilderOptions {
+export type QueryBuilderOptions = IKnexQueryBuilderOptions | IKnexMySQLFullTextQueryBuilderOptions;
+
+export interface IKnexQueryBuilderOptions {
     filterMap?: {[operator: string]: string};
     filterTransformer?: (filter: IFilter) => IFilter;
+}
+
+export interface IKnexMySQLFullTextQueryBuilderOptions extends IKnexQueryBuilderOptions {
+    filterMap?: {[operator: string]: string};
+    filterTransformer?: (filter: IFilter) => IFilter;
+    searchColumns: string[];
+    searchModifier?: keyof typeof MYSQL_FULL_TEXT_SEARCH_MODIFIER;
 }
 
 // QueryResult

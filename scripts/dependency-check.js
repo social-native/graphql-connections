@@ -52,7 +52,8 @@ const options = {
         'tslint',
         'tslint-eslint-rules',
         '@types/jest',
-        '@types/superagent'
+        '@types/superagent',
+        'mysql2'
     ],
     specials: [
         // the target special parsers

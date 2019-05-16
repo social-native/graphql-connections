@@ -7,7 +7,7 @@ import {
     resolvers as connectionResolvers
 } from '../src/graphqlSchema';
 
-import {development as developmentConfig} from '../knexfile';
+import {development as developmentConfig} from '../knexfile.sqlite';
 const knexClient = knex(developmentConfig);
 
 // Construct a schema, using GraphQL schema language

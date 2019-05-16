@@ -164,6 +164,9 @@ export default class QueryContext implements IQueryContext {
      * Extracts the search string from the resolver cursorArgs
      */
     private calcSearch() {
+        if (this.previousCursor) {
+            return this.cursorEncoder.decodeFromCursor(this.previousCursor).search;
+        }
         const {search} = this.inputArgs;
         return search;
     }

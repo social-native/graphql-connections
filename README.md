@@ -100,9 +100,15 @@ The above logic is controlled by the `connectionManager`. It can be added to a r
 
 ## Run locally
 
-1. Run the migrations `NODE_ENV=development npm run migrate:latest`
-2. Seed the database `NODE_ENV=development npm run seed:run`
-3. Run the dev server `npm run dev`
+1. Run the migrations 
+   - `NODE_ENV=development npm run migrate:sqlite:latest`
+   - `NODE_ENV=development npm run migrate:mysql:latest`
+2. Seed the database 
+   - `NODE_ENV=development npm run seed:sqlite:run`
+   - `NODE_ENV=development npm run seed:mysql:run`
+3. Run the dev server 
+   - `npm run dev:sqlite` (search is not supported)
+   - `npm run dev:mysql` (search IS supported :))
 4. Visit the GraphQL playground [http://localhost:4000/graphql](http://localhost:4000/graphql)
 5. Run some queries!
 

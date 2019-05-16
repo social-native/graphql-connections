@@ -20,6 +20,12 @@ const ORDER_DIRECTION = {
     asc: 'asc',
     desc: 'desc'
 };
+// export enum MYSQL_FULL_TEXT_SEARCH_MODIFIER {
+//     'IN NATURAL LANGUAGE MODE',
+//     'IN NATURAL LANGUAGE MODE WITH QUERY EXPANSION',
+//     'IN BOOLEAN MODE',
+//     'WITH QUERY EXPANSION'
+// }
 
 class QueryContext {
     constructor(inputArgs = {}, options = {}) {
@@ -40,6 +46,7 @@ class QueryContext {
         this.orderDir = this.calcOrderDirection();
         this.filters = this.calcFilters();
         this.offset = this.calcOffset();
+        this.search = this.calcSearch();
     }
     /**
      * Checks if there is a 'before or 'last' arg which is used to reverse paginate
@@ -116,6 +123,16 @@ class QueryContext {
             return {};
         }
         return this.inputArgs.filter;
+    }
+    /**
+     * Extracts the search string from the resolver cursorArgs
+     */
+    calcSearch() {
+        if (this.previousCursor) {
+            return this.cursorEncoder.decodeFromCursor(this.previousCursor).search;
+        }
+        const { search } = this.inputArgs;
+        return search;
     }
     /**
      * Gets the index position of the cursor in the total possible result set
@@ -303,6 +320,62 @@ const isFilter = (filter) => {
         !!filter.value);
 };
 
+class KnexMySQLFullTextQueryBuilder extends KnexQueryBuilder {
+    constructor(queryContext, attributeMap, options) {
+        super(queryContext, attributeMap, options);
+        this.hasSearchOptions = this.isKnexMySQLBuilderOptions(options);
+        // calling type guard twice b/c of weird typescript thing...
+        if (this.isKnexMySQLBuilderOptions(options)) {
+            this.searchColumns = options.searchColumns;
+            this.searchModifier = options.searchModifier;
+        }
+        else if (!this.hasSearchOptions && this.queryContext.search) {
+            throw Error('Using search but search is not configured via query builder options');
+        }
+        else {
+            this.searchColumns = [];
+        }
+    }
+    createQuery(queryBuilder) {
+        if (!this.hasSearchOptions) {
+            return super.createQuery(queryBuilder);
+        }
+        // apply filter first
+        this.applyFilter(queryBuilder);
+        this.applySearch(queryBuilder);
+        this.applyOrder(queryBuilder);
+        this.applyLimit(queryBuilder);
+        this.applyOffset(queryBuilder);
+        return queryBuilder;
+    }
+    applySearch(queryBuilder) {
+        if (!this.queryContext.search) {
+            return;
+        }
+        // create comma separated list of columns to search over
+        const columns = this.searchColumns.reduce((acc, columnName, index) => {
+            return index === 0 ? acc + columnName : acc + ', ' + columnName;
+        }, '');
+        if (this.searchModifier) {
+            queryBuilder.andWhereRaw(`
+                MATCH(${columns}) AGAINST (? ${this.searchModifier})
+            `, this.queryContext.search);
+        }
+        else {
+            queryBuilder.andWhereRaw(`MATCH(${columns}) AGAINST (?)`, this.queryContext.search);
+        }
+        queryBuilder.as('score');
+    }
+    // type guard
+    isKnexMySQLBuilderOptions(options) {
+        // tslint:disable-next-line
+        if (options == null) {
+            return false;
+        }
+        return options.searchColumns !== undefined;
+    }
+}
+
 class QueryResult {
     constructor(result, queryContext, options = {}) {
         this.result = result;
@@ -393,6 +466,7 @@ class QueryResult {
         const orderDir = this.queryContext.orderDir;
         const filters = this.queryContext.filters;
         const orderBy = this.queryContext.orderBy;
+        const search = this.queryContext.search;
         const nodesLength = this.nodes.length;
         return this.nodes.map((node, index) => {
             const position = this.queryContext.isPagingBackwards
@@ -403,7 +477,8 @@ class QueryResult {
                     orderDir,
                     filters,
                     orderBy,
-                    position
+                    position,
+                    search
                 }),
                 node: { ...node }
             };
@@ -418,10 +493,15 @@ class ConnectionManager {
         this.inAttributeMap = inAttributeMap;
         // 1. Create QueryContext
         this.queryContext = new QueryContext(inputArgs, this.options.contextOptions);
-        // 2. Create QueryBuilder
-        this.queryBuilder = new KnexQueryBuilder(this.queryContext, this.inAttributeMap, this.options.builderOptions);
     }
     createQuery(queryBuilder) {
+        // 2. Create QueryBuilder
+        if (!this.queryBuilder) {
+            this.initializeQueryBuilder(queryBuilder);
+        }
+        if (!this.queryBuilder) {
+            throw Error('Query builder could not be correctly initialized');
+        }
         return this.queryBuilder.createQuery(queryBuilder);
     }
     addResult(result) {
@@ -439,6 +519,19 @@ class ConnectionManager {
             throw Error('Result must be added before edges can be calculated');
         }
         return this.queryResult.edges;
+    }
+    initializeQueryBuilder(queryBuilder) {
+        // 2. Create QueryBuilder
+        const MYSQL_CLIENTS = ['mysql', 'mysql2'];
+        const { client: clientName } = queryBuilder.client.config;
+        let builder;
+        if (MYSQL_CLIENTS.includes(clientName)) {
+            builder = KnexMySQLFullTextQueryBuilder;
+        }
+        else {
+            builder = KnexQueryBuilder;
+        }
+        this.queryBuilder = new builder(this.queryContext, this.inAttributeMap, this.options.builderOptions);
     }
 }
 
@@ -554,6 +647,7 @@ const filterDescription = `
 const filter = InputUnionType('Filter', [compoundFilterScalar, filterScalar], filterDescription);
 const typeDefs = `
     scalar Filter
+    scalar Search
     scalar OrderBy
     scalar OrderDir
     scalar First
@@ -606,6 +700,10 @@ const after = createStringScalarType('After', `
     Following cursor.
     Returns edges before this cursor
     `);
+const search = createStringScalarType('Search', `
+    A search string.
+    To be used with full text search index
+    `);
 const first = createIntScalarType('First', `
     Number of edges to return at most. For use with 'before'
     `);
@@ -614,6 +712,7 @@ const last = createIntScalarType('Last', `
     `);
 const resolvers = {
     Filter: filter,
+    Search: search,
     OrderBy: orderBy,
     OrderDir: orderDir,
     First: first,
@@ -633,6 +732,7 @@ const resolvers = {
 };
 const gqlTypes = {
     filter,
+    search,
     orderBy,
     orderDir,
     first,
@@ -645,7 +745,8 @@ exports.ConnectionManager = ConnectionManager;
 exports.QueryContext = QueryContext;
 exports.QueryResult = QueryResult;
 exports.CursorEncoder = CursorEncoder;
-exports.KnexQueryBuilder = KnexQueryBuilder;
+exports.Knex = KnexQueryBuilder;
+exports.KnexMySQL = KnexMySQLFullTextQueryBuilder;
 exports.typeDefs = typeDefs;
 exports.resolvers = resolvers;
 exports.gqlTypes = gqlTypes;

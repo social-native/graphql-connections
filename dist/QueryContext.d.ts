@@ -14,11 +14,13 @@ interface IQueryContextInputArgs extends IInputArgs {
     orderBy?: string;
     orderDir?: keyof typeof ORDER_DIRECTION;
     filter: IInputFilter;
+    search?: string;
 }
 export default class QueryContext implements IQueryContext {
     limit: number;
     orderDir: keyof typeof ORDER_DIRECTION;
     orderBy: string;
+    search?: string;
     /**
      * { or: [
      *     { field: 'username', operator: '=', value: 'haxor1'},
@@ -57,6 +59,10 @@ export default class QueryContext implements IQueryContext {
      * Extracts the filters from the resolver filterArgs
      */
     private calcFilters;
+    /**
+     * Extracts the search string from the resolver cursorArgs
+     */
+    private calcSearch;
     /**
      * Gets the index position of the cursor in the total possible result set
      */

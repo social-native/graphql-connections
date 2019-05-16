@@ -1,5 +1,5 @@
 import { QueryBuilder as Knex } from 'knex';
-import { ICursorObj, IInAttributeMap, IInputArgs, IQueryBuilderOptions, IQueryResultOptions, IQueryContextOptions } from './types';
+import { ICursorObj, IInAttributeMap, IInputArgs, QueryBuilderOptions, IQueryResultOptions, IQueryContextOptions } from './types';
 /**
  * ConnectionManager
  *
@@ -14,11 +14,11 @@ declare type KnexQueryResult = Array<{
 interface IConnectionManagerOptions<CursorObj, Node> {
     contextOptions?: IQueryContextOptions<CursorObj>;
     resultOptions?: IQueryResultOptions<CursorObj, Node>;
-    builderOptions?: IQueryBuilderOptions;
+    builderOptions?: QueryBuilderOptions;
 }
 export default class ConnectionManager<Node = {}> {
     private queryContext;
-    private queryBuilder;
+    private queryBuilder?;
     private queryResult?;
     private inAttributeMap;
     private options;
@@ -35,5 +35,6 @@ export default class ConnectionManager<Node = {}> {
         cursor: string;
         node: Node;
     }[];
+    private initializeQueryBuilder;
 }
 export {};

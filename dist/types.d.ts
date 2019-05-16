@@ -15,6 +15,7 @@ export interface ICursorObj<PublicAttributes> {
     orderBy: PublicAttributes;
     position: number;
     filters: IInputFilter;
+    search?: string;
 }
 export interface IInputArgs {
     before?: string;
@@ -24,6 +25,7 @@ export interface IInputArgs {
     orderBy?: string;
     orderDir?: keyof typeof ORDER_DIRECTION;
     filter?: IInputFilter;
+    search?: string;
 }
 export interface IInAttributeMap {
     [nodeField: string]: string;
@@ -37,6 +39,7 @@ export interface IQueryContext {
     orderBy: string;
     filters: IInputFilter;
     offset: number;
+    search?: string;
     inputArgs: IInputArgs;
     previousCursor?: string;
     indexPosition: number;
@@ -53,11 +56,20 @@ export interface ICursorEncoder<CursorObj> {
 export interface IQueryBuilder<Builder> {
     createQuery: (queryBuilder: Builder) => Builder;
 }
-export interface IQueryBuilderOptions {
+export declare type QueryBuilderOptions = IKnexQueryBuilderOptions | IKnexMySQLQueryBuilderOptions;
+export interface IKnexQueryBuilderOptions {
     filterMap?: {
         [operator: string]: string;
     };
     filterTransformer?: (filter: IFilter) => IFilter;
+}
+export interface IKnexMySQLQueryBuilderOptions extends IKnexQueryBuilderOptions {
+    filterMap?: {
+        [operator: string]: string;
+    };
+    filterTransformer?: (filter: IFilter) => IFilter;
+    searchColumns: string[];
+    searchModifier?: 'IN NATURAL LANGUAGE MODE' | 'IN NATURAL LANGUAGE MODE WITH QUERY EXPANSION' | 'IN BOOLEAN MODE' | 'WITH QUERY EXPANSION' | string;
 }
 export interface IQueryResult<Node> {
     edges: Array<{

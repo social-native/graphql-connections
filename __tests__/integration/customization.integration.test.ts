@@ -1,6 +1,6 @@
 import {ConnectionManager, IFilter} from '../../src';
 import knex from 'knex';
-import {test as testConfig} from '../../knexfile';
+import {test as testConfig} from '../../knexfile.sqlite';
 import {KnexQueryResult} from '../types';
 import {validateNodesHaveAttributes} from '../utils';
 
@@ -55,12 +55,12 @@ describe('Customizing the ConnectionManager', () => {
 
     describe('Filter transformer', () => {
         it('Can transform a filter', async () => {
-            const TRANSFORM_FIELD = 'updatedAt';
+            const TRANSFORM_FIELD = 'haircolor';
             const castUnixToDateTime = (filter: IFilter) => {
                 if (filter.field === TRANSFORM_FIELD) {
                     return {
                         ...filter,
-                        value: new Date(+filter.value * 1000).toISOString()
+                        value: 'gray'
                     };
                 }
                 return filter;
@@ -69,7 +69,11 @@ describe('Customizing the ConnectionManager', () => {
             const nodeConnection = new ConnectionManager<ITransformedNode>(
                 {
                     first: 300,
-                    filter: {field: TRANSFORM_FIELD, operator: '=', value: '1546347661'}
+                    filter: {
+                        field: TRANSFORM_FIELD,
+                        operator: '=',
+                        value: 'gr'
+                    }
                 },
                 attributeMap,
                 {
@@ -86,10 +90,8 @@ describe('Customizing the ConnectionManager', () => {
 
             expect(pageInfo.hasNextPage).toBe(false);
             expect(pageInfo.hasPreviousPage).toBe(false);
-            expect(edges.length).toBe(10);
-            expect(
-                validateNodesHaveAttributes(edges, {updated_at: '2019-01-01T13:01:01.000Z'})
-            ).toBe(true);
+            expect(edges.length).toBe(100);
+            expect(validateNodesHaveAttributes(edges, {haircolor: 'gray'})).toBe(true);
         });
     });
 });

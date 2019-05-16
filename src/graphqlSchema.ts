@@ -72,6 +72,7 @@ const filter = InputUnionType('Filter', [compoundFilterScalar, filterScalar], fi
 
 const typeDefs = `
     scalar Filter
+    scalar Search
     scalar OrderBy
     scalar OrderDir
     scalar First
@@ -145,6 +146,14 @@ const after = createStringScalarType(
     `
 );
 
+const search = createStringScalarType(
+    'Search',
+    `
+    A search string.
+    To be used with full text search index
+    `
+);
+
 const first = createIntScalarType(
     'First',
     `
@@ -161,6 +170,7 @@ const last = createIntScalarType(
 
 const resolvers = {
     Filter: filter,
+    Search: search,
     OrderBy: orderBy,
     OrderDir: orderDir,
     First: first,
@@ -181,6 +191,7 @@ const resolvers = {
 
 const gqlTypes = {
     filter,
+    search,
     orderBy,
     orderDir,
     first,

@@ -2,12 +2,13 @@ import Koa from 'koa';
 import {ApolloServer, gql, IResolvers} from 'apollo-server-koa';
 import knex from 'knex';
 import {ConnectionManager, IInputArgs} from '../src';
-import {test as testConfig} from '../knexfile.sqlite';
-const knexClient = knex(testConfig);
 import {
     typeDefs as connectionTypeDefs,
     resolvers as connectionResolvers
 } from '../src/graphqlSchema';
+
+import {development as developmentConfig} from '../knexfile.mysql';
+const knexClient = knex(developmentConfig);
 
 // Construct a schema, using GraphQL schema language
 const typeDefs = gql`
@@ -40,6 +41,7 @@ const typeDefs = gql`
             before: Before
             after: After
             filter: Filter
+            search: Search
         ): QueryUserConnection
     }
 `;
@@ -58,9 +60,8 @@ type KnexQueryResult = Array<{[attributeName: string]: any}>;
 
 // Provide resolver functions for your schema fields
 const resolvers = {
-    ...connectionResolvers,
     Query: {
-        async users(_: any, {input: inputArgs}: {input: IInputArgs}) {
+        async users(_: any, inputArgs: IInputArgs) {
             const queryBuilder = knexClient.from('mock');
             // maps node types to sql column names
             const attributeMap = {
@@ -73,7 +74,13 @@ const resolvers = {
                 bio: 'bio'
             };
 
-            const nodeConnection = new ConnectionManager<IUserNode>(inputArgs, attributeMap);
+            const builderOptions = {
+                searchColumns: ['username', 'firstname', 'lastname', 'bio', 'haircolor'],
+                searchModifier: 'IN NATURAL LANGUAGE MODE'
+            };
+            const nodeConnection = new ConnectionManager<IUserNode>(inputArgs, attributeMap, {
+                builderOptions
+            });
 
             const query = nodeConnection.createQuery(queryBuilder.clone()).select();
             const result = (await query) as KnexQueryResult;
@@ -86,30 +93,23 @@ const resolvers = {
             };
         }
     },
-    IConnection: {
-        __resolveType() {
-            return null;
-        }
-    },
-    IEdge: {
-        __resolveType() {
-            return null;
-        }
-    }
+    ...connectionResolvers
 } as IResolvers;
 
-const appProvider = () => {
-    const allTypeDefs = gql`
-        ${typeDefs}
-        ${connectionTypeDefs}
-    `;
-    const server = new ApolloServer({
-        typeDefs: allTypeDefs,
-        resolvers
-    });
-    const app = new Koa();
-    server.applyMiddleware({app});
-    return app;
-};
+const allTypeDefs = gql`
+    ${typeDefs}
+    ${connectionTypeDefs}
+`;
+const server = new ApolloServer({
+    typeDefs: allTypeDefs,
+    resolvers
+});
+const app = new Koa();
+server.applyMiddleware({app});
 
-export default appProvider;
+app.listen({port: 4000}, () =>
+    // tslint:disable-next-line
+    console.log(
+        `🚀 Server ready at http://localhost:4000${server.graphqlPath} (PID: ${process.pid})`
+    )
+);

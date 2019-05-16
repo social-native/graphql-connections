@@ -25,8 +25,8 @@ jobs:
       - *restore-cache
       - run: npm install
       - *save-cache
-      - run: NODE_ENV=test NODE_ENV=test npm run migrate:latest
-      - run: NODE_ENV=test npm run seed:run
+      - run: NODE_ENV=test NODE_ENV=test npm run migrate:sqlite:latest
+      - run: NODE_ENV=test npm run seed:sqlite:run
       - run: npm run test
 
   build-verification:

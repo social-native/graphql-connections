@@ -135,6 +135,7 @@ export default class QueryResult<
         const orderDir = this.queryContext.orderDir;
         const filters = this.queryContext.filters;
         const orderBy = this.queryContext.orderBy;
+        const search = this.queryContext.search;
 
         const nodesLength = this.nodes.length;
         return this.nodes.map((node, index) => {
@@ -147,7 +148,8 @@ export default class QueryResult<
                     orderDir,
                     filters,
                     orderBy,
-                    position
+                    position,
+                    search
                 }),
                 node: {...node}
             };

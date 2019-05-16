@@ -1,13 +1,13 @@
-import QueryContext from './QueryContext';
+import QueryContext from '../QueryContext';
 import {QueryBuilder as Knex} from 'knex';
 import {
     IFilterMap,
     IInAttributeMap,
     IQueryBuilder,
-    IQueryBuilderOptions,
+    IKnexQueryBuilderOptions,
     IInputFilter,
     IFilter
-} from './types';
+} from '../types';
 
 /**
  * KnexQueryBuilder
@@ -28,15 +28,15 @@ const defaultFilterMap = {
 const defaultFilterTransformer = (filter: IFilter) => filter;
 
 export default class KnexQueryBuilder implements IQueryBuilder<Knex> {
-    private queryContext: QueryContext;
+    protected queryContext: QueryContext;
     private attributeMap: IInAttributeMap;
     private filterMap: IFilterMap;
-    private filterTransformer: NonNullable<IQueryBuilderOptions['filterTransformer']>;
+    private filterTransformer: NonNullable<IKnexQueryBuilderOptions['filterTransformer']>;
 
     constructor(
         queryContext: QueryContext,
         attributeMap: IInAttributeMap,
-        options: IQueryBuilderOptions = {}
+        options: IKnexQueryBuilderOptions = {}
     ) {
         this.queryContext = queryContext;
         this.attributeMap = attributeMap;
@@ -59,14 +59,14 @@ export default class KnexQueryBuilder implements IQueryBuilder<Knex> {
      *     Note: The limit added to the query builder is limit + 1
      *     to allow us to see if there would be additional pages
      */
-    private applyLimit(queryBuilder: Knex) {
+    protected applyLimit(queryBuilder: Knex) {
         queryBuilder.limit(this.queryContext.limit + 1); // add one to figure out if there are more results
     }
 
     /**
      * Adds the order to the sql query builder.
      */
-    private applyOrder(queryBuilder: Knex) {
+    protected applyOrder(queryBuilder: Knex) {
         // map from node attribute names to sql column names
         const orderBy = this.attributeMap[this.queryContext.orderBy] || this.attributeMap.id;
         const direction = this.queryContext.orderDir;
@@ -74,7 +74,7 @@ export default class KnexQueryBuilder implements IQueryBuilder<Knex> {
         queryBuilder.orderBy(orderBy, direction);
     }
 
-    private applyOffset(queryBuilder: Knex) {
+    protected applyOffset(queryBuilder: Knex) {
         const offset = this.queryContext.offset;
         queryBuilder.offset(offset);
     }
@@ -82,7 +82,7 @@ export default class KnexQueryBuilder implements IQueryBuilder<Knex> {
     /**
      * Adds filters to the sql query builder
      */
-    private applyFilter(queryBuilder: Knex) {
+    protected applyFilter(queryBuilder: Knex) {
         this.addFilterRecursively(this.queryContext.filters, queryBuilder);
     }
 

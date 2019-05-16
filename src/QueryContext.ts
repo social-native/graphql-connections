@@ -25,12 +25,14 @@ interface IQueryContextInputArgs extends IInputArgs {
     orderBy?: string;
     orderDir?: keyof typeof ORDER_DIRECTION;
     filter: IInputFilter;
+    search?: string;
 }
 
 export default class QueryContext implements IQueryContext {
     public limit: number;
     public orderDir: keyof typeof ORDER_DIRECTION;
     public orderBy: string;
+    public search?: string;
     /**
      * { or: [
      *     { field: 'username', operator: '=', value: 'haxor1'},
@@ -69,6 +71,7 @@ export default class QueryContext implements IQueryContext {
         this.orderDir = this.calcOrderDirection();
         this.filters = this.calcFilters();
         this.offset = this.calcOffset();
+        this.search = this.calcSearch();
     }
 
     /**
@@ -155,6 +158,17 @@ export default class QueryContext implements IQueryContext {
         }
 
         return this.inputArgs.filter;
+    }
+
+    /**
+     * Extracts the search string from the resolver cursorArgs
+     */
+    private calcSearch() {
+        if (this.previousCursor) {
+            return this.cursorEncoder.decodeFromCursor(this.previousCursor).search;
+        }
+        const {search} = this.inputArgs;
+        return search;
     }
 
     /**

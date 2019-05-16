@@ -84,7 +84,12 @@ export interface IKnexMySQLQueryBuilderOptions extends IKnexQueryBuilderOptions 
     filterMap?: {[operator: string]: string};
     filterTransformer?: (filter: IFilter) => IFilter;
     searchColumns: string[];
-    searchModifier?: string;
+    searchModifier?:
+        | 'IN NATURAL LANGUAGE MODE'
+        | 'IN NATURAL LANGUAGE MODE WITH QUERY EXPANSION'
+        | 'IN BOOLEAN MODE'
+        | 'WITH QUERY EXPANSION'
+        | string;
 }
 
 // QueryResult

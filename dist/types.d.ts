@@ -69,7 +69,7 @@ export interface IKnexMySQLQueryBuilderOptions extends IKnexQueryBuilderOptions 
     };
     filterTransformer?: (filter: IFilter) => IFilter;
     searchColumns: string[];
-    searchModifier?: string;
+    searchModifier?: 'IN NATURAL LANGUAGE MODE' | 'IN NATURAL LANGUAGE MODE WITH QUERY EXPANSION' | 'IN BOOLEAN MODE' | 'WITH QUERY EXPANSION' | string;
 }
 export interface IQueryResult<Node> {
     edges: Array<{

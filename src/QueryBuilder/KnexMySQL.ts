@@ -61,7 +61,6 @@ export default class KnexMySQLFullTextQueryBuilder extends KnexBaseQueryBuilder 
         } else {
             queryBuilder.andWhereRaw(`MATCH(${columns}) AGAINST (?)`, this.queryContext.search);
         }
-        queryBuilder.as('score');
     }
 
     // type guard

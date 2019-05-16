@@ -114,7 +114,8 @@ query {
       filter: { and: [
         {field: "id", operator: ">", value: "19990"},
         {field: "age", operator: "<", value: "90"},
-      ]}
+      ]},
+      search: "random search term"
   ) {
     pageInfo {
       hasNextPage
@@ -164,7 +165,7 @@ query {
 
 ### 1. Add input scalars to schema
 
-Add the input scalars (`First`, `Last`, `OrderBy`, `OrderDir`, `Before`, `After`, `Filter`) to your GQL schema.
+Add the input scalars (`First`, `Last`, `OrderBy`, `OrderDir`, `Before`, `After`, `Filter`, `Search`) to your GQL schema.
 
 At the very least you should add `Before`, `After` and `First`, `Last` because they allow you to move along the connection with a cursor.
 
@@ -178,6 +179,7 @@ type Query {
       before: Before
       after: After
       filter: Filter
+      search: Search
   ): QueryUsersConnection
 }
 ```
@@ -195,6 +197,7 @@ scalar: OrderDir
 scalar: Before
 scalar: After
 scalar: Filter
+scalar: Search
 
 type Query {
   users(
@@ -205,6 +208,7 @@ type Query {
       before: Before
       after: After
       filter: Filter
+      search: Search
   ): QueryUsersConnection
 }
 ```
@@ -225,6 +229,7 @@ const schema = `
         before: Before
         after: After
         filter: Filter
+        search: Search
     ): QueryUsersConnection
   }
 `
@@ -560,7 +565,7 @@ interface ICursorEncoder<CursorObj> {
 }
 ```
 
-#### builderOptions
+#### builderOptions - common
 
 ##### filterTransformer
 
@@ -593,6 +598,33 @@ const defaultFilterMap = {
     '<=': '<=',
     '<>': '<>'
 };
+```
+
+#### builderOptions - MySQL specific
+
+##### searchColumns
+
+Used with full text `Search` input. It is an array of column names that will be used in the full text search sql expression `MATCH (col1,col2,...) AGAINST (expr [search_modifier])`
+
+```typescript
+searchColumns: string[]
+```
+
+##### searchModifier
+
+Used with full text `Search` input. It is an array of column names that will be used in the full text search sql expression `MATCH (col1,col2,...) AGAINST (expr [search_modifier])`
+
+```typescript
+searchColumns: string
+```
+
+The values will likely be one of:
+
+```typescript
+      'IN NATURAL LANGUAGE MODE',
+    | 'IN NATURAL LANGUAGE MODE WITH QUERY EXPANSION',
+    | 'IN BOOLEAN MODE',
+    | 'WITH QUERY EXPANSION'
 ```
 
 #### resultOptions
@@ -638,3 +670,39 @@ This can be visualized as such:
 
 ![Image of Architecture](https://docs.google.com/drawings/d/e/2PACX-1vRwtC2UiFwLXFDbmBNoq_6bD1YTyACV49SWHxfj2ce_K5T_XEZYlgGP7ntbcskoMVWqXp5C2Uj-K7Jj/pub?w=1163&amp;h=719)
 
+### Search
+
+Search inputs are provided for executing query strings against a datastore. At the moment only MySQL support exists.
+Using filters may slow down the query.
+
+An example resolver might look like:
+
+```typescript
+const attributeMap = {
+    id: 'id',
+    username: 'username',
+    firstname: 'firstname',
+    age: 'age',
+    haircolor: 'haircolor',
+    lastname: 'lastname',
+    bio: 'bio'
+};
+
+const builderOptions = {
+    searchColumns: ['username', 'firstname', 'lastname', 'bio', 'haircolor'],
+    searchModifier: 'IN NATURAL LANGUAGE MODE'
+};
+const nodeConnection = new ConnectionManager<IUserNode>(inputArgs, attributeMap, {
+    builderOptions
+});
+
+const query = nodeConnection.createQuery(queryBuilder.clone()).select();
+const result = (await query) as KnexQueryResult;
+
+nodeConnection.addResult(result);
+
+return {
+    pageInfo: nodeConnection.pageInfo,
+    edges: nodeConnection.edges
+};
+```

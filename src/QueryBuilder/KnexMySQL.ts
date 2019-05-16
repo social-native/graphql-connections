@@ -30,8 +30,11 @@ export default class KnexMySQLFullTextQueryBuilder extends KnexBaseQueryBuilder 
             return super.createQuery(queryBuilder);
         }
 
+        // apply filter first
         this.applyFilter(queryBuilder);
+
         this.applySearch(queryBuilder);
+
         this.applyOrder(queryBuilder);
         this.applyLimit(queryBuilder);
         this.applyOffset(queryBuilder);

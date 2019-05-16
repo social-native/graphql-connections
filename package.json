@@ -11,6 +11,8 @@
   "scripts": {
     "dev:sqlite": "nodemon -e ts -w ./dev -x npm run ts-node-start:sqlite",
     "ts-node-start:sqlite": "node ./node_modules/.bin/ts-node --project tsconfig.dev.json -r tsconfig-paths/register dev/dev.sqlite.ts",
+    "dev:mysql": "nodemon -e ts -w ./dev -x npm run ts-node-start:mysql",
+    "ts-node-start:mysql": "node ./node_modules/.bin/ts-node --project tsconfig.dev.json -r tsconfig-paths/register dev/dev.mysql.ts",
     "clean": "rm -rf dist",
     "test": "jest",
     "test:watch": "npm run test -- --watchAll --runInBand",

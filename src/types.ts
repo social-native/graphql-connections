@@ -1,4 +1,4 @@
-import {ORDER_DIRECTION, MYSQL_FULL_TEXT_SEARCH_MODIFIER} from './enums';
+import {ORDER_DIRECTION} from './enums';
 
 export interface IFilter {
     value: string;
@@ -84,7 +84,7 @@ export interface IKnexMySQLQueryBuilderOptions extends IKnexQueryBuilderOptions 
     filterMap?: {[operator: string]: string};
     filterTransformer?: (filter: IFilter) => IFilter;
     searchColumns: string[];
-    searchModifier?: keyof typeof MYSQL_FULL_TEXT_SEARCH_MODIFIER;
+    searchModifier?: string;
 }
 
 // QueryResult

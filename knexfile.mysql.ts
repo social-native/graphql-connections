@@ -30,7 +30,9 @@ const common = {
     seeds: {directory: __dirname + '/db/seeds'}
 };
 
-module.exports = {
-    development: common,
-    test: common
+export const development = {
+    ...common
+};
+export const test = {
+    ...common
 };

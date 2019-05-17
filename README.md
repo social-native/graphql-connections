@@ -678,7 +678,7 @@ This can be visualized as such:
 
 ### Search
 
-Search inputs are provided for executing query strings against a datastore. At the moment only MySQL support exists.
+Search inputs are provided for executing full text search query strings against a datastore. At the moment only MySQL support exists.
 Using filters may slow down the query.
 
 An example resolver might look like:

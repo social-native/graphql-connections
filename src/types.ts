@@ -83,6 +83,7 @@ export interface IKnexQueryBuilderOptions {
 export interface IKnexMySQLQueryBuilderOptions extends IKnexQueryBuilderOptions {
     filterMap?: {[operator: string]: string};
     filterTransformer?: (filter: IFilter) => IFilter;
+    exactMatchColumns?: string[];
     searchColumns: string[];
     searchModifier?:
         | 'IN NATURAL LANGUAGE MODE'

@@ -326,6 +326,7 @@ class KnexMySQLFullTextQueryBuilder extends KnexQueryBuilder {
         this.hasSearchOptions = this.isKnexMySQLBuilderOptions(options);
         // calling type guard twice b/c of weird typescript thing...
         if (this.isKnexMySQLBuilderOptions(options)) {
+            this.exactMatchColumns = options.exactMatchColumns;
             this.searchColumns = options.searchColumns;
             this.searchModifier = options.searchModifier;
         }
@@ -333,6 +334,7 @@ class KnexMySQLFullTextQueryBuilder extends KnexQueryBuilder {
             throw Error('Using search but search is not configured via query builder options');
         }
         else {
+            this.exactMatchColumns = [];
             this.searchColumns = [];
         }
     }
@@ -349,21 +351,39 @@ class KnexMySQLFullTextQueryBuilder extends KnexQueryBuilder {
         return queryBuilder;
     }
     applySearch(queryBuilder) {
-        if (!this.queryContext.search) {
+        const { search } = this.queryContext;
+        if (!search || this.searchColumns.length === 0) {
             return;
         }
         // create comma separated list of columns to search over
         const columns = this.searchColumns.reduce((acc, columnName, index) => {
             return index === 0 ? acc + columnName : acc + ', ' + columnName;
         }, '');
-        if (this.searchModifier) {
-            queryBuilder.andWhereRaw(`
-                MATCH(${columns}) AGAINST (? ${this.searchModifier})
-            `, this.queryContext.search);
-        }
-        else {
-            queryBuilder.andWhereRaw(`MATCH(${columns}) AGAINST (?)`, this.queryContext.search);
-        }
+        /*
+         * using the callback `where` encapsulates the wheres
+         * done inside of it in a parenthesis in the final query
+         */
+        // tslint:disable-next-line cyclomatic-complexity
+        queryBuilder.where(parenBuilder => {
+            const fullTextClause = `MATCH(${columns}) AGAINST (? ${this.searchModifier || ''})`;
+            /**
+             * When given exact match columns, we should check for an exact match OR search match.
+             * This will place exact matches at the top of the results list.
+             */
+            if (this.exactMatchColumns && this.exactMatchColumns.length) {
+                this.exactMatchColumns.forEach(exactMatchColumn => {
+                    parenBuilder.orWhere(exactMatchColumn, search);
+                });
+                parenBuilder.orWhereRaw(fullTextClause, [search]);
+            }
+            else {
+                /**
+                 * Otherwise, use only full text search
+                 */
+                parenBuilder.where(fullTextClause, [search]);
+            }
+        });
+        return queryBuilder;
     }
     // type guard
     isKnexMySQLBuilderOptions(options) {

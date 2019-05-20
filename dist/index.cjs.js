@@ -350,22 +350,50 @@ class KnexMySQLFullTextQueryBuilder extends KnexQueryBuilder {
         this.applyOffset(queryBuilder);
         return queryBuilder;
     }
+    /**
+     * Adds a select for relevance so that the results can be ordered by search score.
+     * Exact matches have their relevance overriden to be 1.
+     */
+    applyRelevanceSelect(queryBuilder, connection) {
+        if (!this.searchColumns.length) {
+            throw new Error('Cannot add "relevance" to query selects: no searchColumns were provided.');
+        }
+        if (!this.queryContext.search) {
+            throw new Error('Cannot add "relevance" to query selects: no search term was provided');
+        }
+        if (this.exactMatchColumns && this.exactMatchColumns.length) {
+            const exactMatchClauses = this.exactMatchColumns
+                .map(columnName => `${columnName} = ?`)
+                .join(' or ');
+            const { search } = this.queryContext;
+            const queryBindings = this.exactMatchColumns.map(() => search);
+            const fullTextMatchClause = this.createFullTextMatchClause();
+            return queryBuilder.select(connection.raw(`if (
+                        ${exactMatchClauses},
+                        1,
+                        ${fullTextMatchClause}
+                    ) as relevance`, 
+            /** Add one additional binding since the `fullTextMatchClause` needs one as well */
+            [...queryBindings, search]));
+        }
+        else {
+            return queryBuilder.select(connection.raw(`(${this.createFullTextMatchClause()}) as relevance`, [
+                this.queryContext.search
+            ]));
+        }
+    }
     applySearch(queryBuilder) {
         const { search } = this.queryContext;
         if (!search || this.searchColumns.length === 0) {
             return;
         }
-        // create comma separated list of columns to search over
-        const columns = this.searchColumns.reduce((acc, columnName, index) => {
-            return index === 0 ? acc + columnName : acc + ', ' + columnName;
-        }, '');
         /*
          * using the callback `where` encapsulates the wheres
          * done inside of it in a parenthesis in the final query
          */
         // tslint:disable-next-line cyclomatic-complexity
         queryBuilder.where(parenBuilder => {
-            const fullTextClause = `MATCH(${columns}) AGAINST (? ${this.searchModifier || ''})`;
+            const fullTextClause = this.createFullTextMatchClause();
             /**
              * When given exact match columns, we should check for an exact match OR search match.
              * This will place exact matches at the top of the results list.
@@ -384,6 +412,13 @@ class KnexMySQLFullTextQueryBuilder extends KnexQueryBuilder {
             }
         });
         return queryBuilder;
+    }
+    createFullTextMatchClause() {
+        // create comma separated list of columns to search over
+        const columns = this.searchColumns.reduce((acc, columnName, index) => {
+            return index === 0 ? acc + columnName : acc + ', ' + columnName;
+        }, '');
+        return `MATCH(${columns}) AGAINST (? ${this.searchModifier || ''})`;
     }
     // type guard
     isKnexMySQLBuilderOptions(options) {

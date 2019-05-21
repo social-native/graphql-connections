@@ -1,15 +1,15 @@
 import knex from 'knex';
 import {test as testConfig} from '../../../knexfile.sqlite';
-import selectRaw from '../../../src/QueryBuilder/selectRaw';
+import createRawFromQueryBuilder from '../../../src/QueryBuilder/createRawFromQueryBuilder';
 const knexClient = knex(testConfig);
 
 describe('QueryBuilder', function() {
-    describe('selectRaw', function() {
+    describe('createRawFromQueryBuilder', function() {
         describe('given a raw query', function() {
             let result: knex.Raw;
 
             beforeAll(function() {
-                result = selectRaw(knexClient.queryBuilder(), '1');
+                result = createRawFromQueryBuilder(knexClient.queryBuilder(), '1');
             });
 
             it('produces a query segment', function() {
@@ -30,9 +30,13 @@ describe('QueryBuilder', function() {
             let result: knex.Raw;
 
             beforeAll(function() {
-                result = selectRaw(knexClient.queryBuilder(), '(:sweet) as flavor', {
-                    sweet: 'sugar'
-                });
+                result = createRawFromQueryBuilder(
+                    knexClient.queryBuilder(),
+                    '(:sweet) as flavor',
+                    {
+                        sweet: 'sugar'
+                    }
+                );
             });
 
             it('produces an interpolated query segment', function() {

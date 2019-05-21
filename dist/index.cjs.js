@@ -327,10 +327,10 @@ const isFilter = (filter) => {
 };
 
 /**
- * Knex does not provide a selectRaw, so this fills in what Knex does in:
+ * Knex does not provide a createRawFromQueryBuilder, so this fills in what Knex does in:
  * https://github.com/tgriesser/knex/blob/887fb5392910ab00f491601ad83383d04b167173/src/util/make-knex.js#L29
  */
-function selectRaw(builder, rawSqlQuery, bindings) {
+function createRawFromQueryBuilder(builder, rawSqlQuery, bindings) {
     const { client } = builder;
     const args = [rawSqlQuery, bindings].filter(arg => arg);
     return client.raw.apply(client, args);
@@ -371,7 +371,7 @@ class KnexMySQLFullTextQueryBuilder extends KnexQueryBuilder {
         }
         return queryBuilder.select([
             ...Object.values(this.attributeMap),
-            selectRaw(queryBuilder, `(${this.createFullTextMatchClause()}) as _relevance`, {
+            createRawFromQueryBuilder(queryBuilder, `(${this.createFullTextMatchClause()}) as _relevance`, {
                 term: this.queryContext.search
             })
         ]);

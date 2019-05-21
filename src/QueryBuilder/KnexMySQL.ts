@@ -2,7 +2,7 @@ import KnexBaseQueryBuilder from './Knex';
 import Knex from 'knex';
 import {QueryContext} from 'index';
 import {IInAttributeMap, IKnexMySQLQueryBuilderOptions, QueryBuilderOptions} from 'types';
-import selectRaw from './selectRaw';
+import createRawFromQueryBuilder from './createRawFromQueryBuilder';
 
 export default class KnexMySQLFullTextQueryBuilder extends KnexBaseQueryBuilder {
     private searchColumns: IKnexMySQLQueryBuilderOptions['searchColumns'];
@@ -53,7 +53,7 @@ export default class KnexMySQLFullTextQueryBuilder extends KnexBaseQueryBuilder 
 
         return queryBuilder.select([
             ...Object.values(this.attributeMap),
-            selectRaw(queryBuilder, `(${this.createFullTextMatchClause()}) as _relevance`, {
+            createRawFromQueryBuilder(queryBuilder, `(${this.createFullTextMatchClause()}) as _relevance`, {
                 term: this.queryContext.search
             })
         ]);

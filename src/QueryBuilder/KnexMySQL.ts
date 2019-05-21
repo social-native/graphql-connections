@@ -9,7 +9,6 @@ export default class KnexMySQLFullTextQueryBuilder extends KnexBaseQueryBuilder 
     private searchModifier?: IKnexMySQLQueryBuilderOptions['searchModifier'];
     private hasSearchOptions: boolean;
 
-    // tslint:disable-next-line cyclomatic-complexity
     constructor(
         queryContext: QueryContext,
         attributeMap: IInAttributeMap,

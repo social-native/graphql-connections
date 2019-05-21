@@ -1,12 +1,14 @@
 import KnexBaseQueryBuilder from './Knex';
-import {QueryBuilder as Knex} from 'knex';
+import Knex from 'knex';
 import {QueryContext} from 'index';
 import {IInAttributeMap, IKnexMySQLQueryBuilderOptions, QueryBuilderOptions} from 'types';
+import createRawFromQueryBuilder from './createRawFromQueryBuilder';
 
 export default class KnexMySQLFullTextQueryBuilder extends KnexBaseQueryBuilder {
     private searchColumns: IKnexMySQLQueryBuilderOptions['searchColumns'];
     private searchModifier?: IKnexMySQLQueryBuilderOptions['searchModifier'];
     private hasSearchOptions: boolean;
+
     constructor(
         queryContext: QueryContext,
         attributeMap: IInAttributeMap,
@@ -15,17 +17,19 @@ export default class KnexMySQLFullTextQueryBuilder extends KnexBaseQueryBuilder 
         super(queryContext, attributeMap, options);
 
         this.hasSearchOptions = this.isKnexMySQLBuilderOptions(options);
+
         // calling type guard twice b/c of weird typescript thing...
         if (this.isKnexMySQLBuilderOptions(options)) {
             this.searchColumns = options.searchColumns;
             this.searchModifier = options.searchModifier;
         } else if (!this.hasSearchOptions && this.queryContext.search) {
-            throw Error('Using search but search is not configured via query builder options');
+            throw new Error('Using search but search is not configured via query builder options');
         } else {
             this.searchColumns = [];
         }
     }
-    public createQuery(queryBuilder: Knex) {
+
+    public createQuery(queryBuilder: Knex.QueryBuilder) {
         if (!this.hasSearchOptions) {
             return super.createQuery(queryBuilder);
         }
@@ -34,7 +38,7 @@ export default class KnexMySQLFullTextQueryBuilder extends KnexBaseQueryBuilder 
         this.applyFilter(queryBuilder);
 
         this.applySearch(queryBuilder);
-
+        this.applyRelevanceSelect(queryBuilder);
         this.applyOrder(queryBuilder);
         this.applyLimit(queryBuilder);
         this.applyOffset(queryBuilder);
@@ -42,25 +46,44 @@ export default class KnexMySQLFullTextQueryBuilder extends KnexBaseQueryBuilder 
         return queryBuilder;
     }
 
-    protected applySearch(queryBuilder: Knex) {
+    public applyRelevanceSelect(queryBuilder: Knex.QueryBuilder) {
         if (!this.queryContext.search) {
             return;
         }
+
+        queryBuilder.select([
+            ...Object.values(this.attributeMap),
+            createRawFromQueryBuilder(
+                queryBuilder,
+                `(${this.createFullTextMatchClause()}) as _relevance`,
+                {
+                    term: this.queryContext.search
+                }
+            )
+        ]);
+
+        return;
+    }
+
+    protected applySearch(queryBuilder: Knex.QueryBuilder) {
+        const {search} = this.queryContext;
+
+        if (!search || this.searchColumns.length === 0) {
+            return;
+        }
+
+        queryBuilder.whereRaw(this.createFullTextMatchClause(), {term: search});
+
+        return;
+    }
+
+    private createFullTextMatchClause() {
         // create comma separated list of columns to search over
         const columns = this.searchColumns.reduce((acc, columnName, index) => {
             return index === 0 ? acc + columnName : acc + ', ' + columnName;
         }, '');
 
-        if (this.searchModifier) {
-            queryBuilder.andWhereRaw(
-                `
-                MATCH(${columns}) AGAINST (? ${this.searchModifier})
-            `,
-                this.queryContext.search
-            );
-        } else {
-            queryBuilder.andWhereRaw(`MATCH(${columns}) AGAINST (?)`, this.queryContext.search);
-        }
+        return `MATCH(${columns}) AGAINST (:term ${this.searchModifier || ''})`;
     }
 
     // type guard

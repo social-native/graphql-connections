@@ -1,8 +1,6 @@
 {
     "defaultSeverity": "error",
-    "extends": [
-        "tslint:recommended"
-    ],
+    "extends": ["tslint:recommended"],
     "jsRules": {},
     "rules": {
         "object-literal-sort-keys": false,
@@ -13,15 +11,8 @@
                 "SwitchCase": 1
             }
         ],
-        "ter-max-len": [
-            "error",
-            100
-        ],
-        "object-curly-spacing": [
-            "error",
-            "never"
-        ],
-        "no-unused-variable": [true, {"ignore-pattern": "^_"}],
+        "ter-max-len": ["error", 100],
+        "object-curly-spacing": ["error", "never"],
         "variable-name": [true, "ban-keywords", "check-format", "allow-leading-underscore"],
         "trailing-comma": false,
         "no-use-before-declare": false,
@@ -29,9 +20,8 @@
         "cyclomatic-complexity": [true, 5],
         "quotemark": [true, "single", "avoid-escape"],
         "ordered-imports": false,
-        "arrow-parens": false
+        "arrow-parens": false,
+        "only-arrow-functions": false
     },
-    "rulesDirectory": [
-        "node_modules/tslint-eslint-rules/dist/rules"    
-    ]
+    "rulesDirectory": ["node_modules/tslint-eslint-rules/dist/rules"]
 }

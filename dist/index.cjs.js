@@ -81,6 +81,9 @@ class QueryContext {
             const prevCursorObj = this.cursorEncoder.decodeFromCursor(this.previousCursor);
             return prevCursorObj.orderBy;
         }
+        else if (this.inputArgs.search && !this.inputArgs.orderBy) {
+            return '_relevance';
+        }
         else {
             return this.inputArgs.orderBy || 'id';
         }
@@ -99,7 +102,7 @@ class QueryContext {
             return this.inputArgs.orderDir;
         }
         else {
-            const dir = this.inputArgs.last || this.inputArgs.before
+            const dir = this.inputArgs.last || this.inputArgs.before || this.inputArgs.search
                 ? ORDER_DIRECTION.desc
                 : ORDER_DIRECTION.asc;
             return dir;
@@ -164,7 +167,7 @@ class QueryContext {
         if (!this.inputArgs) {
             throw Error('Input args are required');
         }
-        const { first, last, before, after, orderBy, orderDir } = this.inputArgs;
+        const { first, last, before, after, orderBy, orderDir, search } = this.inputArgs;
         // tslint:disable
         if (first && last) {
             throw Error('Can not mix `first` and `last`');
@@ -194,6 +197,9 @@ class QueryContext {
         }
         else if ((first != null && first <= 0) || (last != null && last <= 0)) {
             throw Error('Page size must be greater than 0');
+        }
+        else if (search && orderDir && orderBy) {
+            throw Error('Search order is implicitly descending. OrderDir should only be provided with an orderBy.');
         }
         // tslint:enable
     }
@@ -242,7 +248,7 @@ class KnexQueryBuilder {
      */
     applyOrder(queryBuilder) {
         // map from node attribute names to sql column names
-        const orderBy = this.attributeMap[this.queryContext.orderBy] || this.attributeMap.id;
+        const orderBy = this.queryContext.orderBy;
         const direction = this.queryContext.orderDir;
         queryBuilder.orderBy(orderBy, direction);
     }
@@ -320,6 +326,16 @@ const isFilter = (filter) => {
         !!filter.value);
 };
 
+/**
+ * Knex does not provide a createRawFromQueryBuilder, so this fills in what Knex does in:
+ * https://github.com/tgriesser/knex/blob/887fb5392910ab00f491601ad83383d04b167173/src/util/make-knex.js#L29
+ */
+function createRawFromQueryBuilder(builder, rawSqlQuery, bindings) {
+    const { client } = builder;
+    const args = [rawSqlQuery, bindings].filter(arg => arg);
+    return client.raw.apply(client, args);
+}
+
 class KnexMySQLFullTextQueryBuilder extends KnexQueryBuilder {
     constructor(queryContext, attributeMap, options) {
         super(queryContext, attributeMap, options);
@@ -330,7 +346,7 @@ class KnexMySQLFullTextQueryBuilder extends KnexQueryBuilder {
             this.searchModifier = options.searchModifier;
         }
         else if (!this.hasSearchOptions && this.queryContext.search) {
-            throw Error('Using search but search is not configured via query builder options');
+            throw new Error('Using search but search is not configured via query builder options');
         }
         else {
             this.searchColumns = [];
@@ -343,27 +359,37 @@ class KnexMySQLFullTextQueryBuilder extends KnexQueryBuilder {
         // apply filter first
         this.applyFilter(queryBuilder);
         this.applySearch(queryBuilder);
+        this.applyRelevanceSelect(queryBuilder);
         this.applyOrder(queryBuilder);
         this.applyLimit(queryBuilder);
         this.applyOffset(queryBuilder);
         return queryBuilder;
     }
-    applySearch(queryBuilder) {
+    applyRelevanceSelect(queryBuilder) {
         if (!this.queryContext.search) {
+            return queryBuilder;
+        }
+        return queryBuilder.select([
+            ...Object.values(this.attributeMap),
+            createRawFromQueryBuilder(queryBuilder, `(${this.createFullTextMatchClause()}) as _relevance`, {
+                term: this.queryContext.search
+            })
+        ]);
+    }
+    applySearch(queryBuilder) {
+        const { search } = this.queryContext;
+        if (!search || this.searchColumns.length === 0) {
             return;
         }
+        queryBuilder.whereRaw(this.createFullTextMatchClause(), { term: search });
+        return queryBuilder;
+    }
+    createFullTextMatchClause() {
         // create comma separated list of columns to search over
         const columns = this.searchColumns.reduce((acc, columnName, index) => {
             return index === 0 ? acc + columnName : acc + ', ' + columnName;
         }, '');
-        if (this.searchModifier) {
-            queryBuilder.andWhereRaw(`
-                MATCH(${columns}) AGAINST (? ${this.searchModifier})
-            `, this.queryContext.search);
-        }
-        else {
-            queryBuilder.andWhereRaw(`MATCH(${columns}) AGAINST (?)`, this.queryContext.search);
-        }
+        return `MATCH(${columns}) AGAINST (:term ${this.searchModifier || ''})`;
     }
     // type guard
     isKnexMySQLBuilderOptions(options) {

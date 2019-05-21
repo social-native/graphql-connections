@@ -1,11 +1,11 @@
 import QueryContext from '../QueryContext';
 import { QueryBuilder as Knex } from 'knex';
-import { IInAttributeMap, IQueryBuilder, IKnexQueryBuilderOptions } from '../types';
+import { IFilterMap, IInAttributeMap, IQueryBuilder, IKnexQueryBuilderOptions } from '../types';
 export default class KnexQueryBuilder implements IQueryBuilder<Knex> {
     protected queryContext: QueryContext;
-    private attributeMap;
-    private filterMap;
-    private filterTransformer;
+    protected attributeMap: IInAttributeMap;
+    protected filterMap: IFilterMap;
+    protected filterTransformer: NonNullable<IKnexQueryBuilderOptions['filterTransformer']>;
     constructor(queryContext: QueryContext, attributeMap: IInAttributeMap, options?: IKnexQueryBuilderOptions);
     createQuery(queryBuilder: Knex): Knex;
     /**

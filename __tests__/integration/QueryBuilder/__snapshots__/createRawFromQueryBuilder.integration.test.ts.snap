@@ -1,0 +1,21 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`QueryBuilder createRawFromQueryBuilder given a raw query and bindings can be used in a select 1`] = `
+Array [
+  Object {
+    "flavor": "sugar",
+  },
+]
+`;
+
+exports[`QueryBuilder createRawFromQueryBuilder given a raw query and bindings produces an interpolated query segment 1`] = `"('sugar') as flavor"`;
+
+exports[`QueryBuilder createRawFromQueryBuilder given a raw query can be used in a select 1`] = `
+Array [
+  Object {
+    "1": 1,
+  },
+]
+`;
+
+exports[`QueryBuilder createRawFromQueryBuilder given a raw query produces a query segment 1`] = `"1"`;

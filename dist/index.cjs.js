@@ -2,9 +2,6 @@
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
-function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
-
-var Knex = _interopDefault(require('knex'));
 var graphql = require('graphql');
 
 class CursorEncoder {
@@ -329,6 +326,16 @@ const isFilter = (filter) => {
         !!filter.value);
 };
 
+/**
+ * Knex does not provide a selectRaw, so this fills in what Knex does in:
+ * https://github.com/tgriesser/knex/blob/887fb5392910ab00f491601ad83383d04b167173/src/util/make-knex.js#L29
+ */
+function selectRaw(builder, rawSqlQuery, bindings) {
+    const { client } = builder;
+    const args = [rawSqlQuery, bindings].filter(arg => arg);
+    return client.raw.apply(client, args);
+}
+
 class KnexMySQLFullTextQueryBuilder extends KnexQueryBuilder {
     // tslint:disable-next-line cyclomatic-complexity
     constructor(queryContext, attributeMap, options) {
@@ -363,16 +370,19 @@ class KnexMySQLFullTextQueryBuilder extends KnexQueryBuilder {
         if (!this.queryContext.search) {
             return queryBuilder;
         }
-        return queryBuilder.select(...Object.values(this.attributeMap), Knex.raw(`(${this.createFullTextMatchClause()}) as _relevance`, [
-            this.queryContext.search
-        ]));
+        return queryBuilder.select([
+            ...Object.values(this.attributeMap),
+            selectRaw(queryBuilder, `(${this.createFullTextMatchClause()}) as _relevance`, {
+                term: this.queryContext.search
+            })
+        ]);
     }
     applySearch(queryBuilder) {
         const { search } = this.queryContext;
         if (!search || this.searchColumns.length === 0) {
             return;
         }
-        queryBuilder.whereRaw(this.createFullTextMatchClause(), [search]);
+        queryBuilder.whereRaw(this.createFullTextMatchClause(), { term: search });
         return queryBuilder;
     }
     createFullTextMatchClause() {
@@ -380,7 +390,7 @@ class KnexMySQLFullTextQueryBuilder extends KnexQueryBuilder {
         const columns = this.searchColumns.reduce((acc, columnName, index) => {
             return index === 0 ? acc + columnName : acc + ', ' + columnName;
         }, '');
-        return `MATCH(${columns}) AGAINST (? ${this.searchModifier || ''})`;
+        return `MATCH(${columns}) AGAINST (:term ${this.searchModifier || ''})`;
     }
     // type guard
     isKnexMySQLBuilderOptions(options) {

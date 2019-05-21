@@ -1,7 +1,7 @@
 import KnexBaseQueryBuilder from './Knex';
 import Knex from 'knex';
-import {QueryContext} from 'index';
-import {IInAttributeMap, IKnexMySQLQueryBuilderOptions, QueryBuilderOptions} from 'types';
+import {QueryContext} from '../index';
+import {IInAttributeMap, IKnexMySQLQueryBuilderOptions, QueryBuilderOptions} from '../types';
 import createRawFromQueryBuilder from './createRawFromQueryBuilder';
 
 export default class KnexMySQLFullTextQueryBuilder extends KnexBaseQueryBuilder {

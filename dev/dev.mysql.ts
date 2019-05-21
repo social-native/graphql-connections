@@ -83,6 +83,7 @@ const resolvers = {
             });
 
             const query = nodeConnection.createQuery(queryBuilder.clone()).select();
+            console.log(query.toString());
             const result = (await query) as KnexQueryResult;
 
             nodeConnection.addResult(result);

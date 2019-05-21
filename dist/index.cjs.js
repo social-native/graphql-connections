@@ -2,6 +2,9 @@
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
+function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
+
+var Knex = _interopDefault(require('knex'));
 var graphql = require('graphql');
 
 class CursorEncoder {
@@ -81,6 +84,9 @@ class QueryContext {
             const prevCursorObj = this.cursorEncoder.decodeFromCursor(this.previousCursor);
             return prevCursorObj.orderBy;
         }
+        else if (this.inputArgs.search && !this.inputArgs.orderBy) {
+            return '_relevance';
+        }
         else {
             return this.inputArgs.orderBy || 'id';
         }
@@ -99,7 +105,7 @@ class QueryContext {
             return this.inputArgs.orderDir;
         }
         else {
-            const dir = this.inputArgs.last || this.inputArgs.before
+            const dir = this.inputArgs.last || this.inputArgs.before || this.inputArgs.search
                 ? ORDER_DIRECTION.desc
                 : ORDER_DIRECTION.asc;
             return dir;
@@ -164,7 +170,7 @@ class QueryContext {
         if (!this.inputArgs) {
             throw Error('Input args are required');
         }
-        const { first, last, before, after, orderBy, orderDir } = this.inputArgs;
+        const { first, last, before, after, orderBy, orderDir, search } = this.inputArgs;
         // tslint:disable
         if (first && last) {
             throw Error('Can not mix `first` and `last`');
@@ -194,6 +200,9 @@ class QueryContext {
         }
         else if ((first != null && first <= 0) || (last != null && last <= 0)) {
             throw Error('Page size must be greater than 0');
+        }
+        else if (search && orderDir && orderBy) {
+            throw Error('Search order is implicitly descending. OrderDir should only be provided with an orderBy.');
         }
         // tslint:enable
     }
@@ -321,20 +330,19 @@ const isFilter = (filter) => {
 };
 
 class KnexMySQLFullTextQueryBuilder extends KnexQueryBuilder {
+    // tslint:disable-next-line cyclomatic-complexity
     constructor(queryContext, attributeMap, options) {
         super(queryContext, attributeMap, options);
         this.hasSearchOptions = this.isKnexMySQLBuilderOptions(options);
         // calling type guard twice b/c of weird typescript thing...
         if (this.isKnexMySQLBuilderOptions(options)) {
-            this.exactMatchColumns = options.exactMatchColumns;
             this.searchColumns = options.searchColumns;
             this.searchModifier = options.searchModifier;
         }
         else if (!this.hasSearchOptions && this.queryContext.search) {
-            throw Error('Using search but search is not configured via query builder options');
+            throw new Error('Using search but search is not configured via query builder options');
         }
         else {
-            this.exactMatchColumns = [];
             this.searchColumns = [];
         }
     }
@@ -345,72 +353,26 @@ class KnexMySQLFullTextQueryBuilder extends KnexQueryBuilder {
         // apply filter first
         this.applyFilter(queryBuilder);
         this.applySearch(queryBuilder);
+        this.applyRelevanceSelect(queryBuilder);
         this.applyOrder(queryBuilder);
         this.applyLimit(queryBuilder);
         this.applyOffset(queryBuilder);
         return queryBuilder;
     }
-    /**
-     * Adds a select for relevance so that the results can be ordered by search score.
-     * Exact matches have their relevance overriden to be 1.
-     */
-    applyRelevanceSelect(queryBuilder, connection) {
-        if (!this.searchColumns.length) {
-            throw new Error('Cannot add "relevance" to query selects: no searchColumns were provided.');
-        }
+    applyRelevanceSelect(queryBuilder) {
         if (!this.queryContext.search) {
-            throw new Error('Cannot add "relevance" to query selects: no search term was provided');
+            return queryBuilder;
         }
-        if (this.exactMatchColumns && this.exactMatchColumns.length) {
-            const exactMatchClauses = this.exactMatchColumns
-                .map(columnName => `${columnName} = ?`)
-                .join(' or ');
-            const { search } = this.queryContext;
-            const queryBindings = this.exactMatchColumns.map(() => search);
-            const fullTextMatchClause = this.createFullTextMatchClause();
-            return queryBuilder.select(connection.raw(`if (
-                        ${exactMatchClauses},
-                        1,
-                        ${fullTextMatchClause}
-                    ) as relevance`, 
-            /** Add one additional binding since the `fullTextMatchClause` needs one as well */
-            [...queryBindings, search]));
-        }
-        else {
-            return queryBuilder.select(connection.raw(`(${this.createFullTextMatchClause()}) as relevance`, [
-                this.queryContext.search
-            ]));
-        }
+        return queryBuilder.select(...Object.values(this.attributeMap), Knex.raw(`(${this.createFullTextMatchClause()}) as _relevance`, [
+            this.queryContext.search
+        ]));
     }
     applySearch(queryBuilder) {
         const { search } = this.queryContext;
         if (!search || this.searchColumns.length === 0) {
             return;
         }
-        /*
-         * using the callback `where` encapsulates the wheres
-         * done inside of it in a parenthesis in the final query
-         */
-        // tslint:disable-next-line cyclomatic-complexity
-        queryBuilder.where(parenBuilder => {
-            const fullTextClause = this.createFullTextMatchClause();
-            /**
-             * When given exact match columns, we should check for an exact match OR search match.
-             * This will place exact matches at the top of the results list.
-             */
-            if (this.exactMatchColumns && this.exactMatchColumns.length) {
-                this.exactMatchColumns.forEach(exactMatchColumn => {
-                    parenBuilder.orWhere(exactMatchColumn, search);
-                });
-                parenBuilder.orWhereRaw(fullTextClause, [search]);
-            }
-            else {
-                /**
-                 * Otherwise, use only full text search
-                 */
-                parenBuilder.where(fullTextClause, [search]);
-            }
-        });
+        queryBuilder.whereRaw(this.createFullTextMatchClause(), [search]);
         return queryBuilder;
     }
     createFullTextMatchClause() {

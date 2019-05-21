@@ -110,6 +110,8 @@ export default class QueryContext implements IQueryContext {
         if (this.previousCursor) {
             const prevCursorObj = this.cursorEncoder.decodeFromCursor(this.previousCursor);
             return prevCursorObj.orderBy;
+        } else if (this.inputArgs.search && !this.inputArgs.orderBy) {
+            return '_relevance';
         } else {
             return this.inputArgs.orderBy || 'id';
         }
@@ -130,7 +132,7 @@ export default class QueryContext implements IQueryContext {
             return this.inputArgs.orderDir;
         } else {
             const dir =
-                this.inputArgs.last || this.inputArgs.before
+                this.inputArgs.last || this.inputArgs.before || this.inputArgs.search
                     ? ORDER_DIRECTION.desc
                     : ORDER_DIRECTION.asc;
             return (dir as any) as keyof typeof ORDER_DIRECTION;
@@ -204,7 +206,7 @@ export default class QueryContext implements IQueryContext {
         if (!this.inputArgs) {
             throw Error('Input args are required');
         }
-        const {first, last, before, after, orderBy, orderDir} = this.inputArgs;
+        const {first, last, before, after, orderBy, orderDir, search} = this.inputArgs;
 
         // tslint:disable
         if (first && last) {
@@ -231,6 +233,10 @@ export default class QueryContext implements IQueryContext {
             );
         } else if ((first != null && first <= 0) || (last != null && last <= 0)) {
             throw Error('Page size must be greater than 0');
+        } else if (search && orderDir && orderBy) {
+            throw Error(
+                'Search order is implicitly descending. OrderDir should only be provided with an orderBy.'
+            );
         }
         // tslint:enable
     }

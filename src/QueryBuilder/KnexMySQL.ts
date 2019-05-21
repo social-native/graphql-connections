@@ -1,14 +1,14 @@
 import KnexBaseQueryBuilder from './Knex';
-import * as Knex from 'knex';
+import Knex from 'knex';
 import {QueryContext} from 'index';
 import {IInAttributeMap, IKnexMySQLQueryBuilderOptions, QueryBuilderOptions} from 'types';
 
 export default class KnexMySQLFullTextQueryBuilder extends KnexBaseQueryBuilder {
-    private exactMatchColumns: IKnexMySQLQueryBuilderOptions['exactMatchColumns'];
     private searchColumns: IKnexMySQLQueryBuilderOptions['searchColumns'];
     private searchModifier?: IKnexMySQLQueryBuilderOptions['searchModifier'];
     private hasSearchOptions: boolean;
 
+    // tslint:disable-next-line cyclomatic-complexity
     constructor(
         queryContext: QueryContext,
         attributeMap: IInAttributeMap,
@@ -17,15 +17,14 @@ export default class KnexMySQLFullTextQueryBuilder extends KnexBaseQueryBuilder 
         super(queryContext, attributeMap, options);
 
         this.hasSearchOptions = this.isKnexMySQLBuilderOptions(options);
+
         // calling type guard twice b/c of weird typescript thing...
         if (this.isKnexMySQLBuilderOptions(options)) {
-            this.exactMatchColumns = options.exactMatchColumns;
             this.searchColumns = options.searchColumns;
             this.searchModifier = options.searchModifier;
         } else if (!this.hasSearchOptions && this.queryContext.search) {
-            throw Error('Using search but search is not configured via query builder options');
+            throw new Error('Using search but search is not configured via query builder options');
         } else {
-            this.exactMatchColumns = [];
             this.searchColumns = [];
         }
     }
@@ -39,7 +38,7 @@ export default class KnexMySQLFullTextQueryBuilder extends KnexBaseQueryBuilder 
         this.applyFilter(queryBuilder);
 
         this.applySearch(queryBuilder);
-
+        this.applyRelevanceSelect(queryBuilder);
         this.applyOrder(queryBuilder);
         this.applyLimit(queryBuilder);
         this.applyOffset(queryBuilder);
@@ -47,48 +46,17 @@ export default class KnexMySQLFullTextQueryBuilder extends KnexBaseQueryBuilder 
         return queryBuilder;
     }
 
-    /**
-     * Adds a select for relevance so that the results can be ordered by search score.
-     * Exact matches have their relevance overriden to be 1.
-     */
-    public applyRelevanceSelect(queryBuilder: Knex.QueryBuilder, connection: Knex) {
-        if (!this.searchColumns.length) {
-            throw new Error(
-                'Cannot add "relevance" to query selects: no searchColumns were provided.'
-            );
-        }
-
+    public applyRelevanceSelect(queryBuilder: Knex.QueryBuilder) {
         if (!this.queryContext.search) {
-            throw new Error('Cannot add "relevance" to query selects: no search term was provided');
+            return queryBuilder;
         }
 
-        if (this.exactMatchColumns && this.exactMatchColumns.length) {
-            const exactMatchClauses = this.exactMatchColumns
-                .map(columnName => `${columnName} = ?`)
-                .join(' or ');
-
-            const {search} = this.queryContext;
-            const queryBindings = this.exactMatchColumns.map(() => search);
-            const fullTextMatchClause = this.createFullTextMatchClause();
-
-            return queryBuilder.select(
-                connection.raw(
-                    `if (
-                        ${exactMatchClauses},
-                        1,
-                        ${fullTextMatchClause}
-                    ) as relevance`,
-                    /** Add one additional binding since the `fullTextMatchClause` needs one as well */
-                    [...queryBindings, search]
-                )
-            );
-        } else {
-            return queryBuilder.select(
-                connection.raw(`(${this.createFullTextMatchClause()}) as relevance`, [
-                    this.queryContext.search
-                ])
-            );
-        }
+        return queryBuilder.select(
+            ...Object.values(this.attributeMap),
+            (Knex as any).raw(`(${this.createFullTextMatchClause()}) as _relevance`, [
+                this.queryContext.search
+            ])
+        );
     }
 
     protected applySearch(queryBuilder: Knex.QueryBuilder) {
@@ -98,31 +66,7 @@ export default class KnexMySQLFullTextQueryBuilder extends KnexBaseQueryBuilder 
             return;
         }
 
-        /*
-         * using the callback `where` encapsulates the wheres
-         * done inside of it in a parenthesis in the final query
-         */
-        // tslint:disable-next-line cyclomatic-complexity
-        queryBuilder.where(parenBuilder => {
-            const fullTextClause = this.createFullTextMatchClause();
-
-            /**
-             * When given exact match columns, we should check for an exact match OR search match.
-             * This will place exact matches at the top of the results list.
-             */
-            if (this.exactMatchColumns && this.exactMatchColumns.length) {
-                this.exactMatchColumns.forEach(exactMatchColumn => {
-                    parenBuilder.orWhere(exactMatchColumn, search);
-                });
-
-                parenBuilder.orWhereRaw(fullTextClause, [search]);
-            } else {
-                /**
-                 * Otherwise, use only full text search
-                 */
-                parenBuilder.where(fullTextClause, [search]);
-            }
-        });
+        queryBuilder.whereRaw(this.createFullTextMatchClause(), [search]);
 
         return queryBuilder;
     }

@@ -48,15 +48,21 @@ export default class KnexMySQLFullTextQueryBuilder extends KnexBaseQueryBuilder 
 
     public applyRelevanceSelect(queryBuilder: Knex.QueryBuilder) {
         if (!this.queryContext.search) {
-            return queryBuilder;
+            return;
         }
 
-        return queryBuilder.select([
+        queryBuilder.select([
             ...Object.values(this.attributeMap),
-            createRawFromQueryBuilder(queryBuilder, `(${this.createFullTextMatchClause()}) as _relevance`, {
-                term: this.queryContext.search
-            })
+            createRawFromQueryBuilder(
+                queryBuilder,
+                `(${this.createFullTextMatchClause()}) as _relevance`,
+                {
+                    term: this.queryContext.search
+                }
+            )
         ]);
+
+        return;
     }
 
     protected applySearch(queryBuilder: Knex.QueryBuilder) {
@@ -68,7 +74,7 @@ export default class KnexMySQLFullTextQueryBuilder extends KnexBaseQueryBuilder 
 
         queryBuilder.whereRaw(this.createFullTextMatchClause(), {term: search});
 
-        return queryBuilder;
+        return;
     }
 
     private createFullTextMatchClause() {

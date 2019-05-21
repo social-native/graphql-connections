@@ -2,6 +2,7 @@ import KnexBaseQueryBuilder from './Knex';
 import Knex from 'knex';
 import {QueryContext} from 'index';
 import {IInAttributeMap, IKnexMySQLQueryBuilderOptions, QueryBuilderOptions} from 'types';
+import selectRaw from './SelectRaw';
 
 export default class KnexMySQLFullTextQueryBuilder extends KnexBaseQueryBuilder {
     private searchColumns: IKnexMySQLQueryBuilderOptions['searchColumns'];
@@ -51,12 +52,12 @@ export default class KnexMySQLFullTextQueryBuilder extends KnexBaseQueryBuilder 
             return queryBuilder;
         }
 
-        return queryBuilder.select(
+        return queryBuilder.select([
             ...Object.values(this.attributeMap),
-            (Knex as any).raw(`(${this.createFullTextMatchClause()}) as _relevance`, [
-                this.queryContext.search
-            ])
-        );
+            selectRaw(queryBuilder, `(${this.createFullTextMatchClause()}) as _relevance`, {
+                term: this.queryContext.search
+            })
+        ]);
     }
 
     protected applySearch(queryBuilder: Knex.QueryBuilder) {
@@ -66,7 +67,7 @@ export default class KnexMySQLFullTextQueryBuilder extends KnexBaseQueryBuilder 
             return;
         }
 
-        queryBuilder.whereRaw(this.createFullTextMatchClause(), [search]);
+        queryBuilder.whereRaw(this.createFullTextMatchClause(), {term: search});
 
         return queryBuilder;
     }
@@ -77,7 +78,7 @@ export default class KnexMySQLFullTextQueryBuilder extends KnexBaseQueryBuilder 
             return index === 0 ? acc + columnName : acc + ', ' + columnName;
         }, '');
 
-        return `MATCH(${columns}) AGAINST (? ${this.searchModifier || ''})`;
+        return `MATCH(${columns}) AGAINST (:term ${this.searchModifier || ''})`;
     }
 
     // type guard

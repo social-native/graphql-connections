@@ -8,7 +8,7 @@ export default function selectRaw(builder: QueryBuilder, rawSqlQuery: string, bi
     const {
         client
     }: {
-        client: StolenClient;
+        client: IStolenClient;
     } = builder as any;
 
     const args = [rawSqlQuery, bindings].filter(arg => arg);
@@ -16,6 +16,6 @@ export default function selectRaw(builder: QueryBuilder, rawSqlQuery: string, bi
     return client.raw.apply(client, args as any);
 }
 
-type StolenClient = {
+interface IStolenClient {
     raw: RawBuilder;
-};
+}

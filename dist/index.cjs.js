@@ -337,7 +337,6 @@ function selectRaw(builder, rawSqlQuery, bindings) {
 }
 
 class KnexMySQLFullTextQueryBuilder extends KnexQueryBuilder {
-    // tslint:disable-next-line cyclomatic-complexity
     constructor(queryContext, attributeMap, options) {
         super(queryContext, attributeMap, options);
         this.hasSearchOptions = this.isKnexMySQLBuilderOptions(options);

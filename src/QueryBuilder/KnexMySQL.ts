@@ -2,7 +2,7 @@ import KnexBaseQueryBuilder from './Knex';
 import Knex from 'knex';
 import {QueryContext} from 'index';
 import {IInAttributeMap, IKnexMySQLQueryBuilderOptions, QueryBuilderOptions} from 'types';
-import selectRaw from './SelectRaw';
+import selectRaw from './selectRaw';
 
 export default class KnexMySQLFullTextQueryBuilder extends KnexBaseQueryBuilder {
     private searchColumns: IKnexMySQLQueryBuilderOptions['searchColumns'];

@@ -244,7 +244,7 @@ class KnexQueryBuilder {
      */
     applyOrder(queryBuilder) {
         // map from node attribute names to sql column names
-        const orderBy = this.attributeMap[this.queryContext.orderBy] || this.attributeMap.id;
+        const orderBy = this.queryContext.orderBy;
         const direction = this.queryContext.orderDir;
         queryBuilder.orderBy(orderBy, direction);
     }

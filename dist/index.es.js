@@ -363,14 +363,15 @@ class KnexMySQLFullTextQueryBuilder extends KnexQueryBuilder {
     }
     applyRelevanceSelect(queryBuilder) {
         if (!this.queryContext.search) {
-            return queryBuilder;
+            return;
         }
-        return queryBuilder.select([
+        queryBuilder.select([
             ...Object.values(this.attributeMap),
             createRawFromQueryBuilder(queryBuilder, `(${this.createFullTextMatchClause()}) as _relevance`, {
                 term: this.queryContext.search
             })
         ]);
+        return;
     }
     applySearch(queryBuilder) {
         const { search } = this.queryContext;
@@ -378,7 +379,7 @@ class KnexMySQLFullTextQueryBuilder extends KnexQueryBuilder {
             return;
         }
         queryBuilder.whereRaw(this.createFullTextMatchClause(), { term: search });
-        return queryBuilder;
+        return;
     }
     createFullTextMatchClause() {
         // create comma separated list of columns to search over

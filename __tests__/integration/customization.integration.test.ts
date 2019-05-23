@@ -94,4 +94,9 @@ describe('Customizing the ConnectionManager', () => {
             expect(validateNodesHaveAttributes(edges, {haircolor: 'gray'})).toBe(true);
         });
     });
+
+    describe('Order field mapping', function() {
+        it.todo('Order can be a field in the provided attributeMap');
+        it.todo('Order can be a field outside of the provided attributeMap');
+    });
 });

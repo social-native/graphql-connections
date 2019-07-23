@@ -533,6 +533,7 @@ class ConnectionManager {
     addResult(result) {
         // 3. Create QueryResult
         this.queryResult = new QueryResult(result, this.queryContext, this.options.resultOptions);
+        return this;
     }
     get pageInfo() {
         if (!this.queryResult) {

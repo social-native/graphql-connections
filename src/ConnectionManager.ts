@@ -72,6 +72,8 @@ export default class ConnectionManager<Node = {}> {
             this.queryContext,
             this.options.resultOptions
         );
+
+        return this;
     }
 
     public get pageInfo() {

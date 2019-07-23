@@ -24,7 +24,7 @@ export default class ConnectionManager<Node = {}> {
     private options;
     constructor(inputArgs: IInputArgs, inAttributeMap: IInAttributeMap, options?: IConnectionManagerOptions<ICursorObj<string>, Node>);
     createQuery(queryBuilder: Knex): Knex;
-    addResult(result: KnexQueryResult): void;
+    addResult(result: KnexQueryResult): this;
     readonly pageInfo: {
         hasNextPage: boolean;
         hasPreviousPage: boolean;

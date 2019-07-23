@@ -53,7 +53,7 @@
     },
     "homepage": "https://github.com/social-native/snpkg-snapi-connections#readme",
     "dependencies": {
-        "knex": "^0.16.3"
+        "knex": "^0.19.1"
     },
     "devDependencies": {
         "@types/dotenv": "^6.1.1",

@@ -14,7 +14,6 @@ restore-cache: &restore-cache
             # fallback to using the latest cache if no exact match is found
             - v1-dependencies-
 npm-config: &npm-config
-    npm-config:
         run:
             name: Authenticate with registry
             command: echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc

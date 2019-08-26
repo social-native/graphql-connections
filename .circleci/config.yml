@@ -1,5 +1,5 @@
 defaults: &defaults
-    working_directory: ~/snpkg-snapi-connections
+    working_directory: ~/code
 
 save-cache: &save-cache
     save_cache:
@@ -13,6 +13,11 @@ restore-cache: &restore-cache
             - v1-dependencies-{{ checksum "package.json" }}
             # fallback to using the latest cache if no exact match is found
             - v1-dependencies-
+npm-config: &npm-config
+    npm-config:
+        run:
+            name: Authenticate with registry
+            command: echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
 
 version: 2
 jobs:
@@ -21,6 +26,7 @@ jobs:
         docker:
             - image: circleci/node:8.11.4-jessie
         steps:
+            - *npm-config
             - checkout
             - *restore-cache
             - run: npm install
@@ -34,6 +40,7 @@ jobs:
         docker:
             - image: circleci/node:8.11.4-jessie
         steps:
+            - *npm-config
             - checkout
             - *restore-cache
             - run: npm install
@@ -44,6 +51,7 @@ jobs:
         docker:
             - image: circleci/node:8.11.4-jessie
         steps:
+            - *npm-config
             - checkout
             - *restore-cache
             - run: npm install
@@ -55,6 +63,7 @@ jobs:
         docker:
             - image: circleci/node:8.11.4-jessie
         steps:
+            - *npm-config
             - checkout
             - *restore-cache
             - run: npm install
@@ -66,6 +75,7 @@ jobs:
         docker:
             - image: circleci/node:8.11.4-jessie
         steps:
+            - *npm-config
             - checkout
             - *restore-cache
             - run: npm install
@@ -77,6 +87,7 @@ jobs:
         docker:
             - image: circleci/node:8.11.4-jessie
         steps:
+            - *npm-config
             - checkout
             - *restore-cache
             - run: npm install
@@ -84,6 +95,55 @@ jobs:
             - run: npm run dep-check
             - store_artifacts:
                   path: /tmp/dependency-check-output.json
+
+
+    package-version-validation:
+        <<: *defaults
+        docker:
+            - image: circleci/node:8.11.4-jessie
+        steps:
+            - *npm-config
+            - checkout
+            - run: npm install
+            - run: npm run package-version-validation
+    tag-version-validation:
+        <<: *defaults
+        docker:
+            - image: circleci/node:8.11.4-jessie
+        steps:
+            - *npm-config
+            - checkout
+            - run: npm install
+            - run: npm run tag-version-validation
+    build-for-publishing:
+        <<: *defaults
+        docker:
+            - image: circleci/node:8.11.4-jessie
+        steps:
+            - *npm-config
+            - checkout
+            - *restore-cache
+            - run: npm install
+            - run:
+                name: Build package
+                command: npm run build
+            - persist_to_workspace:
+                root: ~/code
+                paths: 
+                    - dist
+    publish-github-release-to-npm:
+        <<: *defaults
+        docker:
+            - image: circleci/node:8.11.4-jessie
+        steps:
+            - *npm-config
+            - checkout
+            - attach_workspace:
+                at: ~/code
+            - *restore-cache
+            - run:
+                name: Publish package
+                command: npm publish
 
 workflows:
     version: 2
@@ -118,3 +178,34 @@ workflows:
                   filters:
                       tags: # run for every branch
                           only: /^[0-9]+(\.[0-9]+)*$/
+    snpkg-publish:
+        jobs:
+            - package-version-validation:
+                  filters:
+                      branches: # run for every branch
+                          ignore: 
+                             - master
+                      tags:
+                          ignore: /.*/  
+            - tag-version-validation:
+                  filters:
+                      branches:
+                          ignore: /.*/
+                      tags:
+                          only: /^v{0,1}\d+\.\d+\.\d+$/
+            - build-for-publishing:
+                  requires: 
+                     - tag-version-validation
+                  filters:
+                      branches:
+                          ignore: /.*/
+                      tags:
+                          only: /^v{0,1}\d+\.\d+\.\d+$/
+            - publish-github-release-to-npm:
+                  requires:
+                      - build-for-publishing
+                  filters:
+                      branches:
+                          ignore: /.*/
+                      tags:
+                          only: /^v{0,1}\d+\.\d+\.\d+$/

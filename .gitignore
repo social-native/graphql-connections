@@ -68,3 +68,6 @@ typings/
 
 # dependency check
 tmp
+
+# npmrc
+.npmrc

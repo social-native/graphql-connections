@@ -6,7 +6,7 @@ const branchPackageRaw = fs.readFileSync("package.json");
 const branchPackage = JSON.parse(branchPackageRaw);
 const branchVersion = semver.parse(branchPackage.version);
 
-childProcess.execSync("git stash");
+childProcess.execSync("git reset --hard HEAD");
 childProcess.execSync("git fetch --all");
 childProcess.execSync("git checkout origin/master");
 

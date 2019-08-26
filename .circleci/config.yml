@@ -19,7 +19,7 @@ npm-config: &npm-config
             name: Authenticate with registry
             command: echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
 
-version: 2
+version: 2.1
 jobs:
     test:
         <<: *defaults

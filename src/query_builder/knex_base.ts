@@ -1,4 +1,4 @@
-import QueryContext from '../QueryContext';
+import QueryContext from '../query_context';
 import {QueryBuilder as Knex} from 'knex';
 import {
     IFilterMap,

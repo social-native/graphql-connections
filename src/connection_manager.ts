@@ -1,6 +1,6 @@
 import {QueryBuilder as Knex} from 'knex';
-import QueryContext from './QueryContext';
-import * as QUERY_BUILDERS from './QueryBuilder';
+import QueryContext from './query_context';
+import * as QUERY_BUILDERS from './query_builder';
 import {
     IQueryBuilder,
     IQueryContext,
@@ -12,7 +12,7 @@ import {
     IQueryResultOptions,
     IQueryContextOptions
 } from './types';
-import QueryResult from './QueryResult';
+import QueryResult from './query_result';
 
 /**
  * ConnectionManager

@@ -1,6 +1,6 @@
 import knex from 'knex';
 import {test as testConfig} from '../../../knexfile.sqlite';
-import createRawFromQueryBuilder from '../../../src/QueryBuilder/createRawFromQueryBuilder';
+import createRawFromQueryBuilder from '../../../src/query_builder/create_raw_from_query_builder';
 const knexClient = knex(testConfig);
 
 describe('QueryBuilder', function() {

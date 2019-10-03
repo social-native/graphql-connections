@@ -1,0 +1,26 @@
+{
+    "ignoreBinPackage": false,
+    "skipMissing": false,
+    "ignoreDirs": [],
+    "ignoreMatches": [
+        "faker",
+        "graphql-tools",
+        "jest",
+        "knex",
+        "nodemon",
+        "prettier",
+        "sqlite3",
+        "ts-jest",
+        "ts-node",
+        "tsconfig-paths",
+        "tslint",
+        "tslint-eslint-rules",
+        "@types/jest",
+        "@types/superagent",
+        "mysql2",
+        "@social-native/snpkg-dependency-check",
+        "@social-native/snpkg-generate-config-ci",
+        "@social-native/snpkg-package-version-validation"
+    ],
+    "specials": []
+}

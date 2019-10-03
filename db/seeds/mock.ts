@@ -1,6 +1,6 @@
 import faker from 'faker';
 import * as Knex from 'knex';
-import generateColumnData from './data/generateColumnData';
+import generateColumnData from './data/generate_column_data';
 
 console.log('Generating fake data values:');
 

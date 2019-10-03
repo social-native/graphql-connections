@@ -1,4 +1,4 @@
-import appProvider from '../appProvider';
+import appProvider from '../app_provider';
 import request from 'supertest';
 import {createGQLRequest} from '../utils';
 
@@ -10,7 +10,7 @@ describe('Input Union Type', () => {
             const gqlQuery = `
                 query {
                     users(
-                    filter:  { 
+                    filter:  {
                         or: [
                         { field: "age", value: "41", operator: "="},
                         { field: "age", value: "31", operator: "="},

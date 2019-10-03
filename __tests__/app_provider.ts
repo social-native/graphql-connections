@@ -7,7 +7,7 @@ const knexClient = knex(testConfig);
 import {
     typeDefs as connectionTypeDefs,
     resolvers as connectionResolvers
-} from '../src/graphqlSchema';
+} from '../src/graphql_schema';
 
 // Construct a schema, using GraphQL schema language
 const typeDefs = gql`

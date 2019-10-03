@@ -68,7 +68,6 @@
     "@types/superagent": "^4.1.1",
     "@types/supertest": "^2.0.7",
     "apollo-server-koa": "^2.4.8",
-    "depcheck": "^0.7.2",
     "dotenv": "^8.0.0",
     "faker": "^4.1.0",
     "graphql": "^14.1.1",

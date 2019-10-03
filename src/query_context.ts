@@ -1,4 +1,4 @@
-import CursorEncoder from './CursorEncoder';
+import CursorEncoder from './cursor_encoder';
 import {
     ICursorEncoder,
     ICursorObj,

@@ -14,30 +14,28 @@ restore-cache: &restore-cache
             # fallback to using the latest cache if no exact match is found
             - v1-dependencies-
 npm-config: &npm-config
-        run:
-            name: Authenticate with registry
-            command: echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
+    run:
+        name: Authenticate with registry
+        command: echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
 
 version: 2.1
 jobs:
     test:
         <<: *defaults
         docker:
-            - image: circleci/node:8.11.4-jessie
+            - image: circleci/node:10.16.3-stretch
         steps:
             - *npm-config
             - checkout
             - *restore-cache
             - run: npm install
             - *save-cache
-            - run: NODE_ENV=test npm run migrate:sqlite:latest
-            - run: NODE_ENV=test npm run seed:sqlite:run
             - run: npm run test
 
     build-verification:
         <<: *defaults
         docker:
-            - image: circleci/node:8.11.4-jessie
+            - image: circleci/node:10.16.3-stretch
         steps:
             - *npm-config
             - checkout
@@ -48,7 +46,7 @@ jobs:
     type-check:
         <<: *defaults
         docker:
-            - image: circleci/node:8.11.4-jessie
+            - image: circleci/node:10.16.3-stretch
         steps:
             - *npm-config
             - checkout
@@ -60,7 +58,7 @@ jobs:
     lint-check:
         <<: *defaults
         docker:
-            - image: circleci/node:8.11.4-jessie
+            - image: circleci/node:10.16.3-stretch
         steps:
             - *npm-config
             - checkout
@@ -72,7 +70,7 @@ jobs:
     beauty-check:
         <<: *defaults
         docker:
-            - image: circleci/node:8.11.4-jessie
+            - image: circleci/node:10.16.3-stretch
         steps:
             - *npm-config
             - checkout
@@ -84,7 +82,7 @@ jobs:
     dependency-check:
         <<: *defaults
         docker:
-            - image: circleci/node:8.11.4-jessie
+            - image: circleci/node:10.16.3-stretch
         steps:
             - *npm-config
             - checkout
@@ -95,11 +93,10 @@ jobs:
             - store_artifacts:
                   path: /tmp/dependency-check-output.json
 
-
     package-version-validation:
         <<: *defaults
         docker:
-            - image: circleci/node:8.11.4-jessie
+            - image: circleci/node:10.16.3-stretch
         steps:
             - *npm-config
             - checkout
@@ -108,7 +105,7 @@ jobs:
     tag-version-validation:
         <<: *defaults
         docker:
-            - image: circleci/node:8.11.4-jessie
+            - image: circleci/node:10.16.3-stretch
         steps:
             - *npm-config
             - checkout
@@ -117,32 +114,32 @@ jobs:
     build-for-publishing:
         <<: *defaults
         docker:
-            - image: circleci/node:8.11.4-jessie
+            - image: circleci/node:10.16.3-stretch
         steps:
             - *npm-config
             - checkout
             - *restore-cache
             - run: npm install
             - run:
-                name: Build package
-                command: npm run build
+                  name: Build package
+                  command: npm run build
             - persist_to_workspace:
-                root: ~/code
-                paths: 
-                    - dist
+                  root: ~/code
+                  paths:
+                      - dist
     publish-github-release-to-npm:
         <<: *defaults
         docker:
-            - image: circleci/node:8.11.4-jessie
+            - image: circleci/node:10.16.3-stretch
         steps:
             - *npm-config
             - checkout
             - attach_workspace:
-                at: ~/code
+                  at: ~/code
             - *restore-cache
             - run:
-                name: Publish package
-                command: npm publish
+                  name: Publish package
+                  command: npm publish
 
 workflows:
     version: 2
@@ -182,10 +179,10 @@ workflows:
             - package-version-validation:
                   filters:
                       branches: # run for every branch
-                          ignore: 
-                             - master
+                          ignore:
+                              - master
                       tags:
-                          ignore: /.*/  
+                          ignore: /.*/
             - tag-version-validation:
                   filters:
                       branches:
@@ -193,8 +190,8 @@ workflows:
                       tags:
                           only: /^v{0,1}\d+\.\d+\.\d+$/
             - build-for-publishing:
-                  requires: 
-                     - tag-version-validation
+                  requires:
+                      - tag-version-validation
                   filters:
                       branches:
                           ignore: /.*/

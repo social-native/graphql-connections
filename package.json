@@ -1,6 +1,6 @@
 {
   "name": "@social-native/snpkg-snapi-connections",
-  "version": "v5.0.1",
+  "version": "5.1.0",
   "description": "Connection / Cursor logic for SNAPI packages",
   "main": "dist/index.cjs.js",
   "module": "dist/index.es.js",
@@ -22,7 +22,6 @@
     "watch": "rollup -cw",
     "lint": "./node_modules/tslint/bin/tslint --project ./tsconfig.json",
     "prettier": "prettier \"src/**/*\"",
-    "dep-check": "node ./scripts/dependency-check.js",
     "knex:sqlite": "node ./node_modules/.bin/ts-node --project tsconfig.dev.json ./node_modules/.bin/knex --knexfile knexfile.sqlite.ts",
     "seed:sqlite:make": "npm run knex:sqlite -- -x ts seed:make",
     "seed:sqlite:run": "npm run knex:sqlite seed:run",
@@ -35,8 +34,10 @@
     "migrate:mysql:make": "npm run knex:mysql migrate:make",
     "migrate:mysql:latest": "npm run knex:mysql migrate:latest",
     "migrate:mysql:rollback": "npm run knex:mysql migrate:rollback",
-    "package-version-validation": "node ./scripts/package-version-validation.js",
-    "tag-version-validation": "node ./scripts/tag-version-validation.js"
+    "dep-check": "snpkg-dependency-check",
+    "package-version-validation": "snpkg-package-version-validation package-version-validation",
+    "tag-version-validation": "snpkg-package-version-validation tag-version-validation",
+    "postinstall": "snpkg-generate-config-ci snpkg"
   },
   "repository": {
     "type": "git",
@@ -58,6 +59,8 @@
     "knex": "^0.19.1"
   },
   "devDependencies": {
+    "@social-native/snpkg-dependency-check": "^0.1.0",
+    "@social-native/snpkg-package-version-validation": "^3.1.0",
     "@types/dotenv": "^6.1.1",
     "@types/faker": "^4.1.5",
     "@types/graphql": "^14.0.7",

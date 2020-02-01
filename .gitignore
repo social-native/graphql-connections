@@ -73,3 +73,4 @@ tmp
 .npmrc
 
 dist
+.DS_Store

@@ -1,6 +1,6 @@
 {
-  "name": "@social-native/snpkg-snapi-connections",
-  "version": "5.1.0",
+  "name": "graphql-connections",
+  "version": "5.2.0",
   "description": "Connection / Cursor logic for SNAPI packages",
   "main": "dist/index.cjs.js",
   "module": "dist/index.es.js",
@@ -33,34 +33,27 @@
     "seed:mysql:run": "npm run knex:mysql seed:run",
     "migrate:mysql:make": "npm run knex:mysql migrate:make",
     "migrate:mysql:latest": "npm run knex:mysql migrate:latest",
-    "migrate:mysql:rollback": "npm run knex:mysql migrate:rollback",
-    "dep-check": "snpkg-dependency-check",
-    "package-version-validation": "snpkg-package-version-validation package-version-validation",
-    "tag-version-validation": "snpkg-package-version-validation tag-version-validation",
-    "postinstall": "snpkg-generate-config-ci snpkg"
+    "migrate:mysql:rollback": "npm run knex:mysql migrate:rollback"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/social-native/snpkg-snapi-connections.git"
+    "url": "git+https://github.com/social-native/graphql-connections.git"
   },
   "keywords": [
-    "SNAPI",
-    "SNPKG",
+    "GraphQL",
     "Connections",
     "Cursor"
   ],
   "author": "",
-  "license": "ISC",
+  "license": "Apache License 2.0",
   "bugs": {
-    "url": "https://github.com/social-native/snpkg-snapi-connections/issues"
+    "url": "https://github.com/social-native/graphql-connections/issues"
   },
-  "homepage": "https://github.com/social-native/snpkg-snapi-connections#readme",
+  "homepage": "https://github.com/social-native/graphql-connections#readme",
   "dependencies": {
     "knex": "^0.19.1"
   },
   "devDependencies": {
-    "@social-native/snpkg-dependency-check": "^0.1.0",
-    "@social-native/snpkg-package-version-validation": "^3.1.0",
     "@types/dotenv": "^6.1.1",
     "@types/faker": "^4.1.5",
     "@types/graphql": "^14.0.7",

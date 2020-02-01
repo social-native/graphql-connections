@@ -141,8 +141,6 @@ workflows:
     snpkg-publish:
         jobs:
             - build-for-publishing:
-                  requires:
-                      - tag-version-validation
                   filters:
                       branches:
                           ignore: /.*/

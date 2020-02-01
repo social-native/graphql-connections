@@ -1,16 +1,56 @@
-# SNPKG-SNAPI-Connections :diamond_shape_with_a_dot_inside:
+# GraphQL-Connections :diamond_shape_with_a_dot_inside:
+
+- [GraphQL-Connections :diamond_shape_with_a_dot_inside:](#graphql-connections-diamondshapewithadotinside)
+  - [Install](#install)
+  - [About](#about)
+  - [Run locally](#run-locally)
+  - [How to use - Schema](#how-to-use---schema)
+    - [1. Add input scalars to schema](#1-add-input-scalars-to-schema)
+    - [2. Add typeDefs to your schema](#2-add-typedefs-to-your-schema)
+      - [Manually](#manually)
+      - [String interpolation](#string-interpolation)
+      - [During configuration](#during-configuration)
+    - [3. Add resolvers](#3-add-resolvers)
+      - [In the resolver object](#in-the-resolver-object)
+      - [During configuration](#during-configuration-1)
+  - [How to use - Resolvers](#how-to-use---resolvers)
+    - [Short Tutorial](#short-tutorial)
+    - [Detailed Tutorial](#detailed-tutorial)
+      - [1. Initialize the `nodeConnection`](#1-initialize-the-nodeconnection)
+        - [A. set the `Node` type](#a-set-the-node-type)
+        - [B. add inputArgs](#b-add-inputargs)
+        - [C. specify an attributeMap](#c-specify-an-attributemap)
+      - [2. build the query query](#2-build-the-query-query)
+      - [3. execute the query and build the `connection`](#3-execute-the-query-and-build-the-connection)
+    - [Options](#options)
+      - [contextOptions](#contextoptions)
+        - [defaultLimit](#defaultlimit)
+        - [cursorEncoder](#cursorencoder)
+      - [builderOptions - common](#builderoptions---common)
+        - [filterTransformer](#filtertransformer)
+        - [filterMap](#filtermap)
+      - [builderOptions - MySQL specific](#builderoptions---mysql-specific)
+        - [searchColumns](#searchcolumns)
+        - [searchModifier](#searchmodifier)
+      - [resultOptions](#resultoptions)
+        - [nodeTransformer](#nodetransformer)
+        - [cursorEncoder](#cursorencoder-1)
+  - [Extensions](#extensions)
+  - [Architecture](#architecture)
+  - [Search](#search)
+
 
 ## Install
 
 Install by referencing the github location and the release number:
 
 ```
-npm install --save social-native/snpkg-snapi-connections#v2.0.0
+npm install --save graphql-connections#v2.2.0
 ```
 
 ## About
 
-`SNPKG-SNAPI-Connections` helps handle the traversal of edges between nodes. 
+`GraphQL-Connections` helps handle the traversal of edges between nodes. 
 
 In a graph, nodes connect to other nodes via edges. In the relay graphql spec, multiple edges can be represented as a single `Connection` type, which has the signature:
 
@@ -222,7 +262,7 @@ type Query {
 #### String interpolation
 
 ```typescript
-import {typeDefs} from 'snpkg-snapi-connections'
+import {typeDefs} from 'graphql-connections'
 
 const schema = `
   ${...typeDefs}
@@ -244,7 +284,7 @@ const schema = `
 #### During configuration
 
 ```typescript
-import {typeDefs as connectionTypeDefs} from 'snpkg-snapi-connections'
+import {typeDefs as connectionTypeDefs} from 'graphql-connections'
 
     const schema = makeExecutableSchema({
         ...
@@ -257,7 +297,7 @@ import {typeDefs as connectionTypeDefs} from 'snpkg-snapi-connections'
 #### In the resolver object
 
 ```typescript
-import {resolvers as connectionResolvers} from 'snpkg-snapi-connections'
+import {resolvers as connectionResolvers} from 'graphql-connections'
 
 const resolvers = {
   ...connectionResolvers,
@@ -274,7 +314,7 @@ const resolvers = {
 #### During configuration
 
 ```typescript
-import {resolvers as connectionResolvers} from 'snpkg-snapi-connections'
+import {resolvers as connectionResolvers} from 'graphql-connections'
 
     const schema = makeExecutableSchema({
         ...
@@ -290,7 +330,7 @@ In short, this is what a resolver using the `connectionManager` will look like:
 
 ```typescript
 // import the manager and relevant types
-import {ConnectionManager, INode} from 'snpkg-snapi-connections';
+import {ConnectionManager, INode} from 'graphql-connections';
 
 const resolver = async (obj, inputArgs) => {
     // create a new node connection instance
@@ -484,7 +524,7 @@ const attributeMap = {
 
 ```typescript
 // import the manager and relevant types
-import {ConnectionManager, INode} from 'snpkg-snapi-connections';
+import {ConnectionManager, INode} from 'graphql-connections';
 
 const resolver = async (obj, inputArgs) => {
     // create a new node connection instance
@@ -519,7 +559,7 @@ This type is constructed by taking the `result` of executing the query and addin
 
 ```typescript
 // import the manager and relevant types
-import {ConnectionManager, INode} from 'snpkg-snapi-connections';
+import {ConnectionManager, INode} from 'graphql-connections';
 
 const resolver = async (obj, inputArgs) => {
     ...
@@ -662,7 +702,7 @@ interface IQueryBuilder<Builder> {
 }
 ```
 
-### Architecture
+## Architecture
 
 Internally, the `ConnectionManager` manages the orchestration of the `QueryContext`, `QueryBuilder`, and `QueryResult`. 
 
@@ -676,7 +716,7 @@ This can be visualized as such:
 
 ![Image of Architecture](https://docs.google.com/drawings/d/e/2PACX-1vRwtC2UiFwLXFDbmBNoq_6bD1YTyACV49SWHxfj2ce_K5T_XEZYlgGP7ntbcskoMVWqXp5C2Uj-K7Jj/pub?w=1163&amp;h=719)
 
-### Search
+## Search
 
 Search inputs are provided for executing full text search query strings against a datastore. At the moment only MySQL support exists.
 Using filters may slow down the query.

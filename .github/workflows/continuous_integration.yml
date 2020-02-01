@@ -98,6 +98,9 @@ jobs:
                   path: node_modules
                   key: ${{ runner.os }}-node-${{ hashFiles('**/package.json') }}
 
+            - name: Setup tmate session
+              uses: mxschmitt/action-tmate@v1
+              
             - name: Run test suit
               run: npm run test
 

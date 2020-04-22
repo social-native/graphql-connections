@@ -19,11 +19,12 @@ const createConnection = async (inputArgs: IInputArgs) => {
     const queryBuilder = knexClient.queryBuilder().from('mock');
     const connection = new ConnectionManager<IUserNode>(inputArgs, attributeMap);
     connection.createQuery(queryBuilder);
+    const sql = queryBuilder.toString();
     const result = ((await queryBuilder.select()) || []) as KnexQueryResult;
     connection.addResult(result);
     const pageInfo = connection.pageInfo;
     const edges = connection.edges;
-    return {pageInfo, edges};
+    return {pageInfo, edges, sql};
 };
 
 describe('Input args with', () => {
@@ -242,8 +243,10 @@ describe('Input args with', () => {
                     {field: 'firstname', operator: '=', value: 'Nerissa'}
                 ]
             };
-            const {pageInfo, edges} = await createConnection({filter});
-
+            const {pageInfo, edges, sql} = await createConnection({filter});
+            expect(sql).toMatchInlineSnapshot(
+                `"select * from \`mock\` where (\`haircolor\` = 'brown' and \`age\` > '80' and \`firstname\` = 'Nerissa') order by \`id\` asc limit 1001"`
+            );
             expect(pageInfo.hasNextPage).toBe(false);
             expect(pageInfo.hasPreviousPage).toBe(false);
             expect(edges.length).toBe(24);

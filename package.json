@@ -1,7 +1,7 @@
 {
   "name": "graphql-connections",
-  "version": "5.2.0",
-  "description": "Connection / Cursor logic for SNAPI packages",
+  "version": "5.2.1",
+  "description": "Build and handle Relay-like GraphQL connections using a Knex query builder",
   "main": "dist/index.cjs.js",
   "module": "dist/index.es.js",
   "types": "dist/index.d.ts",
@@ -42,7 +42,12 @@
   "keywords": [
     "GraphQL",
     "Connections",
-    "Cursor"
+    "Cursor",
+    "Pagination",
+    "Filtering",
+    "Searching",
+    "Filter",
+    "Relay Connection"
   ],
   "author": "",
   "license": "Apache-2.0",

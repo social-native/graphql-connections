@@ -83,7 +83,7 @@ export default class KnexQueryBuilder implements IQueryBuilder<Knex> {
      * Adds filters to the sql query builder
      */
     protected applyFilter(queryBuilder: Knex) {
-        this.addFilterRecursively(this.queryContext.filters, queryBuilder);
+        queryBuilder.andWhere(k => this.addFilterRecursively(this.queryContext.filters, k));
     }
 
     private computeFilterField(field: string) {

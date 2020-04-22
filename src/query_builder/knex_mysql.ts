@@ -20,7 +20,7 @@ export default class KnexMySQLFullTextQueryBuilder extends KnexBaseQueryBuilder 
 
         // calling type guard twice b/c of weird typescript thing...
         if (this.isKnexMySQLBuilderOptions(options)) {
-            this.searchColumns = options.searchColumns;
+            this.searchColumns = options.searchColumns || [];
             this.searchModifier = options.searchModifier;
         } else if (!this.hasSearchOptions && this.queryContext.search) {
             throw new Error('Using search but search is not configured via query builder options');
@@ -68,7 +68,7 @@ export default class KnexMySQLFullTextQueryBuilder extends KnexBaseQueryBuilder 
     protected applySearch(queryBuilder: Knex.QueryBuilder) {
         const {search} = this.queryContext;
 
-        if (!search || this.searchColumns.length === 0) {
+        if (!search || !this.searchColumns || this.searchColumns.length === 0) {
             return;
         }
 
@@ -79,7 +79,7 @@ export default class KnexMySQLFullTextQueryBuilder extends KnexBaseQueryBuilder 
 
     private createFullTextMatchClause() {
         // create comma separated list of columns to search over
-        const columns = this.searchColumns.reduce((acc, columnName, index) => {
+        const columns = (this.searchColumns || []).reduce((acc, columnName, index) => {
             return index === 0 ? acc + columnName : acc + ', ' + columnName;
         }, '');
 

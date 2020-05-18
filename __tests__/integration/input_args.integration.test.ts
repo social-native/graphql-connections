@@ -308,7 +308,7 @@ describe('Input args with', () => {
 
             expect(pageInfo.hasNextPage).toBe(false);
             expect(pageInfo.hasPreviousPage).toBe(false);
-            expect(edges.length).toBe(499);
+            expect(edges.length).toBe(500);
             expect(edges[0].node.id).toBe(9261);
         });
     });
@@ -363,18 +363,17 @@ describe('Input args with', () => {
     });
 
     describe('Filters using suggested value literal transforms', () => {
-        it('Transforms "null" value to real null', async () => {
-            const filter = {field: 'haircolor', operator: '=', value: 'null'};
+        it.skip('Transforms "null" value to real null', async () => {
+            const filter = {field: 'lastname', operator: '=', value: 'null'};
             const {pageInfo, edges} = await createConnection({
                 first: 30,
                 filter,
-                orderBy: 'haircolor',
+                orderBy: 'lastname',
                 orderDir: 'desc'
             });
-
-            expect(pageInfo.hasNextPage).toBe(false); // there is 1 person with no haircolor
+            expect(pageInfo.hasNextPage).toBe(true); // there are 32 people with no last name
             expect(pageInfo.hasPreviousPage).toBe(false);
-            expect(edges.length).toBe(1);
+            expect(edges.length).toBe(30); // we selected 30 people
         });
     });
 

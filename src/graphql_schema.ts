@@ -5,7 +5,7 @@ import {
     GraphQLScalarType,
     GraphQLInt
 } from 'graphql';
-import InputUnionType from 'input_union_type';
+import InputUnionType from './input_union_type';
 
 const compoundFilterScalar = new GraphQLInputObjectType({
     name: 'CompoundFilterScalar',

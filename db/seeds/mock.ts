@@ -253,9 +253,6 @@ const remainingRows = Array(usernames.length)
 const rows = [...finalCaseA, ...finalCaseB, ...finalCaseC, ...remainingRows];
 
 export async function seed(knex: Knex) {
-    return knex('mock')
-        .del()
-        .then(() => {
-            return knex.batchInsert('mock', rows, 100);
-        });
+    await knex('mock').del();
+    await knex.batchInsert('mock', rows, 100);
 }

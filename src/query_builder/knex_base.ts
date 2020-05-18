@@ -1,5 +1,5 @@
 import QueryContext from '../query_context';
-import {QueryBuilder as Knex} from 'knex';
+import {QueryBuilder as Knex, Where, QueryBuilder} from 'knex';
 import {
     IFilterMap,
     IInAttributeMap,
@@ -31,6 +31,7 @@ export default class KnexQueryBuilder implements IQueryBuilder<Knex> {
     protected queryContext: QueryContext;
     protected attributeMap: IInAttributeMap;
     protected filterMap: IFilterMap;
+    protected useSuggestedValueLiteralTransforms: boolean;
     protected filterTransformer: NonNullable<IKnexQueryBuilderOptions['filterTransformer']>;
 
     constructor(
@@ -40,6 +41,10 @@ export default class KnexQueryBuilder implements IQueryBuilder<Knex> {
     ) {
         this.queryContext = queryContext;
         this.attributeMap = attributeMap;
+        /** Default to true */
+        this.useSuggestedValueLiteralTransforms = !(
+            options.useSuggestedValueLiteralTransforms === false
+        );
         this.filterMap = options.filterMap || defaultFilterMap;
         this.filterTransformer = options.filterTransformer || defaultFilterTransformer;
 
@@ -98,7 +103,7 @@ export default class KnexQueryBuilder implements IQueryBuilder<Knex> {
     }
 
     private computeFilterOperator(operator: string) {
-        const mappedField = this.filterMap[operator];
+        const mappedField = this.filterMap[operator.toLowerCase()];
         if (mappedField) {
             return mappedField;
         }
@@ -108,14 +113,45 @@ export default class KnexQueryBuilder implements IQueryBuilder<Knex> {
         );
     }
 
-    private filterArgs(filter: IFilter): [string, string, string] {
-        const f = this.filterTransformer(filter);
-        return [this.computeFilterField(f.field), this.computeFilterOperator(f.operator), f.value];
+    // [string, string, string | number | null]
+    // tslint:disable-next-line: cyclomatic-complexity
+    private filterArgs(filter: IFilter) {
+        const transformedFilter = this.filterTransformer(filter);
+
+        if (
+            this.useSuggestedValueLiteralTransforms &&
+            transformedFilter.operator.toLowerCase() === '=' &&
+            transformedFilter.value.toLowerCase() === 'null'
+        ) {
+            return [
+                (builder: QueryBuilder) => {
+                    builder.whereNull(transformedFilter.field);
+                }
+            ];
+        }
+
+        if (
+            this.useSuggestedValueLiteralTransforms &&
+            transformedFilter.operator.toLowerCase() === '<>' &&
+            transformedFilter.value.toLowerCase() === 'null'
+        ) {
+            return [
+                (builder: QueryBuilder) => {
+                    builder.whereNotNull(transformedFilter.field);
+                }
+            ];
+        }
+
+        return [
+            this.computeFilterField(transformedFilter.field),
+            this.computeFilterOperator(transformedFilter.operator),
+            transformedFilter.value
+        ];
     }
 
     private addFilterRecursively(filter: IInputFilter, queryBuilder: Knex) {
         if (isFilter(filter)) {
-            queryBuilder.where(...this.filterArgs(filter as IFilter));
+            queryBuilder.where(...(this.filterArgs(filter) as Parameters<Where>));
             return queryBuilder;
         }
 
@@ -123,7 +159,7 @@ export default class KnexQueryBuilder implements IQueryBuilder<Knex> {
         if (filter.and && filter.and.length > 0) {
             filter.and.forEach(f => {
                 if (isFilter(f)) {
-                    queryBuilder.andWhere(...this.filterArgs(f));
+                    queryBuilder.andWhere(...(this.filterArgs(f) as Parameters<Where>));
                 } else {
                     queryBuilder.andWhere(k => this.addFilterRecursively(f, k));
                 }
@@ -133,7 +169,7 @@ export default class KnexQueryBuilder implements IQueryBuilder<Knex> {
         if (filter.or && filter.or.length > 0) {
             filter.or.forEach(f => {
                 if (isFilter(f)) {
-                    queryBuilder.orWhere(...this.filterArgs(f));
+                    queryBuilder.orWhere(...(this.filterArgs(f) as Parameters<Where>));
                 } else {
                     queryBuilder.orWhere(k => this.addFilterRecursively(f, k));
                 }
@@ -143,7 +179,7 @@ export default class KnexQueryBuilder implements IQueryBuilder<Knex> {
         if (filter.not && filter.not.length > 0) {
             filter.not.forEach(f => {
                 if (isFilter(f)) {
-                    queryBuilder.andWhereNot(...this.filterArgs(f));
+                    queryBuilder.andWhereNot(...(this.filterArgs(f) as Parameters<Where>));
                 } else {
                     queryBuilder.andWhereNot(k => this.addFilterRecursively(f, k));
                 }

@@ -362,6 +362,21 @@ describe('Input args with', () => {
         });
     });
 
+    describe('Filters using suggested value literal transforms', () => {
+        it.skip('Transforms "null" value to real null', async () => {
+            const filter = {field: 'lastname', operator: '=', value: 'null'};
+            const {pageInfo, edges} = await createConnection({
+                first: 30,
+                filter,
+                orderBy: 'lastname',
+                orderDir: 'desc'
+            });
+            expect(pageInfo.hasNextPage).toBe(true); // there are 32 people with no last name
+            expect(pageInfo.hasPreviousPage).toBe(false);
+            expect(edges.length).toBe(30); // we selected 30 people
+        });
+    });
+
     describe('Filters that return no results', () => {
         it('Can be handled properly', async () => {
             const filter = {

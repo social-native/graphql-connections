@@ -239,7 +239,7 @@ const finalCaseC = caseC.map(({haircolor, age, firstname, lastname}) => ({
     bio: takeRandomElement(bios)
 }));
 
-const remainingRows = Array(usernames.length)
+const remainingRows = Array(usernames.length - 1)
     .fill(undefined)
     .map(() => ({
         haircolor: takeRandomElement(haircolors),
@@ -250,12 +250,18 @@ const remainingRows = Array(usernames.length)
         bio: takeRandomElement(bios)
     }));
 
-const rows = [...finalCaseA, ...finalCaseB, ...finalCaseC, ...remainingRows];
+const noInfo = {
+    haircolor: null,
+    age: null,
+    username: null,
+    firstname: null,
+    lastname: null,
+    bio: null
+};
+
+const rows = [...finalCaseA, ...finalCaseB, ...finalCaseC, noInfo, ...remainingRows];
 
 export async function seed(knex: Knex) {
-    return knex('mock')
-        .del()
-        .then(() => {
-            return knex.batchInsert('mock', rows, 100);
-        });
+    await knex('mock').del();
+    await knex.batchInsert('mock', rows, 100);
 }

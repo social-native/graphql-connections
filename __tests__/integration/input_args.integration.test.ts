@@ -308,7 +308,7 @@ describe('Input args with', () => {
 
             expect(pageInfo.hasNextPage).toBe(false);
             expect(pageInfo.hasPreviousPage).toBe(false);
-            expect(edges.length).toBe(500);
+            expect(edges.length).toBe(499);
             expect(edges[0].node.id).toBe(9261);
         });
     });
@@ -368,13 +368,13 @@ describe('Input args with', () => {
             const {pageInfo, edges} = await createConnection({
                 first: 30,
                 filter,
-                orderBy: 'lastname',
+                orderBy: 'haircolor',
                 orderDir: 'desc'
             });
 
-            expect(pageInfo.hasNextPage).toBe(true);
+            expect(pageInfo.hasNextPage).toBe(false); // there is 1 person with no haircolor
             expect(pageInfo.hasPreviousPage).toBe(false);
-            expect(edges.length).toBe(30); // we selected 30 people
+            expect(edges.length).toBe(1);
         });
     });
 

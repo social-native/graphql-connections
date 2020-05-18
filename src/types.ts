@@ -78,11 +78,13 @@ export type QueryBuilderOptions = IKnexQueryBuilderOptions | IKnexMySQLQueryBuil
 export interface IKnexQueryBuilderOptions {
     filterMap?: {[operator: string]: string};
     filterTransformer?: (filter: IFilter) => IFilter;
+    useSuggestedValueLiteralTransforms?: boolean;
 }
 
 export interface IKnexMySQLQueryBuilderOptions extends IKnexQueryBuilderOptions {
     filterMap?: {[operator: string]: string};
     filterTransformer?: (filter: IFilter) => IFilter;
+    useSuggestedValueLiteralTransforms?: boolean;
     searchColumns?: string[];
     searchModifier?:
         | 'IN NATURAL LANGUAGE MODE'

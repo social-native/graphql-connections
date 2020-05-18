@@ -193,16 +193,6 @@ console.log('ages:         ', agesUniqueData.length, '     ', agesRandomData.len
 console.log('haircolors:   ', haircolorsUniqueData.length, '     ', haircolorsRandomData.length);
 console.log('lastnames:   ', lastnamesUniqueData.length, '     ', lastnamesRandomData.length);
 
-const takeRandomElement = (array: string[]) => {
-    const index = Math.floor(Math.random() * array.length);
-    const item = array[index];
-    if (index !== -1) {
-        array.splice(index, 1);
-    }
-
-    return item ? item : undefined;
-};
-
 const firstnames = [...firstnamesUniqueData, ...firstnamesRandomData];
 const lastnames = [...lastnamesUniqueData, ...lastnamesRandomData];
 const bios = [...biosUniqueData, ...biosRandomData];
@@ -213,19 +203,19 @@ const usernames = [...usernameUniqueData, ...usernameRandomData];
 const finalCaseA = caseA.map(({haircolor, age}) => ({
     haircolor,
     age,
-    username: takeRandomElement(usernames),
-    firstname: takeRandomElement(firstnames),
-    lastname: takeRandomElement(lastnames),
-    bio: takeRandomElement(bios)
+    username: faker.random.arrayElement(usernames),
+    firstname: faker.random.arrayElement(firstnames),
+    lastname: faker.random.arrayElement(lastnames),
+    bio: faker.random.arrayElement(bios)
 }));
 
 const finalCaseB = caseB.map(({haircolor, age, firstname}) => ({
     haircolor,
     age,
     firstname,
-    username: takeRandomElement(usernames),
-    lastname: takeRandomElement(lastnames),
-    bio: takeRandomElement(bios)
+    username: faker.random.arrayElement(usernames),
+    lastname: faker.random.arrayElement(lastnames),
+    bio: faker.random.arrayElement(bios)
 }));
 
 const updatedAt = new Date(1546347661000);
@@ -235,27 +225,35 @@ const finalCaseC = caseC.map(({haircolor, age, firstname, lastname}) => ({
     age,
     firstname,
     lastname,
-    username: takeRandomElement(usernames),
-    bio: takeRandomElement(bios)
+    username: faker.random.arrayElement(usernames),
+    bio: faker.random.arrayElement(bios)
 }));
 
-const remainingRows = Array(usernames.length)
+const noHairColor = Array(usernames.length / 2)
     .fill(undefined)
     .map(() => ({
-        haircolor: takeRandomElement(haircolors),
-        age: takeRandomElement((ages as unknown) as string[]),
-        username: takeRandomElement(usernames),
-        firstname: takeRandomElement(firstnames),
-        lastname: takeRandomElement(lastnames),
-        bio: takeRandomElement(bios)
+        haircolor: null,
+        age: faker.random.arrayElement(ages),
+        username: faker.random.arrayElement(usernames),
+        firstname: faker.random.arrayElement(firstnames),
+        lastname: faker.random.arrayElement(lastnames),
+        bio: faker.random.arrayElement(bios)
     }));
 
-const rows = [...finalCaseA, ...finalCaseB, ...finalCaseC, ...remainingRows];
+const remainingRows = Array(usernames.length / 2)
+    .fill(undefined)
+    .map(() => ({
+        haircolor: faker.random.arrayElement(haircolors),
+        age: faker.random.arrayElement(ages),
+        username: faker.random.arrayElement(usernames),
+        firstname: faker.random.arrayElement(firstnames),
+        lastname: faker.random.arrayElement(lastnames),
+        bio: faker.random.arrayElement(bios)
+    }));
+
+const rows = [...finalCaseA, ...finalCaseB, ...finalCaseC, ...noHairColor, ...remainingRows];
 
 export async function seed(knex: Knex) {
-    return knex('mock')
-        .del()
-        .then(() => {
-            return knex.batchInsert('mock', rows, 100);
-        });
+    await knex('mock').del();
+    await knex.batchInsert('mock', rows, 100);
 }

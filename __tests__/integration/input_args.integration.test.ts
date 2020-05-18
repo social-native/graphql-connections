@@ -362,6 +362,22 @@ describe('Input args with', () => {
         });
     });
 
+    describe('Filters using suggested value literal transforms', () => {
+        it('Transforms "null" value to real null', async () => {
+            const filter = {field: 'haircolor', operator: '=', value: 'null'};
+            const {pageInfo, edges} = await createConnection({
+                first: 30,
+                filter,
+                orderBy: 'lastname',
+                orderDir: 'desc'
+            });
+
+            expect(pageInfo.hasNextPage).toBe(true);
+            expect(pageInfo.hasPreviousPage).toBe(false);
+            expect(edges.length).toBe(30); // we selected 30 people
+        });
+    });
+
     describe('Filters that return no results', () => {
         it('Can be handled properly', async () => {
             const filter = {

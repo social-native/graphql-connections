@@ -25,7 +25,7 @@ import QueryResult from './query_result';
 
 type KnexQueryResult = Array<{[attributeName: string]: any}>;
 
-interface IConnectionManagerOptions<CursorObj, Node> {
+export interface IConnectionManagerOptions<CursorObj, Node> {
     contextOptions?: IQueryContextOptions<CursorObj>;
     resultOptions?: IQueryResultOptions<CursorObj, Node>;
     builderOptions?: QueryBuilderOptions;

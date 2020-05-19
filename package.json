@@ -1,6 +1,6 @@
 {
     "name": "graphql-connections",
-    "version": "7.0.1",
+    "version": "7.0.2",
     "description": "Build and handle Relay-like GraphQL connections using a Knex query builder",
     "main": "dist/index.cjs.js",
     "module": "dist/index.es.js",

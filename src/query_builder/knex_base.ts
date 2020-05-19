@@ -121,7 +121,7 @@ export default class KnexQueryBuilder implements IQueryBuilder<Knex> {
         if (
             this.useSuggestedValueLiteralTransforms &&
             transformedFilter.operator.toLowerCase() === '=' &&
-            transformedFilter.value.toLowerCase() === 'null'
+            (transformedFilter.value === null || transformedFilter.value.toLowerCase() === 'null')
         ) {
             return [
                 (builder: QueryBuilder) => {
@@ -133,7 +133,7 @@ export default class KnexQueryBuilder implements IQueryBuilder<Knex> {
         if (
             this.useSuggestedValueLiteralTransforms &&
             transformedFilter.operator.toLowerCase() === '<>' &&
-            transformedFilter.value.toLowerCase() === 'null'
+            (transformedFilter.value === null || transformedFilter.value.toLowerCase() === 'null')
         ) {
             return [
                 (builder: QueryBuilder) => {

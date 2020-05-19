@@ -125,7 +125,7 @@ export default class KnexQueryBuilder implements IQueryBuilder<Knex> {
         ) {
             return [
                 (builder: QueryBuilder) => {
-                    builder.whereNull(transformedFilter.field);
+                    builder.whereNull(this.computeFilterField(transformedFilter.field));
                 }
             ];
         }
@@ -137,7 +137,7 @@ export default class KnexQueryBuilder implements IQueryBuilder<Knex> {
         ) {
             return [
                 (builder: QueryBuilder) => {
-                    builder.whereNotNull(transformedFilter.field);
+                    builder.whereNotNull(this.computeFilterField(transformedFilter.field));
                 }
             ];
         }

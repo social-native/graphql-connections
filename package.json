@@ -81,7 +81,7 @@
         "sqlite3": "^4.1.1",
         "supertest": "^4.0.2",
         "ts-jest": "^24.0.0",
-        "ts-node": "^8.0.3",
+        "ts-node": "^9.1.0",
         "tsconfig-paths": "^3.8.0",
         "tslint": "^5.13.1",
         "tslint-eslint-rules": "^5.4.0",

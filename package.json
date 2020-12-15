@@ -76,7 +76,7 @@
         "nodemon": "^1.18.10",
         "prettier": "^1.16.4",
         "rimraf": "^3.0.2",
-        "rollup": "^1.2.2",
+        "rollup": "^2.35.1",
         "rollup-plugin-typescript2": "^0.24.3",
         "sqlite3": "^4.1.1",
         "supertest": "^4.0.2",

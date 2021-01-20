@@ -28,6 +28,7 @@ const coerceIntString = (value: number | string) => {
     return String(value);
 };
 
+/** @see https://stackoverflow.com/a/49911974 */
 const intString = new GraphQLScalarType({
     name: 'IntString',
     serialize: coerceIntString,

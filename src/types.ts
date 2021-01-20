@@ -1,7 +1,7 @@
 import {ORDER_DIRECTION} from './enums';
 
 export interface IFilter {
-    value: string;
+    value: string | number | null;
     operator: string;
     field: string;
 }

@@ -1,6 +1,6 @@
 # GraphQL-Connections :diamond_shape_with_a_dot_inside:
 
-- [GraphQL-Connections :diamond_shape_with_a_dot_inside:](#graphql-connections-diamondshapewithadotinside)
+- [GraphQL-Connections :diamond_shape_with_a_dot_inside:](#graphql-connections-diamond_shape_with_a_dot_inside)
   - [Install](#install)
   - [About](#about)
   - [Run locally](#run-locally)
@@ -20,7 +20,7 @@
         - [A. set the `Node` type](#a-set-the-node-type)
         - [B. add inputArgs](#b-add-inputargs)
         - [C. specify an attributeMap](#c-specify-an-attributemap)
-      - [2. build the query query](#2-build-the-query-query)
+      - [2. build the query](#2-build-the-query)
       - [3. execute the query and build the `connection`](#3-execute-the-query-and-build-the-connection)
     - [Options](#options)
       - [contextOptions](#contextoptions)
@@ -38,7 +38,7 @@
   - [Extensions](#extensions)
   - [Architecture](#architecture)
   - [Search](#search)
-
+  - [Filtering on computed columns](#filtering-on-computed-columns)
 
 ## Install
 
@@ -50,7 +50,7 @@ npm install --save graphql-connections#v2.2.0
 
 ## About
 
-`GraphQL-Connections` helps handle the traversal of edges between nodes. 
+`GraphQL-Connections` helps handle the traversal of edges between nodes.
 
 In a graph, nodes connect to other nodes via edges. In the relay graphql spec, multiple edges can be represented as a single `Connection` type, which has the signature:
 
@@ -66,44 +66,42 @@ type Connection {
 }
 ```
 
-A connection object is returned to a user when a `query request` asks for multiple child nodes connected to a parent node. 
+A connection object is returned to a user when a `query request` asks for multiple child nodes connected to a parent node.
 For example, a music artist has multiple songs. In order to get all the `songs` for an `artist` you would write the graphql query request:
 
 ```graphql
 query {
-  artist(id: 1) {
-    songs {
-      songName
-      songLength
+    artist(id: 1) {
+        songs {
+            songName
+            songLength
+        }
     }
-  }
 }
-
 ```
 
-However, sometimes you may only want a portion of the songs returned to you. To allow for this scenario, a `connection` is used to represent the response type of a `song`. 
+However, sometimes you may only want a portion of the songs returned to you. To allow for this scenario, a `connection` is used to represent the response type of a `song`.
 
 ```graphql
 query {
-  artist(id: 1) {
-    songs {
-      pageInfo {
-        hasNextPage
-        hasPreviousPage
-        startCursor
-        endCursor
-      }
-      edges {
-        cursor
-        node {
-          songName
-          songLength
+    artist(id: 1) {
+        songs {
+            pageInfo {
+                hasNextPage
+                hasPreviousPage
+                startCursor
+                endCursor
+            }
+            edges {
+                cursor
+                node {
+                    songName
+                    songLength
+                }
+            }
         }
-      }
     }
-  }
 }
-
 ```
 
 You can use the `cursors` (`startCursor`, `endCursor`, or `cursor`) to get the next set of edges.
@@ -136,74 +134,72 @@ The above logic is controlled by the `connectionManager`. It can be added to a r
 1. Create a cursor for paging through a node's edges
 2. Handle movement through a node's edges using an existing cursor.
 3. Support multiple input types that can sort, group, limit, and filter the edges in a connection
- 
 
 ## Run locally
 
-1. Run the migrations 
-   - `NODE_ENV=development npm run migrate:sqlite:latest`
-   - `NODE_ENV=development npm run migrate:mysql:latest`
-2. Seed the database 
-   - `NODE_ENV=development npm run seed:sqlite:run`
-   - `NODE_ENV=development npm run seed:mysql:run`
-3. Run the dev server 
-   - `npm run dev:sqlite` (search is not supported)
-   - `npm run dev:mysql` (search IS supported :))
+1. Run the migrations
+    - `NODE_ENV=development npm run migrate:sqlite:latest`
+    - `NODE_ENV=development npm run migrate:mysql:latest`
+2. Seed the database
+    - `NODE_ENV=development npm run seed:sqlite:run`
+    - `NODE_ENV=development npm run seed:mysql:run`
+3. Run the dev server
+    - `npm run dev:sqlite` (search is not supported)
+    - `npm run dev:mysql` (search IS supported :))
 4. Visit the GraphQL playground [http://localhost:4000/graphql](http://localhost:4000/graphql)
 5. Run some queries!
 
 ```graphql
 query {
-  users(
-      first: 100,
-      orderBy: "haircolor",
-      filter: { and: [
-        {field: "id", operator: ">", value: "19990"},
-        {field: "age", operator: "<", value: "90"},
-      ]},
-      search: "random search term"
-  ) {
-    pageInfo {
-      hasNextPage
-      hasPreviousPage
-      startCursor
-      endCursor
+    users(
+        first: 100
+        orderBy: "haircolor"
+        filter: {
+            and: [
+                {field: "id", operator: ">", value: "19990"}
+                {field: "age", operator: "<", value: "90"}
+            ]
+        }
+        search: "random search term"
+    ) {
+        pageInfo {
+            hasNextPage
+            hasPreviousPage
+            startCursor
+            endCursor
+        }
+        edges {
+            cursor
+            node {
+                username
+                lastname
+                id
+                haircolor
+                bio
+            }
+        }
     }
-    edges {
-      cursor
-      node {
-        username
-        lastname
-        id
-        haircolor
-        bio
-      }
-    }
-  }
 }
 ```
 
 ```graphql
 query {
-  users(
-    first: 10,
-    after: "eyJmaXJzdFJlc3VsdElkIjoxOTk5MiwibGFzdFJlc3VsdE"
-  ) {
-    pageInfo {
-      hasNextPage
-      hasPreviousPage
+    users(first: 10, after: "eyJmaXJzdFJlc3VsdElkIjoxOTk5MiwibGFzdFJlc3VsdE") {
+        pageInfo {
+            hasNextPage
+            hasPreviousPage
+        }
+        edges {
+            cursor
+            node {
+                username
+                lastname
+                id
+                haircolor
+                bio
+            }
+        }
     }
-    edges {
-      cursor
-      node {
-        username
-        lastname
-        id
-        haircolor
-        bio
-      }
-    }
-  }
 }
 ```
 
@@ -217,16 +213,16 @@ At the very least you should add `Before`, `After` and `First`, `Last` because t
 
 ```graphql
 type Query {
-  users(
-      first: First
-      last: Last
-      orderBy: OrderBy
-      orderDir: OrderDir
-      before: Before
-      after: After
-      filter: Filter
-      search: Search
-  ): QueryUsersConnection
+    users(
+        first: First
+        last: Last
+        orderBy: OrderBy
+        orderDir: OrderDir
+        before: Before
+        after: After
+        filter: Filter
+        search: Search
+    ): QueryUsersConnection
 }
 ```
 
@@ -334,15 +330,13 @@ import {ConnectionManager, INode} from 'graphql-connections';
 
 const resolver = async (obj, inputArgs) => {
     // create a new node connection instance
-    const nodeConnection = new ConnectionManager<
-        INode,
-    >(inputArgs, attributeMap);
+    const nodeConnection = new ConnectionManager<INode>(inputArgs, attributeMap);
 
     // apply the connection to the queryBuilder
     const appliedQuery = nodeConnection.createQuery(queryBuilder.clone());
 
     // run the query
-    const result = await appliedQuery.select()
+    const result = await appliedQuery.select();
 
     // add the result to the nodeConnection
     nodeConnection.addResult(result);
@@ -352,7 +346,7 @@ const resolver = async (obj, inputArgs) => {
         pageInfo: nodeConnection.pageInfo,
         edges: nodeConnection.edges
     };
-}
+};
 ```
 
 types:
@@ -383,7 +377,7 @@ interface IInAttributeMap {
 interface INodeConnection {
   createQuery: (KnexQueryBuilder) => KnexQueryBuilder
   addResult: (KnexQueryResult) => void
-  pageInfo?: IPageInfo 
+  pageInfo?: IPageInfo
   edges?: IEdge[]
 
 interface IPageInfo: {
@@ -392,9 +386,9 @@ interface IPageInfo: {
   startCursor: string
   endCursor: string
 }
-  
+
 interface IEdge {
-  cursor: string; 
+  cursor: string;
   node: INode
 }
 ```
@@ -406,10 +400,10 @@ All types can be found in [src/types.ts](./src/types.ts)
 A `nodeConnection` is used to handle connections.
 
 To use a `nodeConnection` you will have to:
- 1. initialize the nodeConnection
- 2. build the connection query
- 3.  build the connection from the executed query
 
+1.  initialize the nodeConnection
+2.  build the connection query
+3.  build the connection from the executed query
 
 #### 1. Initialize the `nodeConnection`
 
@@ -419,7 +413,7 @@ To correctly initialize, you will need to supply a `Node` type, the `inputArgs` 
 
 The nodes that are part of a connection need a type. The returned edges will contain nodes of this type.
 
- For example, in this case we create an `IUserNode`
+For example, in this case we create an `IUserNode`
 
 ```typescript
 interface IUserNode extends INode {
@@ -439,7 +433,7 @@ interface IInputArgs {
     first?: number; // page size
     last?: number; // page size
     orderBy?: string; // order by a node field
-    orderDir: 'asc' | 'desc'
+    orderDir: 'asc' | 'desc';
     filter?: IOperationFilter;
 }
 
@@ -462,46 +456,52 @@ An example query with a filter could look like:
 
 ```graphql
 query {
-  users(filter:  { 
-      or: [
-        { field: "age", operator: "=", value: "40"},
-        { field: "age", operator: "<", value: "30"},
-        { and: [
-          { field: "haircolor", operator: "=", value: "blue"},
-          { field: "age", operator: "=", value: "70"},
-          { or: [
-            { field: "username", operator: "=", value: "Ellie86"},
-            { field: "username", operator: "=", value: "Euna_Oberbrunner"},
-          ]}
-        ]},
-      ],
-    }) {
-    pageInfo {
-      hasNextPage
-      hasPreviousPage
+    users(
+        filter: {
+            or: [
+                {field: "age", operator: "=", value: "40"}
+                {field: "age", operator: "<", value: "30"}
+                {
+                    and: [
+                        {field: "haircolor", operator: "=", value: "blue"}
+                        {field: "age", operator: "=", value: "70"}
+                        {
+                            or: [
+                                {field: "username", operator: "=", value: "Ellie86"}
+                                {field: "username", operator: "=", value: "Euna_Oberbrunner"}
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ) {
+        pageInfo {
+            hasNextPage
+            hasPreviousPage
+        }
+        edges {
+            cursor
+            node {
+                id
+                age
+                haircolor
+                lastname
+                username
+            }
+        }
     }
-    edges {
-      cursor
-      node {
-        id
-        age
-        haircolor
-        lastname
-        username
-      }
-    }
-  }
 }
 ```
 
 This would yield a sql query equivalent to:
 
 ```sql
-  SELECT * 
-    FROM `mock` 
-   WHERE `age` = '40' OR `age` < '30' OR (`haircolor` = 'blue' AND `age` = '70' AND (`username` = 'Ellie86' OR `username` = 'Euna_Oberbrunner')) 
-ORDER BY `id` 
-     ASC 
+  SELECT *
+    FROM `mock`
+   WHERE `age` = '40' OR `age` < '30' OR (`haircolor` = 'blue' AND `age` = '70' AND (`username` = 'Ellie86' OR `username` = 'Euna_Oberbrunner'))
+ORDER BY `id`
+     ASC
    LIMIT 1001
 ```
 
@@ -511,16 +511,16 @@ ORDER BY `id`
 
 Only fields defined in the attribute map can be `orderBy` or `filtered` on. An error will be thrown if you try to filter on fields that don't exist in the map.
 
- ex:
+ex:
 
- ```typescript
+```typescript
 const attributeMap = {
     id: 'id',
     createdAt: 'created_at'
 };
 ```
 
-#### 2. build the query query
+#### 2. build the query
 
 ```typescript
 // import the manager and relevant types
@@ -582,7 +582,7 @@ const resolver = async (obj, inputArgs) => {
 You can supply options to the `ConnectionManager` via the third parameter. Options are used to customize the `QueryContext`, the `QueryBuilder`, and the `QueryResult` classes.
 
 ```typescript
-    const options = { 
+    const options = {
       contextOptions: { ... }
       resultOptions: { ... }
       builderOptions: { ... }
@@ -597,7 +597,7 @@ Currently, the options are:
 ##### defaultLimit
 
 ```typescript
-number
+number;
 ```
 
 The default limit (page size) if none is specified in the `page` input params
@@ -616,7 +616,7 @@ interface ICursorEncoder<CursorObj> {
 ##### filterTransformer
 
 ```typescript
-type filterTransformer = (filter: IFilter) => IFilter
+type filterTransformer = (filter: IFilter) => IFilter;
 ```
 
 The filter transformer will will be called on every filter `{ field: string, operator: string, value: string}`
@@ -627,7 +627,7 @@ It can be used to transform a filter before being applied to the query. This is 
 
 ```typescript
 interface IFilterMap {
-  [operator: string]: string
+    [operator: string]: string;
 }
 ```
 
@@ -661,7 +661,7 @@ searchColumns: string[]
 Used with full text `Search` input. It is an array of column names that will be used in the full text search sql expression `MATCH (col1,col2,...) AGAINST (expr [search_modifier])`
 
 ```typescript
-searchColumns: string
+searchColumns: string;
 ```
 
 The values will likely be one of:
@@ -704,17 +704,17 @@ interface IQueryBuilder<Builder> {
 
 ## Architecture
 
-Internally, the `ConnectionManager` manages the orchestration of the `QueryContext`, `QueryBuilder`, and `QueryResult`. 
+Internally, the `ConnectionManager` manages the orchestration of the `QueryContext`, `QueryBuilder`, and `QueryResult`.
 
 The orchestration follows the steps:
 
-1. The `QueryContext` extracts the connection attributes from the input connection arguments. 
-2. The `QueryBuilder` (or `KnexQueryBuilder` in the default case) consumes the connection attributes and builds a query. The query is submitted to the database by the user and the result is sent to the `QueryResult`. 
+1. The `QueryContext` extracts the connection attributes from the input connection arguments.
+2. The `QueryBuilder` (or `KnexQueryBuilder` in the default case) consumes the connection attributes and builds a query. The query is submitted to the database by the user and the result is sent to the `QueryResult`.
 3. The `QueryResult` uses the result to build the `edges` (which contain a `cursor` and `node`) and extract the `page info`.
 
 This can be visualized as such:
 
-![Image of Architecture](https://docs.google.com/drawings/d/e/2PACX-1vRwtC2UiFwLXFDbmBNoq_6bD1YTyACV49SWHxfj2ce_K5T_XEZYlgGP7ntbcskoMVWqXp5C2Uj-K7Jj/pub?w=1163&amp;h=719)
+![Image of Architecture](https://docs.google.com/drawings/d/e/2PACX-1vRwtC2UiFwLXFDbmBNoq_6bD1YTyACV49SWHxfj2ce_K5T_XEZYlgGP7ntbcskoMVWqXp5C2Uj-K7Jj/pub?w=1163&h=719)
 
 ## Search
 
@@ -751,4 +751,75 @@ return {
     pageInfo: nodeConnection.pageInfo,
     edges: nodeConnection.edges
 };
+```
+
+## Filtering on computed columns
+
+Sometimes you may compute a field that depends on some other table than the one being paged over. In this case, you can use a derived table as your `from` and alias it to the primary table. In the following example we create a derived alias of "segment", the table we are paging over, to allow filtering and sorting on "popularity", a field computed on the aggregation of values from another table.
+
+```ts
+import {Resolver} from 'types/resolver';
+import {ISegmentNode} from 'types/graphql';
+import {segment as segmentTransformer} from 'transformers/sql_to_graphql';
+import {IQueryResult, IInputArgs, ConnectionManager} from 'graphql-connections';
+
+const attributeMap = {
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
+    name: 'name',
+    explorer: 'explorer_id',
+    popularity: 'popularity'
+};
+
+const segments: Resolver<Promise<IQueryResult<ISegmentNode>>, undefined, IInputArgs> = async (
+    _,
+    input: IInputArgs,
+    ctx
+) => {
+    const {connection} = ctx.clients.sqlClient;
+
+    const queryBuilder = connection.queryBuilder().from(
+        connection.raw(
+            `(
+            select
+                segment.*,
+                coalesce(sum(user_segment.usage_count), 0) as popularity
+            from segment
+                     left join user_segment on user_segment.segment_id = segment.id
+            group by
+                segment.id
+        ) as segment`
+        )
+    );
+
+    const nodeConnection = new ConnectionManager<ISegmentNode>(input, attributeMap, {
+        builderOptions: {
+            filterTransformer(filter) {
+                if (filter.field === 'popularity') {
+                    return {
+                        field: 'popularity',
+                        operator: filter.operator,
+                        value: Number(filter.value) as any
+                    };
+                }
+
+                return filter;
+            }
+        },
+        resultOptions: {
+            nodeTransformer: segmentTransformer
+        }
+    });
+
+    const query = nodeConnection.createQuery(queryBuilder).select('*');
+
+    nodeConnection.addResult(await query);
+
+    return {
+        pageInfo: nodeConnection.pageInfo,
+        edges: nodeConnection.edges
+    };
+};
+
+export default segments;
 ```

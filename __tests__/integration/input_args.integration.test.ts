@@ -392,4 +392,30 @@ describe('Input args with', () => {
             expect(edges.length).toBe(0);
         });
     });
+
+    describe('Numeric and numeric string filters', () => {
+        it('Can be handled properly', async () => {
+            const filter = {
+                or: [
+                    {field: 'age', value: 41, operator: '='},
+                    {field: 'age', value: 31, operator: '='},
+                    {
+                        and: [
+                            {field: 'haircolor', value: 'gray', operator: '='},
+                            {field: 'age', value: 70, operator: '>'},
+                            {
+                                not: [{field: 'age', value: '80', operator: '>'}]
+                            }
+                        ]
+                    }
+                ]
+            };
+            const {pageInfo, edges} = await createConnection({filter});
+
+            expect(pageInfo.hasNextPage).toBe(false);
+            expect(pageInfo.hasPreviousPage).toBe(false);
+            expect(edges.length).toBe(10);
+            expect(edges[0].node.id).toBe(9321);
+        });
+    });
 });

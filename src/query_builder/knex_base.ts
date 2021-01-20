@@ -118,10 +118,15 @@ export default class KnexQueryBuilder implements IQueryBuilder<Knex> {
     private filterArgs(filter: IFilter) {
         const transformedFilter = this.filterTransformer(filter);
 
+        const filterIsNullComparison =
+            transformedFilter.value === null ||
+            (typeof transformedFilter.value === 'string' &&
+                transformedFilter.value.toLowerCase() === 'null');
+
         if (
             this.useSuggestedValueLiteralTransforms &&
-            transformedFilter.operator.toLowerCase() === '=' &&
-            (transformedFilter.value === null || transformedFilter.value.toLowerCase() === 'null')
+            filterIsNullComparison &&
+            transformedFilter.operator.toLowerCase() === '='
         ) {
             return [
                 (builder: QueryBuilder) => {
@@ -132,8 +137,8 @@ export default class KnexQueryBuilder implements IQueryBuilder<Knex> {
 
         if (
             this.useSuggestedValueLiteralTransforms &&
-            transformedFilter.operator.toLowerCase() === '<>' &&
-            (transformedFilter.value === null || transformedFilter.value.toLowerCase() === 'null')
+            filterIsNullComparison &&
+            transformedFilter.operator.toLowerCase() === '<>'
         ) {
             return [
                 (builder: QueryBuilder) => {

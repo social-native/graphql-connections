@@ -28,7 +28,7 @@ const coerceIntString = (value: number | string) => {
     return String(value);
 };
 
-const IntString = new GraphQLScalarType({
+const intString = new GraphQLScalarType({
     name: 'IntString',
     serialize: coerceIntString,
     parseValue: coerceIntString,
@@ -71,7 +71,7 @@ const filterScalar = new GraphQLInputObjectType({
                 type: GraphQLString
             },
             value: {
-                type: IntString
+                type: intString
             }
         };
     }

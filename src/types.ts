@@ -3,7 +3,7 @@ import {ORDER_DIRECTION} from './enums';
 export interface IFilter {
     value: string;
     operator: string;
-    field: string;
+    field: string | number | null;
 }
 
 export interface ICompoundFilter {

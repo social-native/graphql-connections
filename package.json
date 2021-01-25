@@ -61,6 +61,7 @@
         "graphql-tools": "^4.0.4"
     },
     "devDependencies": {
+        "@social-native/snpkg-generate-config-ci": "^6.2.0",
         "@types/dotenv": "^6.1.1",
         "@types/faker": "^4.1.5",
         "@types/graphql": "^14.0.7",

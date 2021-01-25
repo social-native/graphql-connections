@@ -1,0 +1,50 @@
+name: Publish To Registries
+
+on:
+    pull_request:
+        types: closed
+
+jobs:
+    build-and-publish:
+        name: Build js bundle and publish to NPM and Github registries
+        if: github.event.pull_request.merged
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v2
+
+            - name: Use Node.js 12.x
+              uses: actions/setup-node@v1
+              with:
+                  node-version: '12.x'
+                  registry-url: 'https://registry.npmjs.org'
+
+            - name: Install NPM dependencies
+              # ignore scripts b/c they could steal NODE_AUTH_TOKEN.
+              run: npm ci --ignore-scripts
+              env:
+                  NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+            - name: Run build
+              run: npm run build
+
+            # NPM
+            - name: Setup node with NPM
+              uses: actions/setup-node@v1
+              with:
+                  node-version: '12.x'
+                  registry-url: https://registry.npmjs.org/
+            - name: Publish to NPM
+              run: npm publish
+              env:
+                  NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+            # Github
+            - name: Setup node with Github
+              uses: actions/setup-node@v1
+              with:
+                  node-version: '12.x'
+                  registry-url: 'https://npm.pkg.github.com'
+            - name: Publish to Github
+              run: npm publish
+              env:
+                  NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

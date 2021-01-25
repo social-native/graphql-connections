@@ -74,3 +74,6 @@ tmp
 
 dist
 .DS_Store
+
+#webstorm
+.idea

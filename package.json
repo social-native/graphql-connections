@@ -33,7 +33,8 @@
         "seed:mysql:run": "npm run knex:mysql seed:run",
         "migrate:mysql:make": "npm run knex:mysql migrate:make",
         "migrate:mysql:latest": "npm run knex:mysql migrate:latest",
-        "migrate:mysql:rollback": "npm run knex:mysql migrate:rollback"
+        "migrate:mysql:rollback": "npm run knex:mysql migrate:rollback",
+        "package-version-validation": "snpkg-package-version-validation package-version-validation"
     },
     "repository": {
         "type": "git",
@@ -62,6 +63,7 @@
     },
     "devDependencies": {
         "@social-native/snpkg-generate-config-ci": "^6.2.0",
+        "@social-native/snpkg-package-version-validation": "^3.3.1",
         "@types/dotenv": "^6.1.1",
         "@types/faker": "^4.1.5",
         "@types/graphql": "^14.0.7",

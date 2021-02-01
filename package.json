@@ -56,7 +56,7 @@
     },
     "homepage": "https://github.com/social-native/graphql-connections#readme",
     "dependencies": {
-        "knex": "0.20.13",
+        "knex": "0.21.17",
         "graphql": "14.7.0",
         "graphql-tools": "^4.0.4"
     },

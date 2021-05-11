@@ -58,7 +58,7 @@
     "dependencies": {
         "knex": "0.20.13",
         "graphql": "14.7.0",
-        "graphql-tools": "^4.0.4"
+        "graphql-tools": "^7.0.5"
     },
     "devDependencies": {
         "@types/dotenv": "^6.1.1",

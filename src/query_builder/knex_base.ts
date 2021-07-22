@@ -8,6 +8,7 @@ import {
     IInputFilter,
     IFilter
 } from '../types';
+import {coerceStringValue} from '../coerce_string_value';
 
 /**
  * KnexQueryBuilder
@@ -119,7 +120,7 @@ export default class KnexQueryBuilder implements IQueryBuilder<Knex> {
         const {field, operator, value} = this.filterTransformer(filter);
 
         if (this.useSuggestedValueLiteralTransforms) {
-            const coercedValue = typeof value === 'string' ? this.coerceStringValue(value) : value;
+            const coercedValue = typeof value === 'string' ? coerceStringValue(value) : value;
 
             if (coercedValue === null && operator.toLowerCase() === '=') {
                 return [
@@ -145,29 +146,6 @@ export default class KnexQueryBuilder implements IQueryBuilder<Knex> {
         }
 
         return [this.computeFilterField(field), this.computeFilterOperator(operator), value];
-    }
-
-    // tslint:disable-next-line: cyclomatic-complexity
-    private coerceStringValue(value: string) {
-        if (!isNaN(parseInt(value, 10))) {
-            const parsed = parseInt(value, 10);
-
-            return parsed;
-        }
-
-        if (!isNaN(parseFloat(value))) {
-            return parseFloat(value);
-        }
-
-        if (['true', 'false'].includes(value.toLowerCase())) {
-            return value === 'true';
-        }
-
-        if (value.toLowerCase() === 'null') {
-            return null;
-        }
-
-        return value;
     }
 
     private addFilterRecursively(filter: IInputFilter, queryBuilder: Knex) {

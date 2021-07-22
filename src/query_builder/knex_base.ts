@@ -116,42 +116,58 @@ export default class KnexQueryBuilder implements IQueryBuilder<Knex> {
     // [string, string, string | number | null]
     // tslint:disable-next-line: cyclomatic-complexity
     private filterArgs(filter: IFilter) {
-        const transformedFilter = this.filterTransformer(filter);
+        const {field, operator, value} = this.filterTransformer(filter);
 
-        const filterIsNullComparison =
-            transformedFilter.value === null ||
-            (typeof transformedFilter.value === 'string' &&
-                transformedFilter.value.toLowerCase() === 'null');
+        if (this.useSuggestedValueLiteralTransforms) {
+            const coercedValue = typeof value === 'string' ? this.coerceStringValue(value) : value;
 
-        if (
-            this.useSuggestedValueLiteralTransforms &&
-            filterIsNullComparison &&
-            transformedFilter.operator.toLowerCase() === '='
-        ) {
+            if (coercedValue === null && operator.toLowerCase() === '=') {
+                return [
+                    (builder: QueryBuilder) => {
+                        builder.whereNull(this.computeFilterField(field));
+                    }
+                ];
+            }
+
+            if (coercedValue === null && operator.toLowerCase() === '<>') {
+                return [
+                    (builder: QueryBuilder) => {
+                        builder.whereNotNull(this.computeFilterField(field));
+                    }
+                ];
+            }
+
             return [
-                (builder: QueryBuilder) => {
-                    builder.whereNull(this.computeFilterField(transformedFilter.field));
-                }
+                this.computeFilterField(field),
+                this.computeFilterOperator(operator),
+                coercedValue
             ];
         }
 
-        if (
-            this.useSuggestedValueLiteralTransforms &&
-            filterIsNullComparison &&
-            transformedFilter.operator.toLowerCase() === '<>'
-        ) {
-            return [
-                (builder: QueryBuilder) => {
-                    builder.whereNotNull(this.computeFilterField(transformedFilter.field));
-                }
-            ];
+        return [this.computeFilterField(field), this.computeFilterOperator(operator), value];
+    }
+
+    // tslint:disable-next-line: cyclomatic-complexity
+    private coerceStringValue(value: string) {
+        if (!isNaN(parseInt(value, 10))) {
+            const parsed = parseInt(value, 10);
+
+            return parsed;
         }
 
-        return [
-            this.computeFilterField(transformedFilter.field),
-            this.computeFilterOperator(transformedFilter.operator),
-            transformedFilter.value
-        ];
+        if (!isNaN(parseFloat(value))) {
+            return parseFloat(value);
+        }
+
+        if (['true', 'false'].includes(value.toLowerCase())) {
+            return value === 'true';
+        }
+
+        if (value.toLowerCase() === 'null') {
+            return null;
+        }
+
+        return value;
     }
 
     private addFilterRecursively(filter: IInputFilter, queryBuilder: Knex) {
@@ -196,10 +212,15 @@ export default class KnexQueryBuilder implements IQueryBuilder<Knex> {
 }
 
 const isFilter = (filter: IInputFilter): filter is IFilter => {
+    if (!filter) {
+        return false;
+    }
+
+    const asIFilter = filter as IFilter;
+
     return (
-        !!filter &&
-        !!(filter as IFilter).field &&
-        !!(filter as IFilter).operator &&
-        !!(filter as IFilter).value
+        asIFilter.field !== undefined &&
+        asIFilter.operator !== undefined &&
+        asIFilter.value !== undefined
     );
 };

@@ -6,6 +6,7 @@ export interface IUserNode {
     age: number;
     haircolor: string;
     bio: string;
+    isPetOwner: boolean;
 }
 
 export type KnexQueryResult = Array<{[attributeName: string]: any}>;

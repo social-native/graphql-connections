@@ -1,6 +1,6 @@
 import knex from 'knex';
-import {ConnectionManager, IInputArgs} from '../../src';
-import {IUserNode, KnexQueryResult} from '../types';
+import {ConnectionManager, IFilter, IInputArgs} from '../../src';
+import {KnexQueryResult} from '../types';
 import {rejectionOf, validateFieldIsOrderedAlphabetically} from '../utils';
 import {test as testConfig} from '../../knexfile.sqlite';
 const knexClient = knex(testConfig);
@@ -12,18 +12,38 @@ const attributeMap = {
     age: 'age',
     haircolor: 'haircolor',
     lastname: 'lastname',
-    bio: 'bio'
+    bio: 'bio',
+    isPetOwner: 'is_pet_owner'
 };
 
 const createConnection = async (inputArgs: IInputArgs) => {
     const queryBuilder = knexClient.queryBuilder().from('mock');
-    const connection = new ConnectionManager<IUserNode>(inputArgs, attributeMap);
+    const connection = new ConnectionManager<{
+        id: number;
+        username?: string;
+        firstname?: string;
+        age?: number;
+        haircolor?: string;
+        lastname?: string;
+        bio?: string;
+        is_pet_owner: 0 | 1;
+    }>(inputArgs, attributeMap);
+
     connection.createQuery(queryBuilder);
     const sql = queryBuilder.toString();
-    const result = ((await queryBuilder.select()) || []) as KnexQueryResult;
+    const result: KnexQueryResult = await queryBuilder;
     connection.addResult(result);
     const pageInfo = connection.pageInfo;
-    const edges = connection.edges;
+    const edges = connection.edges.map(edge => {
+        return {
+            ...edge,
+            node: {
+                ...edge.node,
+                isPetOwner: edge.node.is_pet_owner === 1
+            }
+        };
+    });
+
     return {pageInfo, edges, sql};
 };
 
@@ -416,6 +436,60 @@ describe('Input args with', () => {
             expect(pageInfo.hasPreviousPage).toBe(false);
             expect(edges.length).toBe(10);
             expect(edges[0].node.id).toBe(9321);
+        });
+    });
+
+    describe('Boolean and boolean string filters', function() {
+        it('Can handle a stringified boolean', async () => {
+            const falseFilter: IFilter = {
+                field: 'isPetOwner',
+                operator: '=',
+                value: 'false'
+            };
+
+            const {edges: falseEdges} = await createConnection({filter: falseFilter});
+
+            for (const edge of falseEdges) {
+                expect(edge.node.isPetOwner).toBe(false);
+            }
+
+            const trueFilter: IFilter = {
+                field: 'isPetOwner',
+                operator: '=',
+                value: 'true'
+            };
+
+            const {edges: trueEdges} = await createConnection({filter: trueFilter});
+
+            for (const edge of trueEdges) {
+                expect(edge.node.isPetOwner).toBe(true);
+            }
+        });
+
+        it.only('Can handle a boolean value', async () => {
+            const falseFilter: IFilter = {
+                field: 'isPetOwner',
+                operator: '=',
+                value: false
+            };
+
+            const {edges: falseEdges} = await createConnection({filter: falseFilter});
+
+            for (const edge of falseEdges) {
+                expect(edge.node.isPetOwner).toBe(false);
+            }
+
+            const trueFilter: IFilter = {
+                field: 'isPetOwner',
+                operator: '=',
+                value: true
+            };
+
+            const {edges: trueEdges} = await createConnection({filter: trueFilter});
+
+            for (const edge of trueEdges) {
+                expect(edge.node.isPetOwner).toBe(true);
+            }
         });
     });
 });

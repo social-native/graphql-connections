@@ -1,5 +1,5 @@
 import Koa from 'koa';
-import {ApolloServer, gql, IResolvers} from 'apollo-server-koa';
+import {ApolloServer, gql} from 'apollo-server-koa';
 import knex from 'knex';
 import {ConnectionManager, IInputArgs} from '../src';
 import {test as testConfig} from '../knexfile.sqlite';
@@ -19,6 +19,7 @@ const typeDefs = gql`
         bio: String
         age: Int
         haircolor: String
+        isPetOwner: Boolean!
     }
 
     type QueryUserConnection implements IConnection {
@@ -52,6 +53,7 @@ interface IUserNode {
     age: number;
     haircolor: string;
     bio: string;
+    isPetOwner: boolean;
 }
 
 type KnexQueryResult = Array<{[attributeName: string]: any}>;
@@ -60,7 +62,7 @@ type KnexQueryResult = Array<{[attributeName: string]: any}>;
 const resolvers = {
     ...connectionResolvers,
     Query: {
-        async users(_: any, {input: inputArgs}: {input: IInputArgs}) {
+        async users(_: any, input: IInputArgs) {
             const queryBuilder = knexClient.from('mock');
             // maps node types to sql column names
             const attributeMap = {
@@ -70,10 +72,20 @@ const resolvers = {
                 age: 'age',
                 haircolor: 'haircolor',
                 lastname: 'lastname',
-                bio: 'bio'
+                bio: 'bio',
+                isPetOwner: 'is_pet_owner'
             };
 
-            const nodeConnection = new ConnectionManager<IUserNode>(inputArgs, attributeMap);
+            const nodeConnection = new ConnectionManager<IUserNode>(input, attributeMap, {
+                resultOptions: {
+                    nodeTransformer: node => {
+                        return {
+                            ...node,
+                            isPetOwner: node.is_pet_owner
+                        };
+                    }
+                }
+            });
 
             const query = nodeConnection.createQuery(queryBuilder.clone()).select();
             const result = (await query) as KnexQueryResult;
@@ -96,7 +108,7 @@ const resolvers = {
             return null;
         }
     }
-} as IResolvers;
+};
 
 const appProvider = () => {
     const allTypeDefs = gql`
@@ -108,7 +120,10 @@ const appProvider = () => {
         resolvers
     });
     const app = new Koa();
-    server.applyMiddleware({app});
+    server.start().then(() => {
+        server.applyMiddleware({app});
+    });
+
     return app;
 };
 

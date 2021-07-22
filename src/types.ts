@@ -1,7 +1,7 @@
 import {ORDER_DIRECTION} from './enums';
 
 export interface IFilter {
-    value: string | number | null;
+    value: string | boolean | number | null;
     operator: string;
     field: string;
 }

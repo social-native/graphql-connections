@@ -116,10 +116,10 @@ Object.keys(haircolorCount).forEach(haircolor => {
             .fill(undefined)
             .map(() => {
                 takeItemFromArray(haircolor, haircolorsUniqueData);
-                takeItemFromArray(+age, agesUniqueData);
+                takeItemFromArray(age, agesUniqueData);
                 return {
                     haircolor,
-                    age: +age
+                    age
                 };
             });
 
@@ -193,7 +193,7 @@ console.log('ages:         ', agesUniqueData.length, '     ', agesRandomData.len
 console.log('haircolors:   ', haircolorsUniqueData.length, '     ', haircolorsRandomData.length);
 console.log('lastnames:   ', lastnamesUniqueData.length, '     ', lastnamesRandomData.length);
 
-const takeRandomElement = (array: string[]) => {
+const takeRandomElement = (array: any[]) => {
     const index = Math.floor(Math.random() * array.length);
     const item = array[index];
     if (index !== -1) {
@@ -216,7 +216,8 @@ const finalCaseA = caseA.map(({haircolor, age}) => ({
     username: takeRandomElement(usernames),
     firstname: takeRandomElement(firstnames),
     lastname: takeRandomElement(lastnames),
-    bio: takeRandomElement(bios)
+    bio: takeRandomElement(bios),
+    is_pet_owner: true
 }));
 
 const finalCaseB = caseB.map(({haircolor, age, firstname}) => ({
@@ -225,7 +226,8 @@ const finalCaseB = caseB.map(({haircolor, age, firstname}) => ({
     firstname,
     username: takeRandomElement(usernames),
     lastname: takeRandomElement(lastnames),
-    bio: takeRandomElement(bios)
+    bio: takeRandomElement(bios),
+    is_pet_owner: false
 }));
 
 const updatedAt = new Date(1546347661000);
@@ -236,7 +238,8 @@ const finalCaseC = caseC.map(({haircolor, age, firstname, lastname}) => ({
     firstname,
     lastname,
     username: takeRandomElement(usernames),
-    bio: takeRandomElement(bios)
+    bio: takeRandomElement(bios),
+    is_pet_owner: false
 }));
 
 const remainingRows = Array(usernames.length)
@@ -247,7 +250,8 @@ const remainingRows = Array(usernames.length)
         username: takeRandomElement(usernames),
         firstname: takeRandomElement(firstnames),
         lastname: takeRandomElement(lastnames),
-        bio: takeRandomElement(bios)
+        bio: takeRandomElement(bios),
+        is_pet_owner: false
     }));
 
 const rows = [...finalCaseA, ...finalCaseB, ...finalCaseC, ...remainingRows];

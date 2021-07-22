@@ -14,6 +14,14 @@ describe('coerceStringValue', function() {
         }
     });
 
+    it('does not use auto trimming to coerce string to number', function() {
+        expect(coerceStringValue('1.24 cows')).toEqual('1.24 cows');
+    });
+
+    it('ignores empty strings', function() {
+        expect(coerceStringValue('')).toEqual('');
+    });
+
     it('coerces float strings', function() {
         expect(coerceStringValue('1.22334')).toEqual(1.22334);
     });

@@ -69,18 +69,20 @@ export default (typeName: string, inputTypes: GraphQLInputObjectType[], descript
             /**
              * Determine if the scalar provided is a compound (or, and)
              * or plain filter scalar (field, operator, value)
+             * AND it must only have one of these present in the object root.
              */
-            const isCompoundFilterScalar = ast.fields.reduce((acc, field) => {
-                if (acc) {
+            const isCompoundFilterScalar =
+                ast.fields.reduce((acc, field) => {
+                    if (acc) {
+                        return acc;
+                    }
+
+                    if (['or', 'and', 'not'].includes(field.name.value.toLowerCase())) {
+                        return true;
+                    }
+
                     return acc;
-                }
-
-                if (['or', 'and', 'not'].includes(field.name.value.toLowerCase())) {
-                    return true;
-                }
-
-                return acc;
-            }, false);
+                }, false) && ast.fields.length === 1;
 
             /** Determine if it is a filter scalar. */
             const filterScalarFields = ast.fields

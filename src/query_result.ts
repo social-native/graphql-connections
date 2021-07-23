@@ -6,7 +6,7 @@ import {
     NodeTransformer,
     IQueryResultOptions
 } from './types';
-import {CursorEncoder} from './index';
+import CursorEncoder from './cursor_encoder';
 
 /**
  * QueryResult

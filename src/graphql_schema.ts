@@ -1,3 +1,5 @@
+// tslint:disable: cyclomatic-complexity
+
 import {
     GraphQLInputObjectType,
     GraphQLList,
@@ -9,38 +11,35 @@ import {
 
 import InputUnionType from './input_union_type';
 
-const MAX_INT = 2147483647;
-const MIN_INT = -2147483648;
-const coerceIntString = (value: number | string) => {
-    if (Array.isArray(value)) {
-        throw new TypeError(`IntString cannot represent an array value: [${String(value)}]`);
-    }
-    if (Number.isInteger(value)) {
-        if (value < MIN_INT || value > MAX_INT) {
-            throw new TypeError(
-                `Value is integer but outside of valid range for 32-bit signed integer: ${String(
-                    value
-                )}`
-            );
-        }
-        return value;
-    }
-    return String(value);
-};
-
 /** @see https://stackoverflow.com/a/49911974 */
-const intString = new GraphQLScalarType({
-    name: 'IntString',
-    serialize: coerceIntString,
-    parseValue: coerceIntString,
+// tslint:disable-next-line: variable-name
+const FilterValue = new GraphQLScalarType({
+    name: 'FilterValue',
+    serialize: value => value,
+    /**
+     * `parseValue` controls what is seen by the resolver.
+     */
+    parseValue: value => value,
+    /**
+     * `parseLiteral` inputs the AST and returns the parsed value of the type.
+     */
     parseLiteral(ast) {
-        if (ast.kind === Kind.INT) {
-            return coerceIntString(parseInt(ast.value, 10));
+        if (ast.kind === Kind.NULL) {
+            return null;
         }
-        if (ast.kind === Kind.STRING) {
+
+        if (
+            ast.kind === Kind.INT ||
+            ast.kind === Kind.FLOAT ||
+            ast.kind === Kind.BOOLEAN ||
+            ast.kind === Kind.STRING
+        ) {
             return ast.value;
         }
-        return undefined;
+
+        throw new Error(
+            'An invalid type was given for filter value. Must be either Int, Float, Boolean, Null, or String.'
+        );
     }
 });
 
@@ -72,7 +71,7 @@ const filterScalar = new GraphQLInputObjectType({
                 type: GraphQLString
             },
             value: {
-                type: intString
+                type: FilterValue
             }
         };
     }
@@ -238,3 +237,5 @@ const gqlTypes = {
 };
 
 export {typeDefs, resolvers, gqlTypes};
+
+// tslint:enable: cyclomatic-complexity

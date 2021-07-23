@@ -4,7 +4,6 @@
     "ignoreDirs": [],
     "ignoreMatches": [
         "faker",
-        "graphql-tools",
         "jest",
         "knex",
         "nodemon",

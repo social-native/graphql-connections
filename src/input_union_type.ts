@@ -1,11 +1,6 @@
-import {
-    GraphQLInputObjectType,
-    GraphQLScalarType,
-    isValidLiteralValue,
-    valueFromAST,
-    GraphQLError,
-    coerceValue
-} from 'graphql';
+import {GraphQLInputObjectType, GraphQLScalarType, valueFromAST, GraphQLError} from 'graphql';
+
+import {coerceInputValue} from 'graphql/utilities';
 
 const printInputType = (type: GraphQLInputObjectType) => {
     const fields = type.getFields();
@@ -36,11 +31,15 @@ export default (typeName: string, inputTypes: GraphQLInputObjectType[], descript
     return new GraphQLScalarType({
         name: typeName,
         description,
-        serialize: (value: any) => value,
+        serialize: (value: any) => String(value),
         parseValue: (value: any) => {
             const hasType = inputTypes.reduce((acc, t) => {
-                const result = coerceValue(value, t);
-                return result.errors && result.errors.length > 0 ? acc : true;
+                try {
+                    const result = coerceInputValue(value, t);
+                    return result.errors && result.errors.length > 0 ? acc : true;
+                } catch (error) {
+                    return acc;
+                }
             }, false);
 
             if (hasType) {
@@ -48,19 +47,88 @@ export default (typeName: string, inputTypes: GraphQLInputObjectType[], descript
             }
             throw generateInputTypeError(typeName, inputTypes);
         },
+        // tslint:disable-next-line: cyclomatic-complexity
         parseLiteral: ast => {
-            const inputType = inputTypes.reduce((acc: any, type) => {
-                const astClone = JSON.parse(JSON.stringify(ast));
-                try {
-                    return isValidLiteralValue(type, astClone).length === 0 ? type : acc;
-                } catch (e) {
-                    return acc;
-                }
-            }, undefined);
-            if (inputType) {
-                return valueFromAST(ast, inputType);
+            const compoundFilterScalarType = inputTypes.find(
+                type => type.name === 'CompoundFilterScalar'
+            );
+            const filterScalarType = inputTypes.find(type => type.name === 'FilterScalar');
+
+            if (!compoundFilterScalarType) {
+                throw new Error('Invalid input type provided');
             }
-            throw generateInputTypeError(typeName, inputTypes);
+
+            if (!filterScalarType) {
+                throw new Error('Invalid input type provided');
+            }
+
+            if (ast.kind !== 'ObjectValue') {
+                throw new Error('Invalid AST kind');
+            }
+
+            /**
+             * Determine if the scalar provided is a compound (or, and)
+             * or plain filter scalar (field, operator, value)
+             * AND it must only have one of these present in the object root.
+             */
+            const isCompoundFilterScalar =
+                ast.fields.reduce((acc, field) => {
+                    if (acc) {
+                        return acc;
+                    }
+
+                    if (['or', 'and', 'not'].includes(field.name.value.toLowerCase())) {
+                        return true;
+                    }
+
+                    return acc;
+                }, false) && ast.fields.length === 1;
+
+            /** Determine if it is a filter scalar. */
+            const filterScalarFields = ast.fields
+                .map(field => field.name.value.toLowerCase())
+                .reduce(
+                    (acc, fieldName) => {
+                        if (fieldName === 'field') {
+                            return {
+                                ...acc,
+                                hasField: true
+                            };
+                        }
+
+                        if (fieldName === 'operator') {
+                            return {
+                                ...acc,
+                                hasOperator: true
+                            };
+                        }
+
+                        if (fieldName === 'value') {
+                            return {
+                                ...acc,
+                                hasValue: true
+                            };
+                        }
+
+                        return acc;
+                    },
+                    {hasField: false, hasOperator: false, hasValue: false}
+                );
+
+            const isFilterScalar =
+                filterScalarFields.hasField &&
+                filterScalarFields.hasOperator &&
+                filterScalarFields.hasValue;
+
+            if (!isCompoundFilterScalar && !isFilterScalar) {
+                throw generateInputTypeError(typeName, inputTypes);
+            }
+
+            if (isCompoundFilterScalar) {
+                return valueFromAST(ast, compoundFilterScalarType);
+            } else {
+                return valueFromAST(ast, filterScalarType);
+            }
         }
-    }) as GraphQLScalarType;
+    });
 };

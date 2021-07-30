@@ -1,5 +1,4 @@
-import {DateTime} from 'luxon';
-import type {DateTimeOptions} from 'luxon';
+import {DateTime, DateTimeOptions} from 'luxon';
 import {FilterTransformer, IFilter} from './types';
 
 /**

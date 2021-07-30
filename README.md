@@ -624,6 +624,8 @@ The filter transformer will will be called on every filter `{ field: string, ope
 
 It can be used to transform a filter before being applied to the query. This is useful if you want to transform say UnixTimestamps to DateTime format, etc...
 
+See the [filter transformation section for more details](#filter-transformation).
+
 ##### filterMap
 
 ```typescript

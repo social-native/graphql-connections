@@ -19,7 +19,7 @@ function castUnixSecondsFiltersToMysqlTimestamps<T extends Record<string, unknow
 
             return {
                 ...filter,
-                value: DateTime.fromSeconds(filterValue).toSQL({
+                value: DateTime.fromSeconds(filterValue, {zone: 'UTC'}).toSQL({
                     includeOffset,
                     includeZone
                 })

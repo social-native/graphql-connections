@@ -17,7 +17,7 @@ describe('Filter Transformers', function() {
                 Object {
                   "field": "createdAt",
                   "operator": "=",
-                  "value": "2021-07-27 01:30:46.000",
+                  "value": "2021-07-27 08:30:46.000",
                 }
             `);
         });
@@ -48,7 +48,7 @@ describe('Filter Transformers', function() {
                 Object {
                   "field": "createdAt",
                   "operator": "=",
-                  "value": "2021-07-27 01:30:46.000",
+                  "value": "2021-07-27 08:30:46.000",
                 }
             `);
 
@@ -62,7 +62,7 @@ describe('Filter Transformers', function() {
                 Object {
                   "field": "updatedAt",
                   "operator": "=",
-                  "value": "2021-07-27 01:30:46.000",
+                  "value": "2021-07-27 08:30:46.000",
                 }
             `);
         });

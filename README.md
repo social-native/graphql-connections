@@ -832,10 +832,14 @@ Sometimes you may have a completely different data type in a filter from what is
 ```ts
 import {FilterTransformers} from 'graphql-connections';
 
-const timestampFilterTransformer = FilterTransformers.castUnixSecondsFiltersToMysqlTimestamps([
-    'createdAt',
-    'updatedAt'
-]);
+type SomeGraphQLNode = {
+    createdAt: string | number;
+    updatedAt: string | number;
+};
+
+const timestampFilterTransformer = FilterTransformers.castUnixSecondsFiltersToMysqlTimestamps<
+    SomeGraphQLNode
+>(['createdAt', 'updatedAt']);
 
 const nodeConnection = new ConnectionManager<GqlActualDistribution | null>(input, inAttributeMap, {
     builderOptions: {

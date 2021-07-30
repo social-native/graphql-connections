@@ -39,6 +39,9 @@
   - [Architecture](#architecture)
   - [Search](#search)
   - [Filtering on computed columns](#filtering-on-computed-columns)
+  - [Filter Transformation](#filter-transformation)
+    - [Filter Transformers provided by this library](#filter-transformers-provided-by-this-library)
+      - [FilterTransformers.castUnixSecondsFiltersToMysqlTimestamps](#filtertransformerscastunixsecondsfilterstomysqltimestamps)
 
 ## Install
 
@@ -623,6 +626,8 @@ The filter transformer will will be called on every filter `{ field: string, ope
 
 It can be used to transform a filter before being applied to the query. This is useful if you want to transform say UnixTimestamps to DateTime format, etc...
 
+See the [filter transformation section for more details](#filter-transformation).
+
 ##### filterMap
 
 ```typescript
@@ -823,3 +828,68 @@ const segments: Resolver<Promise<IQueryResult<ISegmentNode>>, undefined, IInputA
 
 export default segments;
 ```
+
+## Filter Transformation
+
+Sometimes you may have a completely different data type in a filter from what is actually in your database. At Social Native, for example, our graph exposes all timestamps as Unix Seconds, but in our databases, the `timestamp` type is used. In order to easily manage filter value transformation from seconds to sql timestamps, we use the `filterTransformer` option. In the following example, we use the library-provided `FilterTransformers.castUnixSecondsFiltersToMysqlTimestamps` which takes a list of field names that should be transformed from unix seconds to mysql timestamps, if they are present and not falsy.
+
+```ts
+import {FilterTransformers} from 'graphql-connections';
+
+type SomeGraphQLNode = {
+    createdAt: string | number;
+    updatedAt: string | number;
+};
+
+const timestampFilterTransformer = FilterTransformers.castUnixSecondsFiltersToMysqlTimestamps<
+    SomeGraphQLNode
+>(['createdAt', 'updatedAt']);
+
+const nodeConnection = new ConnectionManager<GqlActualDistribution | null>(input, inAttributeMap, {
+    builderOptions: {
+        filterTransformer: timestampFilterTransformer
+    },
+    resultOptions: {nodeTransformer: sqlToGraphql.actualDistribution}
+});
+```
+
+A `compose` function is also exposed to combine multiple transformers together. The following example composes a transformer on 'createdAt', 'updatedAt' with one on 'startedAt', 'completedAt', creating one that will cast if any of the four were given.
+
+```ts
+import {FilterTransformers} from 'graphql-connections';
+
+const timestampFilterTransformer = FilterTransformers.castUnixSecondsFiltersToMysqlTimestamps([
+    'createdAt',
+    'updatedAt'
+]);
+
+const nodeConnection = new ConnectionManager<GqlActualDistribution | null>(input, inAttributeMap, {
+    builderOptions: {
+        filterTransformer: FilterTransformers.compose(
+            timestampFilterTransformer,
+            FilterTransformers.castUnixSecondsFiltersToMysqlTimestamps(['startedAt', 'completedAt'])
+        )
+    },
+    resultOptions: {nodeTransformer: sqlToGraphql.actualDistribution}
+});
+```
+
+### Filter Transformers provided by this library
+
+#### FilterTransformers.castUnixSecondsFiltersToMysqlTimestamps
+
+`castUnixSecondsFiltersToMysqlTimestamps` takes four arguments
+
+```ts
+function castUnixSecondsFiltersToMysqlTimestamps<T extends Record<string, unknown>>(
+    filterFieldsToCast: Array<keyof T>,
+    timezone: DateTimeOptions['zone'] = 'UTC',
+    includeOffset = false,
+    includeZone = false
+): FilterTransformer;
+```
+
+`filterFieldsToCast` refers to the keys in a graphql node being filtered upon that will be transformed from unix seconds to MySQL timestamps.
+`timezone` is the expected timezone of the input seconds. **Default: UTC**
+`includeOffset` dictates whether the timestamp offset will be included in the generated timestamp **Default: false**
+`includeZone` dictates whether the timestamp's timezone will be included in the generated timestamp **Default: false**

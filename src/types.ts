@@ -14,6 +14,8 @@ export interface ICompoundFilter {
 
 export type IInputFilter = IFilter | ICompoundFilter;
 
+export type FilterTransformer = (filter: IFilter) => IFilter;
+
 export interface ICursorObj<PublicAttributes> {
     orderDir: keyof typeof ORDER_DIRECTION;
     orderBy: PublicAttributes;
@@ -77,13 +79,13 @@ export type QueryBuilderOptions = IKnexQueryBuilderOptions | IKnexMySQLQueryBuil
 
 export interface IKnexQueryBuilderOptions {
     filterMap?: {[operator: string]: string};
-    filterTransformer?: (filter: IFilter) => IFilter;
+    filterTransformer?: FilterTransformer;
     useSuggestedValueLiteralTransforms?: boolean;
 }
 
 export interface IKnexMySQLQueryBuilderOptions extends IKnexQueryBuilderOptions {
     filterMap?: {[operator: string]: string};
-    filterTransformer?: (filter: IFilter) => IFilter;
+    filterTransformer?: FilterTransformer;
     useSuggestedValueLiteralTransforms?: boolean;
     searchColumns?: string[];
     searchModifier?:

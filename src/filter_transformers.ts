@@ -1,9 +1,13 @@
 import {DateTime} from 'luxon';
+import type {DateTimeOptions} from 'luxon';
 import {FilterTransformer, IFilter} from './types';
 
-/** Given filter values in unix seconds, this will convert the filters to mysql timestamps. */
+/**
+ * Given filter values in unix seconds, this will convert the filters to mysql timestamps
+ */
 function castUnixSecondsFiltersToMysqlTimestamps<T extends Record<string, unknown>>(
     filterFieldsToCast: Array<keyof T>,
+    timezone: DateTimeOptions['zone'] = 'UTC',
     includeOffset = false,
     includeZone = false
 ): FilterTransformer {
@@ -19,7 +23,7 @@ function castUnixSecondsFiltersToMysqlTimestamps<T extends Record<string, unknow
 
             return {
                 ...filter,
-                value: DateTime.fromSeconds(filterValue, {zone: 'UTC'}).toSQL({
+                value: DateTime.fromSeconds(filterValue, {zone: timezone}).toSQL({
                     includeOffset,
                     includeZone
                 })

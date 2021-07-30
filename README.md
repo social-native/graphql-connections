@@ -40,6 +40,8 @@
   - [Search](#search)
   - [Filtering on computed columns](#filtering-on-computed-columns)
   - [Filter Transformation](#filter-transformation)
+    - [Filter Transformers provided by this library](#filter-transformers-provided-by-this-library)
+      - [FilterTransformers.castUnixSecondsFiltersToMysqlTimestamps](#filtertransformerscastunixsecondsfilterstomysqltimestamps)
 
 ## Install
 
@@ -871,3 +873,23 @@ const nodeConnection = new ConnectionManager<GqlActualDistribution | null>(input
     resultOptions: {nodeTransformer: sqlToGraphql.actualDistribution}
 });
 ```
+
+### Filter Transformers provided by this library
+
+#### FilterTransformers.castUnixSecondsFiltersToMysqlTimestamps
+
+`castUnixSecondsFiltersToMysqlTimestamps` takes four arguments
+
+```ts
+function castUnixSecondsFiltersToMysqlTimestamps<T extends Record<string, unknown>>(
+    filterFieldsToCast: Array<keyof T>,
+    timezone: DateTimeOptions['zone'] = 'UTC',
+    includeOffset = false,
+    includeZone = false
+): FilterTransformer;
+```
+
+`filterFieldsToCast` refers to the keys in a graphql node being filtered upon that will be transformed from unix seconds to MySQL timestamps.
+`timezone` is the expected timezone of the input seconds. **Default: UTC**
+`includeOffset` dictates whether the timestamp offset will be included in the generated timestamp **Default: false**
+`includeZone` dictates whether the timestamp's timezone will be included in the generated timestamp **Default: false**

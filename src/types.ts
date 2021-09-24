@@ -79,6 +79,10 @@ export type QueryBuilderOptions = IKnexQueryBuilderOptions | IKnexMySQLQueryBuil
 
 export interface IKnexQueryBuilderOptions {
     filterMap?: {[operator: string]: string};
+    /**
+     * If given with `useSuggestedValueLiteralTransforms`
+     * note that coercion happens FIRST, and then filterTransformer.
+     */
     filterTransformer?: FilterTransformer;
     useSuggestedValueLiteralTransforms?: boolean;
 }

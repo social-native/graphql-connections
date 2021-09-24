@@ -117,12 +117,17 @@ export default class KnexQueryBuilder implements IQueryBuilder<Knex> {
     // [string, string, string | number | null]
     // tslint:disable-next-line: cyclomatic-complexity
     private filterArgs(filter: IFilter) {
-        const {field, operator, value} = this.filterTransformer(filter);
-
         if (this.useSuggestedValueLiteralTransforms) {
-            const coercedValue = typeof value === 'string' ? coerceStringValue(value) : value;
+            // tslint:disable-next-line: no-shadowed-variable
+            const {field, operator, value} = this.filterTransformer({
+                ...filter,
+                value:
+                    typeof filter.value === 'string'
+                        ? coerceStringValue(filter.value)
+                        : filter.value
+            });
 
-            if (coercedValue === null && operator.toLowerCase() === '=') {
+            if (value === null && operator.toLowerCase() === '=') {
                 return [
                     (builder: QueryBuilder) => {
                         builder.whereNull(this.computeFilterField(field));
@@ -130,7 +135,7 @@ export default class KnexQueryBuilder implements IQueryBuilder<Knex> {
                 ];
             }
 
-            if (coercedValue === null && operator.toLowerCase() === '<>') {
+            if (value === null && operator.toLowerCase() === '<>') {
                 return [
                     (builder: QueryBuilder) => {
                         builder.whereNotNull(this.computeFilterField(field));
@@ -138,13 +143,10 @@ export default class KnexQueryBuilder implements IQueryBuilder<Knex> {
                 ];
             }
 
-            return [
-                this.computeFilterField(field),
-                this.computeFilterOperator(operator),
-                coercedValue
-            ];
+            return [this.computeFilterField(field), this.computeFilterOperator(operator), value];
         }
 
+        const {field, operator, value} = this.filterTransformer(filter);
         return [this.computeFilterField(field), this.computeFilterOperator(operator), value];
     }
 
